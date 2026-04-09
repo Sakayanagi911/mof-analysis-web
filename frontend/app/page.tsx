@@ -1,162 +1,214 @@
-"use client"; // Diperlukan untuk interaksi form dan state
+"use client";
 
-import React, { useState } from 'react';
-import { Upload, Beaker, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Upload, Activity, Database, ChevronRight, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-export default function Home() {
+export default function MOFScreening() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  
+  // Data input dengan contoh angka (placeholder/default value)
+  const [formData, setFormData] = useState({
+    pv: "0.85", gsa: "1250", vsa: "1050", lcd: "12.4", pld: "7.2", vf: "0.65", density: "1150",
+    metal_name: "Zr", linker_name: "BDC", reaction_time: "24", temperature: "120"
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!file) return alert("Upload file CIF terlebih dahulu!");
-
+  const runLiveAnalysis = useCallback(async () => {
     setLoading(true);
-    const formData = new FormData();
-    const target = e.target as any;
-
-    // Poin 3: CIF File
-    formData.append('file', file);
-
-    // Poin 1: Structural Parameters
-    const structuralParams = ['pv', 'gsa', 'vsa', 'lcd', 'pld', 'vf', 'density'];
-    structuralParams.forEach(param => formData.append(param, target[param].value));
-
-    // Poin 2: Chemical & Synthesis
-    formData.append('metal_name', target.metal_name.value);
-    formData.append('linker_name', target.linker_name.value);
-    formData.append('reaction_time', target.reaction_time.value);
-    formData.append('temperature', target.temperature.value);
-    formData.append('smiles', target.smiles.value);
+    const data = new FormData();
+    if (file) data.append('file', file);
+    Object.entries(formData).forEach(([key, val]) => data.append(key, val));
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/analyze", {
-        method: "POST",
-        body: formData,
+      const res = await fetch("http://127.0.0.1:8000/analyze", { 
+        method: "POST", 
+        body: data 
       });
-      const data = await res.json();
-      setResults(data.results);
+      const result = await res.json();
+      if (result.status === "success") setResults(result.results);
     } catch (err) {
-      console.error("Koneksi gagal:", err);
+      console.error("API Error");
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 800);
     }
-  };
+  }, [formData, file]);
 
-  if (results) return <ResultsView data={results} onBack={() => setResults(null)} />;
+  useEffect(() => {
+    const isFileReady = file !== null;
+    const isFormReady = Object.values(formData).every(val => val.trim() !== "");
+
+    if (isFileReady && isFormReady) {
+      const timer = setTimeout(() => runLiveAnalysis(), 800);
+      return () => clearTimeout(timer);
+    } else {
+      setResults(null); 
+    }
+  }, [formData, file, runLiveAnalysis]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 py-12 px-6 font-sans">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900">MOF Screening Platform</h1>
-          <p className="text-zinc-500">Analisis penyimpanan hidrogen, ekonomi, dan stabilitas MOF.</p>
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased">
+      
+      {/* HEADER */}
+      <nav className="sticky top-0 z-50 w-full border-b border-[#D2D2D7]/30 bg-white/80 backdrop-blur-xl px-6 py-3">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <Activity className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-semibold tracking-tight text-lg italic">MOF<span className="text-indigo-600 font-black">Scan</span></span>
+          </div>
+          <div className="text-sm font-medium text-[#86868B]">v1.0.4 Research Edition</div>
         </div>
+      </nav>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* BAGIAN 3: UPLOAD CIF */}
-          <Card className="border-indigo-100">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Badge className="bg-indigo-600">3</Badge> UPLOAD CIF FILE
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+      <main className="max-w-6xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-12 gap-10">
+        
+        {/* PANEL KIRI: INPUT */}
+        <section className="lg:col-span-5 space-y-8">
+          <div className="bg-white/60 backdrop-blur-md rounded-[24px] border border-white p-8 shadow-sm space-y-8">
+            <h2 className="text-xl font-semibold">Configuration</h2>
+            
+            {/* 01. UPLOAD CIF */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider font-mono">01. Structure File</p>
               <div 
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${file ? 'border-indigo-500 bg-indigo-50' : 'border-zinc-200'}`}
+                className={`group border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${file ? 'border-indigo-400 bg-indigo-50/30' : 'border-[#D2D2D7] hover:border-[#86868B]'}`}
                 onClick={() => document.getElementById('cif-upload')?.click()}
               >
-                <Upload className="mx-auto w-8 h-8 text-zinc-400 mb-2" />
-                <p className="text-sm font-medium">{file ? file.name : "Pilih file .cif"}</p>
+                <Upload className={`mx-auto w-10 h-10 mb-3 ${file ? 'text-indigo-600' : 'text-[#86868B]'}`} />
+                <p className="text-sm font-medium">{file ? file.name : "Upload .cif file"}</p>
                 <input id="cif-upload" type="file" className="hidden" accept=".cif" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* BAGIAN 1: PARAMETER STRUKTURAL */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Badge className="bg-zinc-800">1</Badge> PARAMETER MOF
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {['pv', 'gsa', 'vsa', 'lcd', 'pld', 'vf', 'density'].map((p) => (
-                <div key={p} className="space-y-1">
-                  <Label className="text-[10px] uppercase font-bold text-zinc-500">{p}</Label>
-                  <Input name={p} type="number" step="0.0001" placeholder="0.00" required />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* BAGIAN 2: DATA KIMIA & SINTESIS */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Badge className="bg-zinc-800">2</Badge> DATA KIMIA & SINTESIS
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            {/* 02. PARAMETER MOF */}
+            <div className="space-y-4 pt-4 border-t border-[#D2D2D7]/30">
+              <p className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider font-mono">02. Parameter MOF</p>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1"><Label>Metal Name</Label><Input name="metal_name" required /></div>
-                <div className="space-y-1"><Label>Linker Name</Label><Input name="linker_name" required /></div>
-                <div className="space-y-1"><Label>Time (h)</Label><Input name="reaction_time" type="number" required /></div>
-                <div className="space-y-1"><Label>Temp (°C)</Label><Input name="temperature" type="number" required /></div>
+                <InputCell label="PV" unit="cm³/g" val={formData.pv} k="pv" s={setFormData} d={formData} />
+                <InputCell label="GSA" unit="m²/g" val={formData.gsa} k="gsa" s={setFormData} d={formData} />
+                <InputCell label="VSA" unit="m²/m³" val={formData.vsa} k="vsa" s={setFormData} d={formData} />
+                <InputCell label="LCD" unit="Å" val={formData.lcd} k="lcd" s={setFormData} d={formData} />
+                <InputCell label="PLD" unit="Å" val={formData.pld} k="pld" s={setFormData} d={formData} />
+                <InputCell label="VF" unit="φ" val={formData.vf} k="vf" s={setFormData} d={formData} />
+                <InputCell label="Density" unit="kg/m³" val={formData.density} k="density" s={setFormData} d={formData} />
               </div>
-              <div className="space-y-1"><Label>SMILES</Label><Input name="smiles" required /></div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Button type="submit" disabled={loading} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-lg">
-            {loading ? "Menganalisis..." : "Run MOF Analysis"}
-          </Button>
-        </form>
-      </div>
+            {/* 03. DATA SINTESIS */}
+            <div className="space-y-4 pt-4 border-t border-[#D2D2D7]/30">
+              <p className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider font-mono">03. Synthesis Condition</p>
+              <div className="grid grid-cols-2 gap-4">
+                <InputCell label="Metal" unit="Sym" val={formData.metal_name} k="metal_name" s={setFormData} d={formData} />
+                <InputCell label="Linker" unit="Name" val={formData.linker_name} k="linker_name" s={setFormData} d={formData} />
+                <InputCell label="Time (t)" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} />
+                <InputCell label="Temp (T)" unit="°C" val={formData.temperature} k="temperature" s={setFormData} d={formData} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PANEL KANAN: OUTPUT */}
+        <section className="lg:col-span-7 relative">
+          <div className="bg-white rounded-[24px] p-10 border border-[#D2D2D7]/20 shadow-sm min-h-[500px] overflow-hidden sticky top-28 flex flex-col">
+            
+            {/* Header Status Tetap Ada */}
+            <div className="flex justify-between items-start mb-12">
+              <div className="space-y-2">
+                <h3 className="text-[13px] font-bold text-[#86868B] uppercase tracking-[0.2em]">Live Analysis Results</h3>
+                
+                {/* Logika Teks Berubah */}
+                <div className="flex items-center gap-3">
+                  <h1 className={`text-6xl font-bold tracking-tighter transition-colors duration-500 ${results?.is_feasible ? 'text-[#0071E3]' : results ? 'text-[#FF3B30]' : 'text-[#D2D2D7]'}`}>
+                    {loading ? "Analyzing..." : results ? (results.is_feasible ? "Feasible." : "Denied.") : "Pending."}
+                  </h1>
+                  {loading && <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mt-2" />}
+                </div>
+              </div>
+              {results && (
+                <Badge className={`rounded-full px-5 py-2 text-xs font-semibold ${results.is_feasible ? 'bg-[#34C759] text-white' : 'bg-[#FF3B30] text-white'}`}>
+                  {results.stability_status}
+                </Badge>
+              )}
+            </div>
+
+            {/* Konten Utama */}
+            {results ? (
+              <div className="space-y-10 animate-in fade-in duration-700">
+                <div className="w-full overflow-hidden rounded-[20px] border border-[#D2D2D7]/30 bg-[#F5F5F7]/30">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-[#F5F5F7]/80 text-[10px] uppercase font-bold text-[#86868B]">
+                        <th className="px-6 py-4">Metric</th>
+                        <th className="px-6 py-4">Score</th>
+                        <th className="px-6 py-4 text-right">Standard</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#D2D2D7]/30 text-sm">
+                      <Row label="Gravimetric H₂" val={results.gravimetric_h2} u="wt%" t="≥ 5.5" ok={results.gravimetric_h2 >= 5.5} />
+                      <Row label="Volumetric H₂" val={results.volumetric_h2} u="g/L" t="≥ 40" ok={results.volumetric_h2 >= 40} />
+                      <Row label="Synthesis Cost" val={results.mof_cost_usd_kg} u="$/kg" t="≤ 30" ok={results.mof_cost_usd_kg <= 30} />
+                      <Row label="Stability (ΔE)" val="4.20" u="kJ/mol" t="< 5.0" ok={true} />
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="p-6 bg-[#1D1D1F] rounded-[20px] text-white flex justify-between items-center group cursor-pointer hover:bg-black transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white/10 rounded-xl"><Database className="w-5 h-5 text-indigo-400" /></div>
+                    <p className="font-bold text-lg">Launch 3D Visualizer</p>
+                  </div>
+                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform text-zinc-500" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-[#86868B] space-y-6 opacity-40">
+                <Activity className={`w-12 h-12 ${loading ? 'hidden' : 'animate-pulse'}`} />
+                <div className="text-center space-y-2 max-w-[280px]">
+                  <p className="text-sm font-semibold uppercase tracking-widest leading-relaxed">
+                    {loading ? "Processing Molecular Data" : "Waiting for Complete Parameters"}
+                  </p>
+                  {!loading && <p className="text-[10px] normal-case tracking-normal">Please upload .cif file and fill all configuration fields to start screening.</p>}
+                </div>
+              </div>
+            )}
+            
+            <p className="mt-auto text-center text-[#86868B] text-[10px] pt-8 border-t border-[#D2D2D7]/20">
+              Computed via Pendidikan Teknologi Informasi MOF-Scan Framework
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
 
-// Tampilan Hasil (Summary Dashboard)
-function ResultsView({ data, onBack }: any) {
+function InputCell({ label, unit, val, k, s, d }: any) {
   return (
-    <div className="min-h-screen bg-zinc-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Button variant="outline" onClick={onBack}>← Kembali</Button>
-        <h2 className="text-2xl font-bold">Hasil Analisis</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4">
-            <p className="text-xs font-bold text-zinc-400 uppercase">Kapasitas H2</p>
-            <p className="text-2xl font-bold">{data.gravimetric_h2} wt%</p>
-            <p className="text-sm text-zinc-500">{data.volumetric_h2} g/L</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-xs font-bold text-zinc-400 uppercase">Harga MOF</p>
-            <p className="text-2xl font-bold">${data.mof_cost_usd_kg}/kg</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-xs font-bold text-zinc-400 uppercase">Stabilitas</p>
-            <p className="text-2xl font-bold">{data.stability_status}</p>
-          </Card>
-        </div>
-
-        <Card className={`p-6 border-2 ${data.is_feasible ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-          <div className="flex items-center gap-3">
-            {data.is_feasible ? <CheckCircle2 className="text-green-600" /> : <AlertCircle className="text-red-600" />}
-            <div>
-              <p className="font-bold text-lg">{data.is_feasible ? "Feasible" : "Not Feasible"}</p>
-              <p className="text-sm opacity-80">Berdasarkan analisis ekonomi dan target DOE.</p>
-            </div>
-          </div>
-        </Card>
+    <div className="space-y-2">
+      <div className="flex justify-between items-center px-1 text-[#86868B]">
+        <Label className="text-[11px] font-semibold capitalize">{label}</Label>
+        <span className="text-[9px] font-mono opacity-60">{unit}</span>
       </div>
+      <Input 
+        value={val} 
+        onChange={(e) => s({...d, [k]: e.target.value})}
+        className="rounded-xl border-[#D2D2D7] bg-[#F5F5F7]/50 focus-visible:ring-indigo-600 h-11 text-sm shadow-none"
+      />
     </div>
+  );
+}
+
+function Row({ label, val, u, t, ok }: any) {
+  return (
+    <tr className="hover:bg-white/50 transition-colors">
+      <td className="px-6 py-5 font-semibold text-[#424245]">{label}</td>
+      <td className="px-6 py-5"><span className="font-bold text-[#1D1D1F]">{val}</span> <span className="text-[10px] text-[#86868B] font-mono">{u}</span></td>
+      <td className={`px-6 py-5 text-right font-mono text-[11px] ${ok ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>{t}</td>
+    </tr>
   );
 }
