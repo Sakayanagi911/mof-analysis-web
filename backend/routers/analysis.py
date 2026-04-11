@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form
 
 from models.schemas import FeasibilityRequest, FeasibilityResponse
+from models.schemas import EconomicRequest, EconomicResponse
 from services.whitebox_model import predict_working_capacity
+from services.cost_analysis import run_economic_analysis
 
 router = APIRouter()
 
@@ -64,4 +66,29 @@ async def analyze_feasibility(request: FeasibilityRequest):
             volumetric_wc=0.0,
             is_feasible=False,
             thresholds={"gravimetric": 5.5, "volumetric": 40.0}
+        )
+
+
+@router.post("/api/economic", response_model=EconomicResponse)
+async def analyze_economic(request: EconomicRequest):
+    """Analisis ekonomi MOF: harga, storage cost, energi."""
+    try:
+        result = run_economic_analysis(
+            metal_name=request.metal_name,
+            linker_name=request.linker_name,
+            reaction_time=request.reaction_time,
+            temperature=request.temperature,
+            smiles=request.smiles,
+            gravimetric_wc=request.gravimetric_wc
+        )
+        return EconomicResponse(status="success", **result)
+    except Exception as e:
+        return EconomicResponse(
+            status=f"error: {str(e)}",
+            mof_cost_usd_per_kg=0.0,
+            storage_cost_usd_per_kg_h2=0.0,
+            q_energy_kj=0.0,
+            q_loss_kj=0.0,
+            is_feasible=False,
+            feasibility_details={}
         )
