@@ -1,5 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form
 
+from models.schemas import FeasibilityRequest, FeasibilityResponse
+from services.whitebox_model import predict_working_capacity
+
 router = APIRouter()
 
 @router.post("/analyze")
@@ -33,3 +36,32 @@ async def analyze_mof(
             "is_overall_feasible": False
         }
     }
+
+
+@router.post("/api/feasibility", response_model=FeasibilityResponse)
+async def analyze_feasibility(request: FeasibilityRequest):
+    """
+    Analisis feasibility MOF berdasarkan 7 parameter struktural.
+    Menggunakan persamaan polynomial eksplisit (Persamaan 4-1 & 4-2).
+    """
+    try:
+        result = predict_working_capacity(
+            p=request.p, gsa=request.gsa, vsa=request.vsa,
+            vf=request.vf, pv=request.pv,
+            lcd=request.lcd, pld=request.pld
+        )
+        return FeasibilityResponse(
+            status="success",
+            gravimetric_wc=result["gravimetric_wc"],
+            volumetric_wc=result["volumetric_wc"],
+            is_feasible=result["is_feasible"],
+            thresholds={"gravimetric": 5.5, "volumetric": 40.0}
+        )
+    except Exception as e:
+        return FeasibilityResponse(
+            status=f"error: {str(e)}",
+            gravimetric_wc=0.0,
+            volumetric_wc=0.0,
+            is_feasible=False,
+            thresholds={"gravimetric": 5.5, "volumetric": 40.0}
+        )

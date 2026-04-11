@@ -32,3 +32,22 @@ class AnalysisResults(BaseModel):
 class AnalysisResponse(BaseModel):
     status: str
     results: AnalysisResults
+
+
+# --- API #1: Feasibility Analysis ---
+
+class FeasibilityRequest(BaseModel):
+    p: float        # Tekanan operasi [bar]
+    gsa: float      # Gravimetric Surface Area [m²/g]
+    vsa: float      # Volumetric Surface Area [m²/cm³]
+    vf: float       # Void Fraction [-]
+    pv: float       # Pore Volume [cm³/g]
+    lcd: float      # Largest Cavity Diameter [Å]
+    pld: float      # Pore Limiting Diameter [Å]
+
+class FeasibilityResponse(BaseModel):
+    status: str                # "success" atau "error"
+    gravimetric_wc: float      # Working Uptake Gravimetrik [wt.%]
+    volumetric_wc: float       # Working Uptake Volumetrik [g H₂/L]
+    is_feasible: bool          # True jika memenuhi threshold DOE 2025
+    thresholds: dict           # {"gravimetric": 5.5, "volumetric": 40.0}
