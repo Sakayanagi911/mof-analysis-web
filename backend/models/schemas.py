@@ -51,3 +51,23 @@ class FeasibilityResponse(BaseModel):
     volumetric_wc: float       # Working Uptake Volumetrik [g H₂/L]
     is_feasible: bool          # True jika memenuhi threshold DOE 2025
     thresholds: dict           # {"gravimetric": 5.5, "volumetric": 40.0}
+
+
+# --- API #2: Economic Analysis ---
+
+class EconomicRequest(BaseModel):
+    metal_name: str        # Nama metal precursor
+    linker_name: str       # Nama linker
+    reaction_time: float   # Waktu reaksi (jam)
+    temperature: float     # Temperatur reaksi (°C)
+    smiles: str            # SMILES linker
+    gravimetric_wc: float = 5.0  # Opsional, dari API #1
+
+class EconomicResponse(BaseModel):
+    status: str
+    mof_cost_usd_per_kg: float
+    storage_cost_usd_per_kg_h2: float
+    q_energy_kj: float
+    q_loss_kj: float
+    is_feasible: bool
+    feasibility_details: dict
