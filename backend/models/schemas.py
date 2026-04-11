@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 class AnalysisRequest(BaseModel):
     pv: float
@@ -71,3 +71,27 @@ class EconomicResponse(BaseModel):
     q_loss_kj: float
     is_feasible: bool
     feasibility_details: dict
+
+
+# --- API #3: Structure Analysis ---
+
+class Atom3D(BaseModel):
+    symbol: str
+    x: float
+    y: float
+    z: float
+
+class StructureResponse(BaseModel):
+    status: str
+    formula: str
+    n_atoms: int
+    n_sbu_atoms: int
+    n_linker_atoms: int
+    delta_e: float              # kJ/mol
+    rmsd: float                 # Å
+    stability_score: float      # skor gabungan
+    stability_status: str       # "Sangat stabil" / "Cukup stabil" / "Tidak stabil"
+    is_feasible: bool
+    structure_3d: dict          # Data untuk rendering 3D
+    cell_params: dict           # Parameter unit cell
+    xtb_available: bool = False # Apakah xTB tersedia di server
