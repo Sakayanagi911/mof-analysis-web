@@ -19,7 +19,7 @@ app.add_middleware(
 # Include routers
 app.include_router(analysis.router, tags=["Analysis"])
 app.include_router(visualization.router, prefix="/visualize", tags=["Visualization"])
-app.include_router(structure.router, prefix="/structure", tags=["Structure"])
+app.include_router(structure.router, tags=["Structure"])
 
 @app.get("/")
 async def root():
