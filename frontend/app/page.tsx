@@ -16,7 +16,7 @@ export default function MOFScreening() {
   const [results, setResults] = useState<any>(null);
   
   const [formData, setFormData] = useState({
-    pv: "0.85", gsa: "1250", vsa: "1050", lcd: "12.4", pld: "7.2", vf: "0.65", density: "1150",
+    pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
     metal_name: "Zr", linker_name: "BDC", reaction_time: "24", temperature: "120"
   });
 
@@ -188,13 +188,15 @@ function SectionHeader({ icon, num, text }: any) {
 
 function InputGroup({ icon, label, unit, val, k, s, d }: any) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 text-left">
       <Label className="text-[11px] font-medium text-[#424245] ml-1">{label}</Label>
       <div className="relative flex items-center group">
         <div className="absolute left-3 text-[#86868B] group-focus-within:text-indigo-600 transition-colors">
           {icon}
         </div>
         <Input 
+          type="number" 
+          step="any" // Agar bisa input desimal
           value={val} 
           onChange={(e) => s({...d, [k]: e.target.value})} 
           className="pl-10 pr-16 rounded-xl border-[#D2D2D7] bg-white h-11 text-sm shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500 transition-all"
