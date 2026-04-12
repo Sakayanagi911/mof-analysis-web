@@ -39,7 +39,7 @@ def calculate_wug(p, GSA, VSA, VF, PV, LCD, PLD):
         (0.00253194 * PV * PLD) + (0.000521033 * (LCD**2)) + (0.000700743 * LCD * PLD) - 
         (0.000244913 * (PLD**2))
     )
-    return round(wug, 3)
+    return wug # Kembalikan nilai mentah (full precision)
 
 
 def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
@@ -72,7 +72,7 @@ def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
         (0.0410538 * PV * PLD) + (0.00735029 * (LCD**2)) + (0.00119741 * LCD * PLD) + 
         (0.00386859 * (PLD**2))
     )
-    return round(wuv, 3)
+    return wuv # Kembalikan nilai mentah (full precision)
 
 
 def predict_working_capacity(p: float, gsa: float, vsa: float,

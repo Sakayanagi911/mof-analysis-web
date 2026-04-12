@@ -119,7 +119,7 @@ export default function MOFScreening() {
                 {/* 1. HYDROGEN CAPACITY */}
                 <div className="space-y-4 text-left">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">1. Hydrogen Working Capacity</h4>
+                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">1. Hydrogen Working Capacity (Whitebox)</h4>
                     <FeasibleBadge status={results.doe_feasible} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -128,21 +128,40 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* 2. ECONOMIC ANALYSIS */}
+                {/* 2. ECONOMIC ANALYSIS & ENERGY FINGERPRINT (REVISI) */}
                 <div className="space-y-4 pt-6 border-t border-[#D2D2D7]/30 text-left">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">2. Economic Analysis</h4>
+                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">2. Economic Analysis & Energy Fingerprint</h4>
                     <FeasibleBadge status={results.econ_feasible} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <ResultBox label="MOF Cost" val={results.mof_cost} unit="USD/kg" target="≤ 30" ok={results.mof_cost_ok} />
-                    <ResultBox label="Storage Cost" val={results.storage_cost} unit="USD/kg H2" target="≤ 300" ok={results.storage_cost_ok} />
+                    <ResultBox label="MOF Cost" val={results.mof_cost} unit="USD/kg" target="≤ 30" ok={results.mof_cost <= 30} />
+                    <ResultBox label="Storage Cost" val={results.storage_cost} unit="USD/kg H2" target="≤ 300" ok={results.storage_cost <= 300} />
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <EconMiniCard icon={<Zap className="w-3 h-3 text-amber-500" />} label="Q (Energy)" val={results.q_energy} unit="kJ" />
-                    <EconMiniCard icon={<AlertTriangle className="w-3 h-3 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="kJ" />
-                    <ConditionMiniCard icon={<Clock className="w-3 h-3" />} label="Time" val={results.reaction_time} unit="h" ok={results.time_ok} />
-                    <ConditionMiniCard icon={<Thermometer className="w-3 h-3" />} label="Temp" val={results.temperature} unit="°C" ok={results.temp_ok} />
+                  
+                  {/* Grid Energi - Menambahkan E Stirring */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <EconMiniCard icon={<Zap className="w-3 h-3 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="MJ" />
+                    <EconMiniCard icon={<AlertTriangle className="w-3 h-3 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="MJ" />
+                    <EconMiniCard icon={<Activity className="w-3 h-3 text-blue-500" />} label="E Stirring" val={results.e_stirr} unit="MJ" />
+                  </div>
+
+                  {/* Monitoring Threshold UI */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <ConditionMiniCard 
+                      icon={<Clock className="w-3 h-3" />} 
+                      label="Synthesis Time" 
+                      val={results.reaction_time} 
+                      unit=" / 48h" 
+                      ok={results.reaction_time < 48} 
+                    />
+                    <ConditionMiniCard 
+                      icon={<Thermometer className="w-3 h-3" />} 
+                      label="Reaction Temp" 
+                      val={results.temperature} 
+                      unit=" / 180°C" 
+                      ok={results.temperature <= 180} 
+                    />
                   </div>
                 </div>
 
@@ -155,7 +174,7 @@ export default function MOFScreening() {
                   <div className="flex gap-8">
                     <div className="space-y-3 flex-1 text-left">
                       <div className="flex justify-between items-center bg-[#F5F5F7] p-4 rounded-2xl border border-zinc-100">
-                        <span className="text-xs font-semibold text-zinc-500">Delta E</span>
+                        <span className="text-xs font-semibold text-zinc-500">Delta E (Hybrid)</span>
                         <span className="font-mono font-bold">{results.delta_e} kJ/mol</span>
                       </div>
                       <div className="flex justify-between items-center bg-[#F5F5F7] p-4 rounded-2xl border border-zinc-100">

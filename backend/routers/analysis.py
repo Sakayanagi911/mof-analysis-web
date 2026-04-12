@@ -43,14 +43,11 @@ async def analyze_mof(
     temperature: float = Form(...)
 ):
     # 1. Standarisasi Void Fraction
-    # Jika input 80 (persen), otomatis jadi 0.8
     valid_vf = vf / 100.0 if vf > 1.0 else vf
 
-    # 2. Hitung Kapasitas (URUTAN SESUAI CORE_FEATURE_KEYS)
-    # Urutan di file CoRE-MOF-whitebox-ml.py: Density, GSA, VSA, VF, PV, LCD, PLD
-    # JANGAN MASUKKAN ANGKA 100 LAGI DI SINI.
+    # 2. Hitung Kapasitas (Sesuai model Whitebox)
     wug = calculate_wug(
-        p=density,     # Di rumusmu, 'p' sebenarnya adalah Density
+        p=density,     
         GSA=gsa, 
         VSA=vsa, 
         VF=valid_vf, 
@@ -60,7 +57,7 @@ async def analyze_mof(
     )
     
     wuv = calculate_wuv(
-        p=density,     # Di rumusmu, 'p' sebenarnya adalah Density
+        p=density,     
         GSA=gsa, 
         VSA=vsa, 
         VF=valid_vf, 
@@ -69,16 +66,18 @@ async def analyze_mof(
         PLD=pld
     )
 
-    # 3. Hitung Energi Industri (A = 5.899 m2)
-    cp_val = calculate_cp_joback_full(smiles, temperature)
+    # 3. Integrated Energy Fingerprint (Update Sesuai Notebook)
+    heat_eff = 0.75  
     delta_t = temperature - 25.0
+    t_seconds = reaction_time * 3600.0
     
-    # Q Heat (kJ)
-    q_heat = ((cp_val * delta_t / 0.8) * 1000) / 1000
+    cp_val = calculate_cp_joback_full(smiles, temperature)
     
-    # Q Loss (kJ) - t dalam detik (3600)
-    t_seconds = reaction_time * 3600
-    q_loss = (5.899 * (0.042 / 0.075) * delta_t * t_seconds) / 1000
+    # Hitung per komponen dalam MJ
+    q_heat_mj = (cp_val * delta_t) / (heat_eff * 1_000_000)
+    q_loss_mj = (3.303 * delta_t * t_seconds) / (heat_eff * 1_000_000)
+    e_stirr_mj = (0.0162 * 1000.0 * t_seconds) / 1_000_000 # Asumsi mass 1kg
+    total_energy_mj = q_heat_mj + q_loss_mj + e_stirr_mj
 
     return {
         "status": "success",
@@ -90,8 +89,13 @@ async def analyze_mof(
             "mof_cost_ok": True,
             "storage_cost": round(25.0 / (wug/100), 2) if wug > 0 else 0,
             "storage_cost_ok": True,
-            "q_energy": round(q_heat, 2),
-            "q_loss": round(q_loss, 2),
+            
+            # Nilai Energi dalam Mega Joule (MJ)
+            "q_energy": round(q_heat_mj, 4), 
+            "q_loss": round(q_loss_mj, 4),
+            "e_stirr": round(e_stirr_mj, 4),       # Field tambahan
+            "total_energy": round(total_energy_mj, 4), # Field tambahan
+            
             "reaction_time": reaction_time,
             "time_ok": reaction_time <= 48,
             "temperature": temperature,
@@ -107,10 +111,6 @@ async def analyze_mof(
 
 @router.post("/api/feasibility", response_model=FeasibilityResponse)
 async def analyze_feasibility(request: FeasibilityRequest):
-    """
-    Analisis feasibility MOF berdasarkan 7 parameter struktural.
-    Menggunakan persamaan polynomial eksplisit (Persamaan 4-1 & 4-2).
-    """
     try:
         result = predict_working_capacity(
             p=request.p, gsa=request.gsa, vsa=request.vsa,
@@ -133,10 +133,8 @@ async def analyze_feasibility(request: FeasibilityRequest):
             thresholds={"gravimetric": 5.5, "volumetric": 40.0}
         )
 
-
 @router.post("/api/economic", response_model=EconomicResponse)
 async def analyze_economic(request: EconomicRequest):
-    """Analisis ekonomi MOF: harga, storage cost, energi."""
     try:
         result = run_economic_analysis(
             metal_name=request.metal_name,
