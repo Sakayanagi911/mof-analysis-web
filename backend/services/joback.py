@@ -52,6 +52,8 @@ JOBACK_CP_GROUPS = {
     "-NH- (ring)":   {"smarts": "[NX3H1;r]",  "a": 8.83,  "b": -3.84e-3, "c": 4.35e-5,  "d": -2.60e-8},
     "-N= (ring)":    {"smarts": "[nX2]",       "a": 5.69,  "b": -4.12e-3, "c": 1.28e-5,  "d": -8.88e-9},
     "-S- (ring)":    {"smarts": "[SX2;r]",     "a": 6.45,  "b": 6.70e-2,  "c": -3.57e-5, "d": 2.86e-9},
+
+    
 }
 
 # Lookup table Cp untuk SMILES umum linker MOF (fallback jika rdkit tidak tersedia)
@@ -105,6 +107,16 @@ def count_joback_groups(smiles: str) -> dict:
 
     return counts
 
+# --- LIST PRIORITY (Penting untuk Import) ---
+PRIORITY = [
+    "COOH","COOR","CHO","CO_nonring","CO_ring","C=O_other",
+    "OH_phenol","OH_alcohol",
+    "NO2","CN","NH2_ar","ring_nH","ring_n","NH_ring","NH2","NH_nonring","N_nonring","N=_ring","N=_nonring","NH=",
+    "ring_cH","ring_c","ring_CH2","ring_CH","ring_C",
+    "CH3","CH2","CH","C","CH2=","CH=","C=","C=C","C#C",
+    "F","Cl","Br","I",
+    "SH","S_nonring","S_ring"
+]
 
 def calculate_cp_joback(smiles: str, T: float = 298.15) -> float:
     """
