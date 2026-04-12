@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import json, os
 import uvicorn
 
 # Import routers sesuai struktur folder kamu
@@ -27,3 +28,15 @@ async def root():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+@app.get("/get-prices")
+async def get_prices():
+    file_path = os.path.join("data", "price_database.json")
+    try:
+        # Tambahkan encoding="utf-8" di sini
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"error": "File not found", "metals": {}, "linkers": {}}
+    except Exception as e:
+        return {"error": str(e), "metals": {}, "linkers": {}}
