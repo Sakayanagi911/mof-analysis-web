@@ -1,0 +1,28 @@
+{
+  "eur_to_usd": 1.15,
+  "scale_factors": {
+    "ym": 0.56,
+    "ym_linker": 0.67,
+    "industrial_mass_mg": 10000000
+  },
+  "metals": {
+    "Cu(NO3)2": {"price_eur_per_g": 0.00255, "grade": "technical"},
+    "Zn(NO3)2": {"price_eur_per_g": 0.00128, "grade": "technical"},
+    "Zr(OPr)4": {"price_eur_per_g": 0.01500, "grade": "technical"},
+    "Al(NO3)3": {"price_eur_per_g": 0.00180, "grade": "technical"},
+    "Fe(NO3)3": {"price_eur_per_g": 0.00200, "grade": "technical"},
+    "Cr(NO3)3": {"price_eur_per_g": 0.00350, "grade": "technical"}
+  },
+  "linkers": {
+    "H3BTC": {"price_eur_per_g": 6.868, "smiles": "C(=O)(O)c1cc(cc(c1)C(=O)O)C(=O)O"},
+    "H2BDC": {"price_eur_per_g": 0.5, "smiles": "OC(=O)c1ccc(cc1)C(O)=O"},
+    "H4DOBDC": {"price_eur_per_g": 15.0, "smiles": "Oc1cc(O)c(cc1C(O)=O)C(O)=O"},
+    "BPDC": {"price_eur_per_g": 48.28, "smiles": "OC(=O)c1ccc(-c2ccc(cc2)C(O)=O)cc1"}
+  },
+  "solvents": {
+    "DMF": {"price_eur_per_ml": 0.000654},
+    "DMA": {"price_eur_per_ml": 0.001961},
+    "DEF": {"price_eur_per_ml": 0.000391},
+    "H2O": {"price_eur_per_ml": 0.000001}
+  }
+}

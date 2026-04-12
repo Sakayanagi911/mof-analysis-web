@@ -10,10 +10,9 @@ frontend/*.tsbuildinfo
 frontend/next-env.d.ts
 
 # --- BACKEND (FastAPI) ---
-backend/venv/ 
-backend/__pycache__/ 
-backend/uploads/* 
-backend/.pytest_cache/
+backend/venv/
+**/__pycache__/
+**/.pytest_cache/
 
 # --- MISC / OS ---
 .DS_Store
