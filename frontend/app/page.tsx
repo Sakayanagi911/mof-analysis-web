@@ -44,8 +44,8 @@ export default function MOFScreening() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
-      <nav className="sticky top-0 z-50 w-full border-b border-[#D2D2D7]/30 bg-white/80 backdrop-blur-xl px-6 py-3 text-left">
-        <div className="max-w-7xl mx-auto flex justify-between items-center italic font-semibold text-left">
+      <nav className="sticky top-0 z-50 w-full border-b border-[#D2D2D7]/30 bg-white/80 backdrop-blur-xl px-6 py-3">
+        <div className="max-w-7xl mx-auto flex justify-between items-center italic font-semibold">
           <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-indigo-600" />
             <span>MOF<span className="text-indigo-600 font-black">Scan</span></span>
@@ -54,14 +54,14 @@ export default function MOFScreening() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 text-left">
+      <main className="max-w-7xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-12 gap-10">
         
         {/* PANEL KIRI: INPUT */}
-        <section className="lg:col-span-4 space-y-6 text-left">
+        <section className="lg:col-span-4 space-y-6">
           <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white p-8 shadow-sm space-y-6">
             <h2 className="text-xl font-semibold">Configuration</h2>
             
-            <div className="space-y-4 text-left">
+            <div className="space-y-4">
               <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure File" />
               <div 
                 className={`group border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${file ? 'border-indigo-400 bg-indigo-50/20' : 'border-[#D2D2D7] hover:bg-zinc-50'}`}
@@ -73,7 +73,7 @@ export default function MOFScreening() {
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-zinc-100 text-left">
+            <div className="space-y-4 pt-4 border-t border-zinc-100">
               <SectionHeader icon={<Layers className="w-4 h-4" />} text="02 Geometric Factors" />
               <div className="space-y-3">
                 <InputGroup icon={<Activity className="w-4 h-4"/>} label="ASA Gravimetric" unit="m²/g" val={formData.gsa} k="gsa" s={setFormData} d={formData} />
@@ -86,7 +86,7 @@ export default function MOFScreening() {
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-zinc-100 text-left">
+            <div className="space-y-4 pt-4 border-t border-zinc-100">
               <SectionHeader icon={<Beaker className="w-4 h-4" />} text="03 Synthesis Conditions" />
               <div className="space-y-3">
                 <InputGroup icon={<FlaskConical className="w-4 h-4"/>} label="Metal Name" unit="Sym" val={formData.metal_name} k="metal_name" s={setFormData} d={formData} />
@@ -100,14 +100,14 @@ export default function MOFScreening() {
         </section>
 
         {/* PANEL KANAN: OUTPUT */}
-        <section className="lg:col-span-8 relative text-left">
-          <div className="bg-white rounded-[32px] p-10 border border-[#D2D2D7]/20 shadow-sm sticky top-28 space-y-8 min-h-[600px] flex flex-col text-left">
+        <section className="lg:col-span-8 relative">
+          <div className="bg-white rounded-[32px] p-10 border border-[#D2D2D7]/20 shadow-sm sticky top-28 space-y-8 min-h-[600px] flex flex-col">
             {loading && <div className="absolute top-0 left-0 w-full h-1 bg-indigo-600 animate-pulse" />}
             
-            <header className="flex justify-between items-center text-left">
-              <div className="text-left">
-                <h3 className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] text-left">Screening Result</h3>
-                <h1 className={`text-6xl font-bold tracking-tighter text-left ${results ? (results.is_overall_feasible ? 'text-[#0071E3]' : 'text-[#FF3B30]') : 'text-[#D2D2D7]'}`}>
+            <header className="flex justify-between items-center">
+              <div>
+                <h3 className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]">Screening Result</h3>
+                <h1 className={`text-6xl font-bold tracking-tighter ${results ? (results.is_overall_feasible ? 'text-[#0071E3]' : 'text-[#FF3B30]') : 'text-[#D2D2D7]'}`}>
                   {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible." : "Denied.") : "Pending."}
                 </h1>
               </div>
@@ -115,11 +115,11 @@ export default function MOFScreening() {
             </header>
 
             {results ? (
-              <div className="space-y-8 animate-in fade-in duration-500 text-left">
+              <div className="space-y-8 animate-in fade-in duration-500">
                 {/* 1. HYDROGEN CAPACITY */}
-                <div className="space-y-4 text-left">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">1. Hydrogen Working Capacity (Whitebox)</h4>
+                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">1. Hydrogen Working Capacity</h4>
                     <FeasibleBadge status={results.doe_feasible} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -128,10 +128,10 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* 2. ECONOMIC ANALYSIS & ENERGY FINGERPRINT (REVISI) */}
-                <div className="space-y-4 pt-6 border-t border-[#D2D2D7]/30 text-left">
+                {/* 2. ECONOMIC ANALYSIS & ENERGY FINGERPRINT */}
+                <div className="space-y-4 pt-6 border-t border-[#D2D2D7]/30">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">2. Economic Analysis & Energy Fingerprint</h4>
+                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">2. Economic Analysis & Energy Fingerprint</h4>
                     <FeasibleBadge status={results.econ_feasible} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -139,14 +139,12 @@ export default function MOFScreening() {
                     <ResultBox label="Storage Cost" val={results.storage_cost} unit="USD/kg H2" target="≤ 300" ok={results.storage_cost <= 300} />
                   </div>
                   
-                  {/* Grid Energi - Menambahkan E Stirring */}
                   <div className="grid grid-cols-3 gap-4">
                     <EconMiniCard icon={<Zap className="w-3 h-3 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="MJ" />
                     <EconMiniCard icon={<AlertTriangle className="w-3 h-3 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="MJ" />
                     <EconMiniCard icon={<Activity className="w-3 h-3 text-blue-500" />} label="E Stirring" val={results.e_stirr} unit="MJ" />
                   </div>
 
-                  {/* Monitoring Threshold UI */}
                   <div className="grid grid-cols-2 gap-4">
                     <ConditionMiniCard 
                       icon={<Clock className="w-3 h-3" />} 
@@ -166,31 +164,36 @@ export default function MOFScreening() {
                 </div>
 
                 {/* 3. STRUCTURAL INTERPRETATION */}
-                <div className="space-y-4 pt-6 border-t border-[#D2D2D7]/30 text-left">
+                <div className="space-y-4 pt-6 border-t border-[#D2D2D7]/30">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider text-left">3. Structural Interpretation</h4>
+                    <h4 className="text-[11px] font-bold text-[#86868B] uppercase tracking-wider">3. Structural Interpretation</h4>
                     <FeasibleBadge status={results.stability_feasible} />
                   </div>
                   <div className="flex gap-8">
-                    <div className="space-y-3 flex-1 text-left">
-                      <div className="flex justify-between items-center bg-[#F5F5F7] p-4 rounded-2xl border border-zinc-100">
-                        <span className="text-xs font-semibold text-zinc-500">Delta E (Hybrid)</span>
-                        <span className="font-mono font-bold">{results.delta_e} kJ/mol</span>
+                    <div className="space-y-3 flex-1">
+                      {/* Baris ΔE - Bersih Tanpa Tulisan Tambahan */}
+                      <div className="flex justify-between items-center bg-[#F5F5F7] p-5 rounded-2xl border border-zinc-100 transition-all hover:border-indigo-100">
+                        <span className="text-lg font-black text-indigo-600 tracking-tighter">ΔE</span>
+                        <span className="font-mono font-bold text-lg">{results.delta_e} <span className="text-[10px] text-zinc-400 font-sans ml-1">kJ/mol</span></span>
                       </div>
-                      <div className="flex justify-between items-center bg-[#F5F5F7] p-4 rounded-2xl border border-zinc-100">
-                        <span className="text-xs font-semibold text-zinc-500">RMSD</span>
-                        <span className="font-mono font-bold">{results.rmsd} Å</span>
+                      
+                      {/* Baris RMSD */}
+                      <div className="flex justify-between items-center bg-[#F5F5F7] p-5 rounded-2xl border border-zinc-100 transition-all hover:border-indigo-100">
+                        <span className="text-xs font-bold text-zinc-400 tracking-widest uppercase">RMSD</span>
+                        <span className="font-mono font-bold text-lg">{results.rmsd} <span className="text-[10px] text-zinc-400 font-sans ml-1">Å</span></span>
                       </div>
                     </div>
-                    <div className="w-1/3 aspect-square bg-[#1D1D1F] rounded-[24px] flex items-center justify-center border border-white/10 shadow-lg relative">
-                       <FlaskConical className="w-8 h-8 text-indigo-400 opacity-50" />
-                       <p className="absolute bottom-3 text-[8px] font-mono text-zinc-500 uppercase tracking-widest text-center">3D Struct Active</p>
+                    
+                    <div className="w-1/3 aspect-square bg-[#1D1D1F] rounded-[32px] flex items-center justify-center border border-white/10 shadow-xl relative overflow-hidden group">
+                       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <FlaskConical className="w-10 h-10 text-indigo-400 opacity-40 group-hover:scale-110 transition-transform" />
+                       <p className="absolute bottom-4 text-[7px] font-mono text-zinc-500 uppercase tracking-[0.3em] text-center w-full">3D Visualizer</p>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-30 space-y-4 text-left">
+              <div className="flex-1 flex flex-col items-center justify-center opacity-30 space-y-4">
                 <Loader2 className={`w-8 h-8 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
                 <p className="text-xs font-bold uppercase tracking-widest text-center px-10">Please upload .cif file and fill all configuration fields to start screening.</p>
               </div>
@@ -206,7 +209,7 @@ export default function MOFScreening() {
 
 function SectionHeader({ icon, text }: any) {
   return (
-    <div className="flex items-center gap-2 mb-2 text-left">
+    <div className="flex items-center gap-2 mb-2">
       <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">{icon}</div>
       <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{text}</p>
     </div>
@@ -215,7 +218,7 @@ function SectionHeader({ icon, text }: any) {
 
 function InputGroup({ icon, label, unit, val, k, s, d }: any) {
   return (
-    <div className="space-y-1.5 text-left">
+    <div className="space-y-1.5">
       <Label className="text-[11px] font-medium text-[#424245] ml-1">{label}</Label>
       <div className="relative flex items-center group">
         <div className="absolute left-3 text-[#86868B] group-focus-within:text-indigo-600 transition-colors">
@@ -239,7 +242,7 @@ function InputGroup({ icon, label, unit, val, k, s, d }: any) {
 function ResultBox({ label, val, unit, target, ok }: any) {
   return (
     <div className={`p-5 rounded-[24px] border transition-all flex justify-between items-center ${ok ? 'bg-emerald-50/20 border-emerald-100/50' : 'bg-red-50/20 border-red-100/50'}`}>
-      <div className="text-left">
+      <div>
         <p className="text-[9px] font-bold text-[#86868B] uppercase mb-1">{label}</p>
         <p className="text-2xl font-black">{val} <span className="text-xs font-medium text-[#86868B]">{unit}</span></p>
         <p className="text-[9px] text-[#86868B] mt-1 font-mono">Target: {target}</p>
@@ -264,7 +267,7 @@ function EconMiniCard({ icon, label, val, unit }: any) {
 function ConditionMiniCard({ icon, label, val, unit, ok }: any) {
   return (
     <div className={`p-3 rounded-xl border text-center space-y-1 ${ok ? 'bg-emerald-50/30 border-emerald-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
-      <div className="flex items-center justify-center gap-1 text-center">
+      <div className="flex items-center justify-center gap-1">
         <span className={ok ? 'text-emerald-600' : 'text-red-600'}>{icon}</span>
         <span className={`text-[8px] font-bold uppercase tracking-tighter ${ok ? 'text-emerald-700' : 'text-red-700'}`}>{label}</span>
       </div>
