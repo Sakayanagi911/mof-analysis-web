@@ -1,0 +1,4 @@
+# This directory stores temporary CIF uploads from users.
+# All files here are transient and should not be committed.
+*
+!.gitignore
