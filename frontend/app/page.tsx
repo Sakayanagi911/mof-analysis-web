@@ -59,8 +59,8 @@ export default function MOFScreening() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
-      {/* NAVBAR MODERN */}
-      <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-8 py-4">
+      {/* NAVBAR MODERN: Responsive Padding */}
+      <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="p-2 bg-indigo-600 rounded-xl group-hover:rotate-12 transition-transform duration-300">
@@ -69,22 +69,23 @@ export default function MOFScreening() {
             <span className="text-xl font-bold tracking-tight">MOF<span className="text-indigo-600">Scan</span></span>
           </div>
           <div className="flex items-center gap-6">
-            <div className="text-[11px] text-[#86868B] uppercase tracking-[0.2em] font-bold bg-zinc-100 px-3 py-1 rounded-full">Pro Edition</div>
+            <div className="hidden sm:block text-[11px] text-[#86868B] uppercase tracking-[0.2em] font-bold bg-zinc-100 px-3 py-1 rounded-full">Pro Edition</div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-12 px-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
+      {/* MAIN: Ganti ke grid-cols-1 untuk mobile */}
+      <main className="max-w-7xl mx-auto py-6 md:py-12 px-4 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* PANEL KIRI: CONFIGURATION */}
         <section className="lg:col-span-4 space-y-8 animate-in slide-in-from-left duration-700">
-          <div className="bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/50 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.04)] space-y-8">
+          <div className="bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/50 p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.04)] space-y-8">
             <h2 className="text-2xl font-bold tracking-tight">Configuration</h2>
             
             {/* 01. Structure File */}
             <div className="space-y-4">
               <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure File" />
               <div 
-                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all duration-500 ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300 hover:bg-zinc-50'}`}
+                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 md:p-8 text-center cursor-pointer transition-all duration-500 ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300 hover:bg-zinc-50'}`}
                 onClick={() => document.getElementById('cif-upload')?.click()}
               >
                 <Upload className={`mx-auto w-8 h-8 mb-3 transition-colors ${file ? 'text-indigo-600' : 'text-zinc-400'}`} />
@@ -181,18 +182,18 @@ export default function MOFScreening() {
 
         {/* PANEL KANAN: OUTPUT */}
         <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-12 border border-white shadow-[0_24px_80px_rgba(0,0,0,0.06)] sticky top-28 space-y-12 min-h-[700px] flex flex-col overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-[0_24px_80px_rgba(0,0,0,0.06)] lg:sticky lg:top-28 space-y-12 min-h-[600px] flex flex-col overflow-hidden">
             {loading && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
-            <header className="flex justify-between items-start">
+            <header className="flex flex-col sm:flex-row justify-between items-start gap-6">
               <div className="space-y-2">
                 <h3 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
-                <h1 className={`text-8xl font-black tracking-tighter transition-colors duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
+                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
                   {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible" : "Denied") : "Pending"}
                 </h1>
               </div>
               {results && (
-                <div className="flex flex-col items-end gap-3">
+                <div className="flex flex-col items-start sm:items-end gap-3">
                     <Badge className="bg-zinc-900 text-white rounded-full px-6 py-2 text-xs font-bold uppercase tracking-widest">{results.stability_status}</Badge>
                     <div className="flex gap-2">
                         <div className="w-3 h-3 rounded-full bg-indigo-500 animate-ping" />
@@ -203,30 +204,30 @@ export default function MOFScreening() {
             </header>
 
             {results ? (
-              <div className="space-y-12 animate-in fade-in duration-1000 slide-in-from-bottom-4">
+              <div className="space-y-12 animate-in fade-in duration-1000 slide-in-from-bottom-4 overflow-y-auto pr-2">
                 {/* 1. Hydrogen Capacity */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Hydrogen Storage Metrics</h4>
+                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Hydrogen Metrics</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <ResultBox label="Gravimetric" val={results.gravimetric_h2} unit="wt%" target="≥ 5.5" ok={results.gravimetric_h2 >= 5.5} />
                     <ResultBox label="Volumetric" val={results.volumetric_h2} unit="g/L" target="≥ 40" ok={results.volumetric_h2 >= 40} />
                   </div>
                 </div>
 
-                {/* 2. Economic & Energy */}
+                {/* 2. Economic & Energy (BAGIAN COST) */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Economy & Energy Fingerprint</h4>
+                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Economy & Energy</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <ResultBox label="MOF Cost" val={results.mof_cost} unit="USD/kg" target="≤ 30" ok={results.mof_cost <= 30} />
                     <ResultBox label="Storage Cost" val={results.storage_cost} unit="USD/kg H2" target="≤ 300" ok={results.storage_cost <= 300} />
                   </div>
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="MJ" />
                     <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="MJ" />
                     <EconMiniCard icon={<Activity className="w-4 h-4 text-indigo-500" />} label="E Stirring" val={results.e_stirr} unit="MJ" />
@@ -236,10 +237,10 @@ export default function MOFScreening() {
                 {/* 3. Structural Interpretation */}
                 <div className="space-y-6">
                    <div className="flex items-center gap-4">
-                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Structural Analysis</h4>
+                    <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Structural Analysis</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="flex gap-10">
+                  <div className="flex flex-col sm:flex-row gap-6 lg:gap-10">
                     <div className="space-y-4 flex-1">
                       <div className="group flex justify-between items-center bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50 hover:bg-indigo-100 transition-colors duration-300">
                         <span className="text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
@@ -250,24 +251,17 @@ export default function MOFScreening() {
                         <span className="font-mono font-bold text-2xl">{results.rmsd} <span className="text-[10px] text-zinc-400 ml-1">Å</span></span>
                       </div>
                     </div>
-                    <div className="w-1/3 aspect-square bg-zinc-900 rounded-[40px] flex items-center justify-center border border-white/10 shadow-2xl relative group overflow-hidden">
+                    <div className="hidden sm:flex w-full sm:w-1/3 aspect-square bg-zinc-900 rounded-[40px] items-center justify-center border border-white/10 shadow-2xl relative group overflow-hidden">
                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                        <FlaskConical className="w-12 h-12 text-white/20 group-hover:text-indigo-400 group-hover:scale-110 transition-all duration-500" />
-                       <div className="absolute bottom-4 text-[8px] text-white/30 font-bold uppercase tracking-[0.3em]">3D View</div>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
-                    <Loader2 className={`w-16 h-16 relative ${loading ? 'animate-spin text-indigo-600' : 'text-zinc-100'}`} />
-                </div>
-                <div className="space-y-2">
-                    <p className="text-sm font-bold uppercase tracking-[0.3em] text-zinc-400">Ready for Scan</p>
-                    <p className="text-xs text-zinc-400 max-w-[280px] leading-relaxed">Please configure synthesis parameters and upload structure file to begin.</p>
-                </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 opacity-30">
+                <Loader2 className={`w-16 h-16 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+                <p className="text-sm font-bold uppercase tracking-[0.3em] text-zinc-400">Waiting for Data</p>
               </div>
             )}
           </div>
@@ -308,10 +302,10 @@ function InputGroup({ icon, label, unit, val, k, s, d }: any) {
 
 function ResultBox({ label, val, unit, target, ok }: any) {
   return (
-    <div className={`p-8 rounded-[32px] border flex justify-between items-center transition-all duration-500 hover:scale-[1.02] ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
+    <div className={`p-6 md:p-8 rounded-[32px] border flex justify-between items-center transition-all duration-500 hover:scale-[1.02] ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
       <div className="space-y-1">
         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
-        <p className="text-4xl font-black tracking-tighter">{val} <span className="text-sm font-bold text-zinc-300 uppercase ml-1">{unit}</span></p>
+        <p className="text-3xl md:text-4xl font-black tracking-tighter">{val} <span className="text-sm font-bold text-zinc-300 uppercase ml-1">{unit}</span></p>
         <p className="text-[10px] font-bold text-zinc-400 mt-2 italic opacity-60">Target: {target}</p>
       </div>
       <div className={`p-4 rounded-2xl ${ok ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
