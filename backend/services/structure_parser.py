@@ -4,6 +4,7 @@ Referensi: old_model/Input_for_DFT,_xTB_Conformational_Energy,_and_Geometry_Dist
 """
 
 import math
+import uuid
 from pathlib import Path
 
 try:
@@ -24,18 +25,26 @@ def parse_cif_file(file_content: bytes, filename: str) -> dict:
     Returns:
         dict: {atoms, positions, n_atoms, cell_params, formula}
     """
-    # Simpan ke file temporary
+    # Simpan ke file temporary dengan nama unik
     upload_dir = Path(__file__).parent.parent / "data" / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    temp_path = upload_dir / filename
-    with open(temp_path, "wb") as f:
-        f.write(file_content)
+    # Buat nama file unik menggunakan UUID untuk menghindari race condition
+    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    temp_path = upload_dir / unique_name
 
-    if ASE_AVAILABLE:
-        return _parse_with_ase(temp_path)
-    else:
-        return _parse_manual(file_content, temp_path)
+    try:
+        with open(temp_path, "wb") as f:
+            f.write(file_content)
+
+        if ASE_AVAILABLE:
+            return _parse_with_ase(temp_path)
+        else:
+            return _parse_manual(file_content, temp_path)
+    finally:
+        # Selalu hapus file temporary setelah selesai diproses
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def _parse_with_ase(file_path: Path) -> dict:

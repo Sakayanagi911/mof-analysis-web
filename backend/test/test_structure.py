@@ -1,4 +1,6 @@
 import pytest
+import os
+from pathlib import Path
 from unittest.mock import patch
 
 @pytest.mark.asyncio
@@ -138,3 +140,106 @@ async def test_structure_analysis_corrupt_content_ase_parser(client, invalid_cif
         response = await client.post("/api/structure", files=files)
 
     assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_concurrent_uploads_different_content(client, sample_cif_content):
+    """
+    Test bahwa upload concurrent dengan nama file sama
+    menghasilkan analisis yang benar untuk masing-masing.
+
+    Race condition fix: setiap upload harus mendapat file temporary
+    dengan nama unik (UUID) sehingga tidak saling menimpa.
+    """
+    import asyncio
+
+    with patch("services.structure_parser.ASE_AVAILABLE", False):
+        # Buat 2 file CIF dengan konten berbeda tapi nama sama
+        cif_1 = sample_cif_content                                      # cell_a = 10.0000
+        cif_2 = sample_cif_content.replace(b"10.0000", b"20.0000")     # cell_a = 20.0000
+
+        async def upload(content):
+            return await client.post(
+                "/api/structure",
+                files={"file": ("test.cif", content, "chemical/x-cif")}
+            )
+
+        # Upload bersamaan
+        r1, r2 = await asyncio.gather(upload(cif_1), upload(cif_2))
+
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+
+    d1 = r1.json()
+    d2 = r2.json()
+
+    # Pastikan hasilnya berbeda karena cell parameter berbeda
+    assert d1["cell_params"]["a"] != d2["cell_params"]["a"], (
+        f"Kedua upload mengembalikan cell_a yang sama ({d1['cell_params']['a']}), "
+        "kemungkinan race condition masih terjadi"
+    )
+
+    # Pastikan masing-masing nilai sesuai konten yang dikirim
+    assert d1["cell_params"]["a"] == pytest.approx(10.0, abs=0.01)
+    assert d2["cell_params"]["a"] == pytest.approx(20.0, abs=0.01)
+
+
+@pytest.mark.asyncio
+async def test_temp_file_cleaned_up(client, sample_cif_content):
+    """
+    Test bahwa file temporary dihapus setelah parsing selesai.
+
+    Cleanup fix: blok finally harus memastikan file UUID dihapus
+    dari disk meskipun parsing gagal.
+    """
+    upload_dir = Path(__file__).parent.parent / "data" / "uploads"
+
+    # Hitung file sebelum upload
+    files_before = set(os.listdir(upload_dir)) if upload_dir.exists() else set()
+
+    with patch("services.structure_parser.ASE_AVAILABLE", False):
+        response = await client.post(
+            "/api/structure",
+            files={"file": ("cleanup_test.cif", sample_cif_content, "chemical/x-cif")}
+        )
+
+    assert response.status_code == 200
+
+    # Pastikan tidak ada file baru yang tertinggal di upload_dir
+    files_after = set(os.listdir(upload_dir)) if upload_dir.exists() else set()
+    new_files = files_after - files_before
+
+    assert not any("cleanup_test" in f for f in new_files), (
+        f"File temporary tidak dihapus setelah parsing selesai: {new_files}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_temp_file_cleaned_up_on_parse_error(client, invalid_cif_content):
+    """
+    Test bahwa file temporary tetap dihapus meskipun terjadi error saat parsing.
+
+    Blok finally harus berjalan bahkan ketika ASE melempar exception,
+    sehingga tidak ada file yang tertinggal di disk.
+    """
+    upload_dir = Path(__file__).parent.parent / "data" / "uploads"
+
+    files_before = set(os.listdir(upload_dir)) if upload_dir.exists() else set()
+
+    with patch("services.structure_parser.ASE_AVAILABLE", True), \
+         patch("services.structure_parser.ase_read", side_effect=Exception("ASE parse error")):
+        response = await client.post(
+            "/api/structure",
+            files={"file": ("error_test.cif", invalid_cif_content, "application/octet-stream")}
+        )
+
+    # Router menangkap ValueError dari ASE dan mengembalikan 400
+    assert response.status_code == 400
+
+    # Meskipun parsing gagal, file temporary harus sudah dihapus
+    files_after = set(os.listdir(upload_dir)) if upload_dir.exists() else set()
+    new_files = files_after - files_before
+
+    assert not any("error_test" in f for f in new_files), (
+        f"File temporary tidak dihapus setelah parse error: {new_files}"
+    )

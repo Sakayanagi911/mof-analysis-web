@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 import sys
 import os
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 
 # Ensure backend directory is in path so we can import main
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,7 +14,7 @@ async def client():
     """
     Async client for FastAPI testing using httpx.
     """
-    async with AsyncClient(app=app, base_url="http://testserver") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as ac:
         yield ac
 
 @pytest.fixture
