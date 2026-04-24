@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Upload, Activity, Database, Loader2, 
-  CheckCircle2, XCircle, FlaskConical, Layers, Maximize, 
-  Scaling, Box, Weight, Ruler, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search
+  CheckCircle2, XCircle, FlaskConical, Layers, 
+  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale
 } from 'lucide-react';
 
 import { Input } from "@/components/ui/input";
@@ -19,13 +19,20 @@ export default function MOFScreening() {
 
   const [showMetalList, setShowMetalList] = useState(false);
   const [showLinkerList, setShowLinkerList] = useState(false);
-  const [metalSearch, setMetalSearch] = useState("");
-  const [linkerSearch, setLinkerSearch] = useState("");
-
+  
   const [formData, setFormData] = useState({
+    // 02 Geometric Factors
     pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
-    metal_name: "", linker_name: "", smiles: "",
-    reaction_time: "24", temperature: "120"
+    // 03 Synthesis Conditions
+    solvent_name: "-",   
+    additive_name: "-",  
+    modulator_name: "-", 
+    metal_name: "",     
+    linker_name: "",    
+    smiles: "-",         
+    product_mass: "0",   
+    reaction_time: "24", 
+    temperature: "120"   
   });
 
   useEffect(() => {
@@ -34,6 +41,16 @@ export default function MOFScreening() {
       .then(data => { if (data && !data.error) setPriceDb(data); })
       .catch(err => console.error("Database offline"));
   }, []);
+
+  useEffect(() => {
+    if (formData.linker_name && price_db.linkers && price_db.linkers[formData.linker_name]) {
+      const dbEntry = price_db.linkers[formData.linker_name];
+      setFormData(prev => ({
+        ...prev,
+        smiles: dbEntry.smiles || dbEntry.SMILES1 || "-"
+      }));
+    }
+  }, [formData.linker_name, price_db.linkers]);
 
   const runLiveAnalysis = useCallback(async () => {
     setLoading(true);
@@ -56,6 +73,10 @@ export default function MOFScreening() {
     }
   }, [formData, file, runLiveAnalysis]);
 
+  const handleTextChange = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value === "" ? "-" : value }));
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
       <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
@@ -65,9 +86,6 @@ export default function MOFScreening() {
                 <Activity className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">MOF<span className="text-indigo-600">Scan</span></span>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden sm:block text-[11px] text-[#86868B] uppercase tracking-[0.2em] font-bold bg-zinc-100 px-3 py-1 rounded-full">Pro Edition</div>
           </div>
         </div>
       </nav>
@@ -80,11 +98,11 @@ export default function MOFScreening() {
             <div className="space-y-4">
               <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure File" />
               <div 
-                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 md:p-8 text-center cursor-pointer transition-all duration-500 ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300 hover:bg-zinc-50'}`}
+                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300'}`}
                 onClick={() => document.getElementById('cif-upload')?.click()}
               >
-                <Upload className={`mx-auto w-8 h-8 mb-3 transition-colors ${file ? 'text-indigo-600' : 'text-zinc-400'}`} />
-                <p className="text-sm font-semibold tracking-tight truncate px-4">{file ? file.name : "Drop .cif file here"}</p>
+                <Upload className={`mx-auto w-8 h-8 mb-3 ${file ? 'text-indigo-600' : 'text-zinc-400'}`} />
+                <p className="text-sm font-semibold truncate px-4">{file ? file.name : "Drop .cif file here"}</p>
                 <input id="cif-upload" type="file" className="hidden" accept=".cif" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </div>
             </div>
@@ -109,121 +127,118 @@ export default function MOFScreening() {
             <div className="space-y-4 pt-6 border-t border-zinc-100">
               <SectionHeader icon={<Beaker className="w-4 h-4" />} text="03 Synthesis Conditions" />
               <div className="space-y-4">
+                <InputGroup label="1. Solvent Name" val={formData.solvent_name} k="solvent_name" s={setFormData} d={formData} />
+                <InputGroup label="2. Additive Name" val={formData.additive_name} k="additive_name" s={setFormData} d={formData} />
+                <InputGroup label="3. Modulator Name" val={formData.modulator_name} k="modulator_name" s={setFormData} d={formData} />
+
                 <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">Metal Name</Label>
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">4. Metal Name</Label>
                   <div className="relative cursor-pointer" onClick={() => setShowMetalList(!showMetalList)}>
-                    <Input placeholder="Search metal..." value={formData.metal_name} onChange={(e) => setFormData({...formData, metal_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium focus:ring-4 focus:ring-indigo-100" />
+                    <Input placeholder="Search metal..." value={formData.metal_name} onChange={(e) => setFormData({...formData, metal_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium" />
                     <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400" />
                     <ChevronDown className={`absolute right-4 top-4 w-4 h-4 text-zinc-400 transition-transform ${showMetalList ? 'rotate-180' : ''}`} />
                   </div>
                   {showMetalList && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-2 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
                       {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
-                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold text-zinc-700" onClick={() => { setFormData({...formData, metal_name: m}); setShowMetalList(false); }}>{m}</div>
+                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold" onClick={() => { setFormData({...formData, metal_name: m}); setShowMetalList(false); }}>{m}</div>
                       ))}
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">Linker Name</Label>
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">5. Linker Name</Label>
                   <div className="relative cursor-pointer" onClick={() => setShowLinkerList(!showLinkerList)}>
-                    <Input placeholder="Search linker..." value={formData.linker_name} onChange={(e) => setFormData({...formData, linker_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium focus:ring-4 focus:ring-indigo-100" />
+                    <Input placeholder="Search linker..." value={formData.linker_name} onChange={(e) => setFormData({...formData, linker_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium" />
                     <Database className="absolute left-4 top-4 w-4 h-4 text-zinc-400" />
                     <ChevronDown className={`absolute right-4 top-4 w-4 h-4 text-zinc-400 transition-transform ${showLinkerList ? 'rotate-180' : ''}`} />
                   </div>
                   {showLinkerList && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-2 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
                       {Object.keys(price_db.linkers).filter(l => l.toLowerCase().includes(formData.linker_name.toLowerCase())).map(l => (
-                        <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold text-zinc-700" onClick={() => { setFormData({...formData, linker_name: l}); setShowLinkerList(false); }}>{l}</div>
+                        <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold" onClick={() => { setFormData({...formData, linker_name: l}); setShowLinkerList(false); }}>{l}</div>
                       ))}
                     </div>
                   )}
                 </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase italic tracking-tighter">SMILES (Auto-filled)</Label>
+                  <Input value={formData.smiles} readOnly className="h-10 rounded-2xl border-none bg-zinc-50 text-zinc-500 font-mono text-[10px] italic" />
+                </div>
 
-                <InputGroup icon={<Beaker className="w-4 h-4"/>} label="SMILES" unit="Str" val={formData.smiles} k="smiles" s={setFormData} d={formData} />
+                <InputGroup icon={<Scale className="w-4 h-4"/>} label="6. Product Mass" unit="mg" val={formData.product_mass} k="product_mass" s={setFormData} d={formData} />
                 <div className="grid grid-cols-2 gap-4">
-                    <InputGroup icon={<Clock className="w-4 h-4"/>} label="Time" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} />
-                    <InputGroup icon={<Thermometer className="w-4 h-4"/>} label="Temp" unit="°C" val={formData.temperature} k="temperature" s={setFormData} d={formData} />
+                    <InputGroup icon={<Clock className="w-4 h-4"/>} label="9. Time" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} />
+                    <InputGroup icon={<Thermometer className="w-4 h-4"/>} label="10. Temp" unit="°C" val={formData.temperature} k="temperature" s={setFormData} d={formData} />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-sm lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[500px] md:min-h-[700px] flex flex-col overflow-hidden">
+        <section className="lg:col-span-8 relative">
+          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-sm lg:sticky lg:top-28 min-h-[750px] flex flex-col">
             {loading && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
-            <header className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <header className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-12">
               <div className="space-y-2">
-                <h3 className="text-[10px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
-                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
+                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
+                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-all duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
                   {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible" : "Denied") : "Pending"}
                 </h1>
               </div>
-              {results && (
-                <div className="flex flex-col items-start sm:items-end gap-3">
-                    <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest">{results.stability_status}</Badge>
-                </div>
-              )}
+              {results && <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 font-bold uppercase tracking-widest">{results.stability_status}</Badge>}
             </header>
 
             {results ? (
-              <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {/* METRIK HIDROGEN (WUG & WUV) */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-zinc-400">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Hydrogen Metrics</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <ResultBox label="Working Uptake Gravimetric" val={results.gravimetric_h2} unit="wt%" target="5.5" ok={results.gravimetric_h2 >= 5.5} />
                     <ResultBox label="Working Uptake Volumetric" val={results.volumetric_h2} unit="g/L" target="40" ok={results.volumetric_h2 >= 40} />
                   </div>
                 </div>
 
+                {/* EKONOMI & ENERGI */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-zinc-400">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Economy & Energy</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <ResultBox label="MOF Cost" val={results.mof_cost} unit="usd/kg mof" target="30" ok={results.mof_cost <= 30} />
-                    <ResultBox label="Storage Cost" val={results.storage_cost} unit="usd/kg h2" target="300" ok={results.storage_cost <= 300} />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="mJ" />
                     <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="mJ" />
                     <EconMiniCard icon={<Activity className="w-4 h-4 text-indigo-500" />} label="E Stirring" val={results.e_stirr} unit="mJ" />
                   </div>
                 </div>
 
+                {/* ANALISIS STRUKTUR (ΔE & RMSD) */}
                 <div className="space-y-6 pt-6 border-t border-zinc-100">
                   <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Structural Analysis</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure File Output</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-6 md:gap-10 items-center">
-                    <div className="space-y-4 flex-1 w-full">
-                      <div className="flex justify-between items-center bg-indigo-50/50 p-4 md:p-6 rounded-2xl border border-indigo-100/50">
-                        <span className="text-xl md:text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
-                        <span className="font-mono font-bold text-lg md:text-2xl text-indigo-950">
-                          {results.delta_e} <span className="ml-2 text-sm font-medium text-zinc-400 normal-case">kJ/mol</span>
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center bg-zinc-50 p-4 md:p-6 rounded-2xl border border-zinc-100">
-                        <span className="text-[10px] font-bold text-zinc-400 tracking-widest uppercase">RMSD</span>
-                        <span className="font-mono font-bold text-lg md:text-2xl text-zinc-800">
-                          {results.rmsd} <span className="ml-2 text-sm font-medium text-zinc-400 normal-case">Å</span>
-                        </span>
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="flex justify-between items-center bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02]">
+                      <span className="text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
+                      <span className="font-mono font-bold text-2xl text-indigo-950">{results.delta_e} <span className="text-xs font-medium text-zinc-400 normal-case">kJ/mol</span></span>
+                    </div>
+                    <div className="flex justify-between items-center bg-zinc-50 p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02]">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">RMSD</span>
+                      <span className="font-mono font-bold text-2xl text-zinc-800">{results.rmsd} <span className="text-xs font-medium text-zinc-400 normal-case">Å</span></span>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                <Loader2 className={`w-12 h-12 md:w-16 md:h-16 relative ${loading ? 'animate-spin text-indigo-600' : 'text-zinc-100 opacity-20'}`} />
+              <div className="flex-1 flex items-center justify-center text-zinc-100">
+                <Loader2 className={`w-16 h-16 ${loading ? 'animate-spin text-indigo-600' : 'opacity-20'}`} />
               </div>
             )}
           </div>
@@ -248,14 +263,14 @@ function InputGroup({ icon, label, unit, val, k, s, d }: any) {
     <div className="space-y-2">
       <Label className="text-[10px] md:text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">{label}</Label>
       <div className="relative flex items-center group">
-        {icon && <div className="absolute left-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors duration-300">{icon}</div>}
+        {icon && <div className="absolute left-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors">{icon}</div>}
         <Input 
-          type={k === 'smiles' ? 'text' : 'number'} 
+          type={['solvent_name', 'additive_name', 'modulator_name'].includes(k) ? 'text' : 'number'} 
           step="any" value={val} 
-          onChange={(e) => s({...d, [k]: e.target.value})} 
-          className={`pr-12 rounded-xl md:rounded-2xl border-zinc-200 h-11 md:h-12 text-sm font-semibold focus-visible:ring-4 focus-visible:ring-indigo-100 transition-all ${icon ? 'pl-11' : 'pl-4'}`} 
+          onChange={(e) => s({...d, [k]: e.target.value === "" ? "-" : e.target.value})} 
+          className={`pr-12 rounded-2xl border-zinc-200 h-12 text-sm font-semibold focus-visible:ring-4 focus-visible:ring-indigo-100 ${icon ? 'pl-11' : 'pl-4'}`} 
         />
-        <div className="absolute right-4 text-[10px] font-black text-zinc-300 uppercase">{unit}</div>
+        {unit && <div className="absolute right-4 text-[10px] font-black text-zinc-300 uppercase">{unit}</div>}
       </div>
     </div>
   );
@@ -263,30 +278,17 @@ function InputGroup({ icon, label, unit, val, k, s, d }: any) {
 
 function ResultBox({ label, val, unit, target, ok }: any) {
   return (
-    <div className={`p-6 md:p-8 rounded-[24px] md:rounded-[32px] border flex justify-between items-center transition-all hover:scale-[1.02] ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
+    <div className={`p-8 rounded-[32px] border flex justify-between items-center transition-all hover:scale-[1.02] ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
       <div className="space-y-1">
         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
         <div className="flex items-baseline">
-            <span className="text-3xl md:text-4xl font-black tracking-tighter text-[#1D1D1F]">{val}</span>
-            <span className="ml-2 text-lg font-medium text-zinc-400 normal-case leading-none">{unit}</span>
+            <span className="text-4xl font-black tracking-tighter text-[#1D1D1F]">{val}</span>
+            <span className="ml-2 text-lg font-medium text-zinc-400">{unit}</span>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-            <p className="text-[10px] font-bold text-zinc-400 tracking-tight">Target: ≥ {target} <span className="normal-case">{unit}</span></p>
-            {ok ? (
-                <div className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Pass</span>
-                </div>
-            ) : (
-                <div className="flex items-center gap-1 text-red-600 text-[10px] font-bold">
-                    <XCircle className="w-3 h-3" />
-                    <span>Fail</span>
-                </div>
-            )}
-        </div>
+        {target && <p className="text-[10px] font-bold text-zinc-400 mt-2">Target: ≥ {target} {unit}</p>}
       </div>
-      <div className={`p-3 md:p-4 rounded-xl ${ok ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
-        {ok ? <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 stroke-[3]" /> : <XCircle className="w-5 h-5 md:w-6 md:h-6 stroke-[3]" />}
+      <div className={`p-4 rounded-xl ${ok ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
+        {ok ? <CheckCircle2 className="w-6 h-6 stroke-[3]" /> : <XCircle className="w-6 h-6 stroke-[3]" />}
       </div>
     </div>
   );
@@ -294,13 +296,13 @@ function ResultBox({ label, val, unit, target, ok }: any) {
 
 function EconMiniCard({ icon, label, val, unit }: any) {
   return (
-    <div className="bg-white p-4 md:p-6 rounded-[20px] md:rounded-[24px] border border-zinc-100 text-center space-y-2 shadow-sm">
+    <div className="bg-white p-6 rounded-[24px] border border-zinc-100 text-center space-y-2 shadow-sm transition-all hover:scale-[1.02]">
       <div className="flex items-center justify-center gap-2">
         {icon}
-        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
+        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
       </div>
-      <p className="text-xl md:text-2xl font-black tracking-tight text-zinc-800">
-        {val} <span className="ml-1 text-[10px] font-medium text-zinc-400 normal-case">{unit}</span>
+      <p className="text-2xl font-black tracking-tight text-zinc-800">
+        {val} <span className="ml-1 text-[10px] font-medium text-zinc-400">{unit}</span>
       </p>
     </div>
   );

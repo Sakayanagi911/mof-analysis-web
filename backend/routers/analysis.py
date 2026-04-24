@@ -36,9 +36,13 @@ async def analyze_mof(
     pld: float = Form(...), 
     vf: float = Form(...),
     density: float = Form(...), 
-    metal_name: str = Form(...),
-    linker_name: str = Form(...), 
-    smiles: str = Form(...),
+    metal_name: str = Form("-"),
+    linker_name: str = Form("-"), 
+    smiles: str = Form("-"),
+    solvent_name: str = Form("-"),    # Input baru
+    additive_name: str = Form("-"),   # Input baru
+    modulator_name: str = Form("-"),  # Input baru
+    product_mass: float = Form(0.0),  # Input baru
     reaction_time: float = Form(...), 
     temperature: float = Form(...)
 ):

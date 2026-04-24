@@ -9,8 +9,14 @@ class AnalysisRequest(BaseModel):
     pld: float
     vf: float
     density: float
-    metal_name: str
-    linker_name: str
+    # Input baru atau yang diperbarui
+    metal_name: Optional[str] = "-"
+    linker_name: Optional[str] = "-"
+    smiles: Optional[str] = "-"
+    solvent_name: Optional[str] = "-"
+    additive_name: Optional[str] = "-"
+    modulator_name: Optional[str] = "-"
+    product_mass_mg: Optional[float] = 0.0
     reaction_time: float
     temperature: float
 

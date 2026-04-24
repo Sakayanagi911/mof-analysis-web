@@ -10,22 +10,8 @@ DOE_TARGET_VOL = 40.0   # g H2/L
 
 
 def calculate_wug(p, GSA, VSA, VF, PV, LCD, PLD):
-    """
-    Persamaan (4-1) Working Uptake Gravimetric.
-
-    Parameters:
-        p: Tekanan operasi [bar]
-        GSA: Gravimetric Surface Area [m²/g]
-        VSA: Volumetric Surface Area [m²/cm³]
-        VF: Void Fraction [-]
-        PV: Pore Volume [cm³/g]
-        LCD: Largest Cavity Diameter [Å]
-        PLD: Pore Limiting Diameter [Å]
-
-    Returns:
-        float: Working Uptake Gravimetric [wt.%]
-    """
-    wug = (
+    # Rumus Persamaan (4-1) sesuai Gambar
+    return (
         -4.47194 + (1.77349 * p) + (0.000511149 * GSA) + (0.00163429 * VSA) + 
         (3.92696 * VF) + (5.59522 * PV) - (0.0764434 * LCD) + (0.262302 * PLD) - 
         (0.163317 * (p**2)) - (0.00133171 * p * GSA) + (7.69048e-5 * p * VSA) - 
@@ -39,25 +25,17 @@ def calculate_wug(p, GSA, VSA, VF, PV, LCD, PLD):
         (0.00253194 * PV * PLD) + (0.000521033 * (LCD**2)) + (0.000700743 * LCD * PLD) - 
         (0.000244913 * (PLD**2))
     )
-    return wug # Kembalikan nilai mentah (full precision)
-
 
 def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
-    """
-    Persamaan (4-2) Working Uptake Volumetric.
 
-    Parameters:
-        p: Tekanan operasi [bar]
-        GSA: Gravimetric Surface Area [m²/g]
-        VSA: Volumetric Surface Area [m²/cm³]
-        VF: Void Fraction [-]
-        PV: Pore Volume [cm³/g]
-        LCD: Largest Cavity Diameter [Å]
-        PLD: Pore Limiting Diameter [Å]
+    p = float(p)
+    GSA = float(GSA)
+    VSA = float(VSA)
+    VF = float(VF)
+    PV = float(PV)
+    LCD = float(LCD)
+    PLD = float(PLD)
 
-    Returns:
-        float: Working Uptake Volumetric [g H₂/L]
-    """
     wuv = (
         -49.6238 + (17.4843 * p) - (0.000310481 * GSA) + (0.0214365 * VSA) + 
         (32.4082 * VF) + (14.1933 * PV) + (0.0660557 * LCD) + (1.66494 * PLD) - 
@@ -72,7 +50,7 @@ def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
         (0.0410538 * PV * PLD) + (0.00735029 * (LCD**2)) + (0.00119741 * LCD * PLD) + 
         (0.00386859 * (PLD**2))
     )
-    return wuv # Kembalikan nilai mentah (full precision)
+    return wuv
 
 
 def predict_working_capacity(p: float, gsa: float, vsa: float,
