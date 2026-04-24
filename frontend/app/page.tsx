@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Upload, Activity, Database, Loader2, 
   CheckCircle2, XCircle, FlaskConical, Layers, 
-  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale
+  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale, DollarSign
 } from 'lucide-react';
 
 import { Input } from "@/components/ui/input";
@@ -15,21 +15,28 @@ export default function MOFScreening() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
-  const [price_db, setPriceDb] = useState<any>({ metals: {}, linkers: {} });
+  const [price_db, setPriceDb] = useState<any>({ 
+    metals: {}, 
+    linkers: {}, 
+    solvents: {}, 
+    additives: {}, 
+    modulators: {} 
+  });
 
   const [showMetalList, setShowMetalList] = useState(false);
   const [showLinkerList, setShowLinkerList] = useState(false);
+  const [showSolventList, setShowSolventList] = useState(false);
+  const [showAdditiveList, setShowAdditiveList] = useState(false);
+  const [showModulatorList, setShowModulatorList] = useState(false);
   
   const [formData, setFormData] = useState({
-    // 02 Geometric Factors
     pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
-    // 03 Synthesis Conditions
-    solvent_name: "-",   
-    additive_name: "-",  
-    modulator_name: "-", 
+    solvent_name: "",   
+    additive_name: "",  
+    modulator_name: "", 
     metal_name: "",     
     linker_name: "",    
-    smiles: "-",         
+    smiles: "",         
     product_mass: "0",   
     reaction_time: "24", 
     temperature: "120"   
@@ -47,7 +54,7 @@ export default function MOFScreening() {
       const dbEntry = price_db.linkers[formData.linker_name];
       setFormData(prev => ({
         ...prev,
-        smiles: dbEntry.smiles || dbEntry.SMILES1 || "-"
+        smiles: dbEntry.smiles || dbEntry.SMILES1 || ""
       }));
     }
   }, [formData.linker_name, price_db.linkers]);
@@ -73,10 +80,6 @@ export default function MOFScreening() {
     }
   }, [formData, file, runLiveAnalysis]);
 
-  const handleTextChange = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value === "" ? "-" : value }));
-  };
-
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
       <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
@@ -98,7 +101,7 @@ export default function MOFScreening() {
             <div className="space-y-4">
               <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure File" />
               <div 
-                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300'}`}
+                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300'}`}
                 onClick={() => document.getElementById('cif-upload')?.click()}
               >
                 <Upload className={`mx-auto w-8 h-8 mb-3 ${file ? 'text-indigo-600' : 'text-zinc-400'}`} />
@@ -127,50 +130,136 @@ export default function MOFScreening() {
             <div className="space-y-4 pt-6 border-t border-zinc-100">
               <SectionHeader icon={<Beaker className="w-4 h-4" />} text="03 Synthesis Conditions" />
               <div className="space-y-4">
-                <InputGroup label="1. Solvent Name" val={formData.solvent_name} k="solvent_name" s={setFormData} d={formData} />
-                <InputGroup label="2. Additive Name" val={formData.additive_name} k="additive_name" s={setFormData} d={formData} />
-                <InputGroup label="3. Modulator Name" val={formData.modulator_name} k="modulator_name" s={setFormData} d={formData} />
-
+                {/* 1. Solvent Name */}
                 <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">4. Metal Name</Label>
-                  <div className="relative cursor-pointer" onClick={() => setShowMetalList(!showMetalList)}>
-                    <Input placeholder="Search metal..." value={formData.metal_name} onChange={(e) => setFormData({...formData, metal_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium" />
-                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400" />
-                    <ChevronDown className={`absolute right-4 top-4 w-4 h-4 text-zinc-400 transition-transform ${showMetalList ? 'rotate-180' : ''}`} />
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">1. Solvent Name</Label>
+                  <div className="relative group">
+                    <Input 
+                      placeholder="Input solvent name..." 
+                      value={formData.solvent_name} 
+                      onFocus={() => setShowSolventList(true)} 
+                      onBlur={() => setTimeout(() => setShowSolventList(false), 200)} 
+                      onChange={(e) => setFormData({...formData, solvent_name: e.target.value})} 
+                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                    />
+                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Solv</div>
                   </div>
-                  {showMetalList && (
-                    <div className="absolute z-50 w-full mt-2 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
-                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold" onClick={() => { setFormData({...formData, metal_name: m}); setShowMetalList(false); }}>{m}</div>
+                  {showSolventList && price_db.solvents && (
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                      {Object.keys(price_db.solvents).filter(s => s.toLowerCase().includes(formData.solvent_name.toLowerCase())).map(s => (
+                        <div key={s} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, solvent_name: s})}>{s}</div>
                       ))}
                     </div>
                   )}
                 </div>
 
+                {/* 2. Additive Name */}
+                <div className="space-y-2 relative">
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">2. Additive Name</Label>
+                  <div className="relative group">
+                    <Input 
+                      placeholder="Input additive name..." 
+                      value={formData.additive_name} 
+                      onFocus={() => setShowAdditiveList(true)} 
+                      onBlur={() => setTimeout(() => setShowAdditiveList(false), 200)} 
+                      onChange={(e) => setFormData({...formData, additive_name: e.target.value})} 
+                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                    />
+                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Addit</div>
+                  </div>
+                  {showAdditiveList && price_db.additives && (
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                      {Object.keys(price_db.additives).filter(a => a.toLowerCase().includes(formData.additive_name.toLowerCase())).map(a => (
+                        <div key={a} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, additive_name: a})}>{a}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Modulator Name */}
+                <div className="space-y-2 relative">
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">3. Modulator Name</Label>
+                  <div className="relative group">
+                    <Input 
+                      placeholder="Input modulator name..." 
+                      value={formData.modulator_name} 
+                      onFocus={() => setShowModulatorList(true)} 
+                      onBlur={() => setTimeout(() => setShowModulatorList(false), 200)} 
+                      onChange={(e) => setFormData({...formData, modulator_name: e.target.value})} 
+                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                    />
+                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Mod</div>
+                  </div>
+                  {showModulatorList && price_db.modulators && (
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                      {Object.keys(price_db.modulators).filter(m => m.toLowerCase().includes(formData.modulator_name.toLowerCase())).map(m => (
+                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, modulator_name: m})}>{m}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Metal Name */}
+                <div className="space-y-2 relative">
+                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">4. Metal Name</Label>
+                  <div className="relative group">
+                    <Input 
+                      placeholder="Input metal name..." 
+                      value={formData.metal_name} 
+                      onFocus={() => setShowMetalList(true)} 
+                      onBlur={() => setTimeout(() => setShowMetalList(false), 200)} 
+                      onChange={(e) => setFormData({...formData, metal_name: e.target.value})} 
+                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                    />
+                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Metal</div>
+                  </div>
+                  {showMetalList && price_db.metals && (
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                      {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
+                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, metal_name: m})}>{m}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Linker Name */}
                 <div className="space-y-2 relative">
                   <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">5. Linker Name</Label>
-                  <div className="relative cursor-pointer" onClick={() => setShowLinkerList(!showLinkerList)}>
-                    <Input placeholder="Search linker..." value={formData.linker_name} onChange={(e) => setFormData({...formData, linker_name: e.target.value})} className="pl-11 pr-10 h-12 rounded-2xl border-zinc-200 bg-white font-medium" />
-                    <Database className="absolute left-4 top-4 w-4 h-4 text-zinc-400" />
-                    <ChevronDown className={`absolute right-4 top-4 w-4 h-4 text-zinc-400 transition-transform ${showLinkerList ? 'rotate-180' : ''}`} />
+                  <div className="relative group">
+                    <Input 
+                      placeholder="Input linker name..." 
+                      value={formData.linker_name} 
+                      onFocus={() => setShowLinkerList(true)} 
+                      onBlur={() => setTimeout(() => setShowLinkerList(false), 200)} 
+                      onChange={(e) => setFormData({...formData, linker_name: e.target.value})} 
+                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                    />
+                    <Database className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Linker</div>
                   </div>
-                  {showLinkerList && (
-                    <div className="absolute z-50 w-full mt-2 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                  {showLinkerList && price_db.linkers && (
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
                       {Object.keys(price_db.linkers).filter(l => l.toLowerCase().includes(formData.linker_name.toLowerCase())).map(l => (
-                        <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 last:border-0 font-semibold" onClick={() => { setFormData({...formData, linker_name: l}); setShowLinkerList(false); }}>{l}</div>
+                        <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, linker_name: l})}>{l}</div>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase italic tracking-tighter">SMILES (Auto-filled)</Label>
-                  <Input value={formData.smiles} readOnly className="h-10 rounded-2xl border-none bg-zinc-50 text-zinc-500 font-mono text-[10px] italic" />
+                  <Input value={formData.smiles} readOnly className="h-10 rounded-2xl border-none bg-zinc-50 text-zinc-500 font-mono text-[10px] italic shadow-inner" />
                 </div>
 
-                <InputGroup icon={<Scale className="w-4 h-4"/>} label="6. Product Mass" unit="mg" val={formData.product_mass} k="product_mass" s={setFormData} d={formData} />
+                {/* 6. Product Mass */}
+                <InputGroup icon={<Scale className="w-4 h-4"/>} label="6. Product Mass" unit="mg" val={formData.product_mass} k="product_mass" s={setFormData} d={formData} placeholder="Input product mass..." />
+
                 <div className="grid grid-cols-2 gap-4">
-                    <InputGroup icon={<Clock className="w-4 h-4"/>} label="9. Time" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} />
-                    <InputGroup icon={<Thermometer className="w-4 h-4"/>} label="10. Temp" unit="°C" val={formData.temperature} k="temperature" s={setFormData} d={formData} />
+                    <InputGroup icon={<Clock className="w-4 h-4"/>} label="9. Time" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} placeholder="0" />
+                    <InputGroup icon={<Thermometer className="w-4 h-4"/>} label="10. Temp" unit="°C" val={formData.temperature} k="temperature" s={setFormData} d={formData} placeholder="0" />
                 </div>
               </div>
             </div>
@@ -178,7 +267,7 @@ export default function MOFScreening() {
         </section>
 
         <section className="lg:col-span-8 relative">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-sm lg:sticky lg:top-28 min-h-[750px] flex flex-col">
+          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 min-h-[750px] flex flex-col overflow-hidden">
             {loading && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
             <header className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-12">
@@ -188,12 +277,13 @@ export default function MOFScreening() {
                   {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible" : "Denied") : "Pending"}
                 </h1>
               </div>
-              {results && <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 font-bold uppercase tracking-widest">{results.stability_status}</Badge>}
+              {results && <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 font-bold uppercase tracking-widest shadow-lg">{results.stability_status}</Badge>}
             </header>
 
             {results ? (
               <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                {/* METRIK HIDROGEN (WUG & WUV) */}
+                
+                {/* Bagian 1: Metrik Hidrogen */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-zinc-400">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Hydrogen Metrics</h4>
@@ -205,10 +295,22 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* EKONOMI & ENERGI */}
+                {/* Bagian 2: Ekonomi & Harga */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Economy & Energy</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Economic Analysis</h4>
+                    <div className="h-px bg-zinc-100 flex-1" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="MOF Production Cost" val={results.mof_cost} unit="USD/kg" target="30" ok={results.mof_cost <= 30} />
+                    <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="Hydrogen Storage Cost" val={results.storage_cost} unit="USD/kg H2" target="300" ok={results.storage_cost <= 300} />
+                  </div>
+                </div>
+
+                {/* Bagian 3: Energi */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 text-zinc-400">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Consumption</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -218,26 +320,27 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* ANALISIS STRUKTUR (ΔE & RMSD) */}
+                {/* Bagian 4: Struktur */}
                 <div className="space-y-6 pt-6 border-t border-zinc-100">
                   <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure File Output</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure Analysis</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="flex justify-between items-center bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02]">
+                    <div className="flex justify-between items-center bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02] shadow-sm">
                       <span className="text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
                       <span className="font-mono font-bold text-2xl text-indigo-950">{results.delta_e} <span className="text-xs font-medium text-zinc-400 normal-case">kJ/mol</span></span>
                     </div>
-                    <div className="flex justify-between items-center bg-zinc-50 p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02]">
+                    <div className="flex justify-between items-center bg-zinc-50 p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02] shadow-sm">
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">RMSD</span>
                       <span className="font-mono font-bold text-2xl text-zinc-800">{results.rmsd} <span className="text-xs font-medium text-zinc-400 normal-case">Å</span></span>
                     </div>
                   </div>
                 </div>
+
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-zinc-100">
+              <div className="flex-1 flex flex-col items-center justify-center text-zinc-100">
                 <Loader2 className={`w-16 h-16 ${loading ? 'animate-spin text-indigo-600' : 'opacity-20'}`} />
               </div>
             )}
@@ -252,23 +355,24 @@ export default function MOFScreening() {
 function SectionHeader({ icon, text }: any) {
   return (
     <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">{icon}</div>
+      <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 shadow-sm">{icon}</div>
       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">{text}</p>
     </div>
   );
 }
 
-function InputGroup({ icon, label, unit, val, k, s, d }: any) {
+function InputGroup({ icon, label, unit, val, k, s, d, placeholder }: any) {
   return (
     <div className="space-y-2">
       <Label className="text-[10px] md:text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">{label}</Label>
       <div className="relative flex items-center group">
-        {icon && <div className="absolute left-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors">{icon}</div>}
+        {icon && <div className="absolute left-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors duration-300">{icon}</div>}
         <Input 
-          type={['solvent_name', 'additive_name', 'modulator_name'].includes(k) ? 'text' : 'number'} 
-          step="any" value={val} 
-          onChange={(e) => s({...d, [k]: e.target.value === "" ? "-" : e.target.value})} 
-          className={`pr-12 rounded-2xl border-zinc-200 h-12 text-sm font-semibold focus-visible:ring-4 focus-visible:ring-indigo-100 ${icon ? 'pl-11' : 'pl-4'}`} 
+          type="text" 
+          placeholder={placeholder || "Input value..."}
+          value={val} 
+          onChange={(e) => s({...d, [k]: e.target.value})} 
+          className={`pr-12 rounded-xl md:rounded-2xl border-zinc-300 h-11 md:h-12 text-sm font-semibold focus-visible:ring-4 focus-visible:ring-indigo-100 transition-all shadow-sm ${icon ? 'pl-11' : 'pl-4'}`} 
         />
         {unit && <div className="absolute right-4 text-[10px] font-black text-zinc-300 uppercase">{unit}</div>}
       </div>
@@ -276,19 +380,32 @@ function InputGroup({ icon, label, unit, val, k, s, d }: any) {
   );
 }
 
-function ResultBox({ label, val, unit, target, ok }: any) {
+function ResultBox({ icon, label, val, unit, target, ok }: any) {
   return (
-    <div className={`p-8 rounded-[32px] border flex justify-between items-center transition-all hover:scale-[1.02] ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
+    <div className={`p-6 md:p-8 rounded-[24px] md:rounded-[32px] border flex justify-between items-center transition-all hover:scale-[1.02] shadow-sm ${ok ? 'bg-indigo-50/30 border-indigo-100/50' : 'bg-red-50/30 border-red-100/50'}`}>
       <div className="space-y-1">
         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
         <div className="flex items-baseline">
-            <span className="text-4xl font-black tracking-tighter text-[#1D1D1F]">{val}</span>
-            <span className="ml-2 text-lg font-medium text-zinc-400">{unit}</span>
+            <span className="text-3xl md:text-4xl font-black tracking-tighter text-[#1D1D1F]">{val}</span>
+            <span className="ml-2 text-lg font-medium text-zinc-400 normal-case leading-none">{unit}</span>
         </div>
-        {target && <p className="text-[10px] font-bold text-zinc-400 mt-2">Target: ≥ {target} {unit}</p>}
+        <div className="flex items-center gap-2 mt-2">
+            <p className="text-[10px] font-bold text-zinc-400 tracking-tight">Target: {target} <span className="normal-case">{unit}</span></p>
+            {ok ? (
+                <div className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Pass</span>
+                </div>
+            ) : (
+                <div className="flex items-center gap-1 text-red-600 text-[10px] font-bold">
+                    <XCircle className="w-3 h-3" />
+                    <span>Fail</span>
+                </div>
+            )}
+        </div>
       </div>
-      <div className={`p-4 rounded-xl ${ok ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
-        {ok ? <CheckCircle2 className="w-6 h-6 stroke-[3]" /> : <XCircle className="w-6 h-6 stroke-[3]" />}
+      <div className={`p-3 md:p-4 rounded-xl shadow-inner ${ok ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}`}>
+        {icon ? icon : (ok ? <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 stroke-[3]" /> : <XCircle className="w-5 h-5 md:w-6 md:h-6 stroke-[3]" />)}
       </div>
     </div>
   );
@@ -296,13 +413,13 @@ function ResultBox({ label, val, unit, target, ok }: any) {
 
 function EconMiniCard({ icon, label, val, unit }: any) {
   return (
-    <div className="bg-white p-6 rounded-[24px] border border-zinc-100 text-center space-y-2 shadow-sm transition-all hover:scale-[1.02]">
+    <div className="bg-white p-4 md:p-6 rounded-[20px] md:rounded-[24px] border border-zinc-100 text-center space-y-2 shadow-sm transition-all hover:scale-[1.02]">
       <div className="flex items-center justify-center gap-2">
         {icon}
-        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
+        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
       </div>
-      <p className="text-2xl font-black tracking-tight text-zinc-800">
-        {val} <span className="ml-1 text-[10px] font-medium text-zinc-400">{unit}</span>
+      <p className="text-xl md:text-2xl font-black tracking-tight text-zinc-800">
+        {val} <span className="ml-1 text-[10px] font-medium text-zinc-400 normal-case">{unit}</span>
       </p>
     </div>
   );
