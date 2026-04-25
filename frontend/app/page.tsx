@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Upload, Activity, Database, Loader2, 
   CheckCircle2, XCircle, FlaskConical, Layers, 
-  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale, DollarSign
+  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale, DollarSign, Weight
 } from 'lucide-react';
 
 import { Input } from "@/components/ui/input";
@@ -32,10 +32,15 @@ export default function MOFScreening() {
   const [formData, setFormData] = useState({
     pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
     solvent_name: "",   
+    solvent_volume: "", 
     additive_name: "",  
+    additive_volume: "", 
     modulator_name: "", 
+    modulator_volume: "", 
     metal_name: "",     
+    metal_mass: "", 
     linker_name: "",    
+    linker_mass: "", 
     smiles: "",         
     product_mass: "0",   
     reaction_time: "24", 
@@ -130,132 +135,158 @@ export default function MOFScreening() {
             <div className="space-y-4 pt-6 border-t border-zinc-100">
               <SectionHeader icon={<Beaker className="w-4 h-4" />} text="03 Synthesis Conditions" />
               <div className="space-y-4">
-                {/* 1. Solvent Name */}
-                <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">1. Solvent Name</Label>
-                  <div className="relative group">
-                    <Input 
-                      placeholder="Input solvent name..." 
-                      value={formData.solvent_name} 
-                      onFocus={() => setShowSolventList(true)} 
-                      onBlur={() => setTimeout(() => setShowSolventList(false), 200)} 
-                      onChange={(e) => setFormData({...formData, solvent_name: e.target.value})} 
-                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
-                    />
-                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Solv</div>
-                  </div>
-                  {showSolventList && price_db.solvents && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.solvents).filter(s => s.toLowerCase().includes(formData.solvent_name.toLowerCase())).map(s => (
-                        <div key={s} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, solvent_name: s})}>{s}</div>
-                      ))}
+                
+                {/* 1. Solvent */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-2 space-y-2 relative">
+                    <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">1. Solvent Name</Label>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Mohon diisi" 
+                        value={formData.solvent_name} 
+                        onFocus={() => setShowSolventList(true)} 
+                        onBlur={() => setTimeout(() => setShowSolventList(false), 200)} 
+                        onChange={(e) => setFormData({...formData, solvent_name: e.target.value})} 
+                        className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                      />
+                      <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Solv</div>
                     </div>
-                  )}
+                    {showSolventList && price_db.solvents && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                        {Object.keys(price_db.solvents).filter(s => s.toLowerCase().includes(formData.solvent_name.toLowerCase())).map(s => (
+                          <div key={s} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, solvent_name: s})}>{s}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:col-span-1">
+                    <InputGroup label="Volume" unit="mL" val={formData.solvent_volume} k="solvent_volume" s={setFormData} d={formData} placeholder="0" />
+                  </div>
                 </div>
 
-                {/* 2. Additive Name */}
-                <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">2. Additive Name</Label>
-                  <div className="relative group">
-                    <Input 
-                      placeholder="Input additive name..." 
-                      value={formData.additive_name} 
-                      onFocus={() => setShowAdditiveList(true)} 
-                      onBlur={() => setTimeout(() => setShowAdditiveList(false), 200)} 
-                      onChange={(e) => setFormData({...formData, additive_name: e.target.value})} 
-                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
-                    />
-                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Addit</div>
-                  </div>
-                  {showAdditiveList && price_db.additives && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.additives).filter(a => a.toLowerCase().includes(formData.additive_name.toLowerCase())).map(a => (
-                        <div key={a} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, additive_name: a})}>{a}</div>
-                      ))}
+                {/* 2. Additive */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-2 space-y-2 relative">
+                    <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">2. Additive Name</Label>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Mohon diisi" 
+                        value={formData.additive_name} 
+                        onFocus={() => setShowAdditiveList(true)} 
+                        onBlur={() => setTimeout(() => setShowAdditiveList(false), 200)} 
+                        onChange={(e) => setFormData({...formData, additive_name: e.target.value})} 
+                        className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                      />
+                      <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Addit</div>
                     </div>
-                  )}
+                    {showAdditiveList && price_db.additives && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                        {Object.keys(price_db.additives).filter(a => a.toLowerCase().includes(formData.additive_name.toLowerCase())).map(a => (
+                          <div key={a} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, additive_name: a})}>{a}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:col-span-1">
+                    <InputGroup label="Volume" unit="mL" val={formData.additive_volume} k="additive_volume" s={setFormData} d={formData} placeholder="0" />
+                  </div>
                 </div>
 
-                {/* 3. Modulator Name */}
-                <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">3. Modulator Name</Label>
-                  <div className="relative group">
-                    <Input 
-                      placeholder="Input modulator name..." 
-                      value={formData.modulator_name} 
-                      onFocus={() => setShowModulatorList(true)} 
-                      onBlur={() => setTimeout(() => setShowModulatorList(false), 200)} 
-                      onChange={(e) => setFormData({...formData, modulator_name: e.target.value})} 
-                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
-                    />
-                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Mod</div>
-                  </div>
-                  {showModulatorList && price_db.modulators && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.modulators).filter(m => m.toLowerCase().includes(formData.modulator_name.toLowerCase())).map(m => (
-                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, modulator_name: m})}>{m}</div>
-                      ))}
+                {/* 3. Modulator */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-2 space-y-2 relative">
+                    <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">3. Modulator Name</Label>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Mohon diisi" 
+                        value={formData.modulator_name} 
+                        onFocus={() => setShowModulatorList(true)} 
+                        onBlur={() => setTimeout(() => setShowModulatorList(false), 200)} 
+                        onChange={(e) => setFormData({...formData, modulator_name: e.target.value})} 
+                        className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                      />
+                      <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Mod</div>
                     </div>
-                  )}
+                    {showModulatorList && price_db.modulators && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                        {Object.keys(price_db.modulators).filter(m => m.toLowerCase().includes(formData.modulator_name.toLowerCase())).map(m => (
+                          <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, modulator_name: m})}>{m}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:col-span-1">
+                    <InputGroup label="Volume" unit="mL" val={formData.modulator_volume} k="modulator_volume" s={setFormData} d={formData} placeholder="0" />
+                  </div>
                 </div>
 
-                {/* 4. Metal Name */}
-                <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">4. Metal Name</Label>
-                  <div className="relative group">
-                    <Input 
-                      placeholder="Input metal name..." 
-                      value={formData.metal_name} 
-                      onFocus={() => setShowMetalList(true)} 
-                      onBlur={() => setTimeout(() => setShowMetalList(false), 200)} 
-                      onChange={(e) => setFormData({...formData, metal_name: e.target.value})} 
-                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
-                    />
-                    <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Metal</div>
-                  </div>
-                  {showMetalList && price_db.metals && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
-                        <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, metal_name: m})}>{m}</div>
-                      ))}
+                {/* 4. Metal */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-2 space-y-2 relative">
+                    <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">4. Metal Name</Label>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Mohon diisi" 
+                        value={formData.metal_name} 
+                        onFocus={() => setShowMetalList(true)} 
+                        onBlur={() => setTimeout(() => setShowMetalList(false), 200)} 
+                        onChange={(e) => setFormData({...formData, metal_name: e.target.value})} 
+                        className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                      />
+                      <Search className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Metal</div>
                     </div>
-                  )}
+                    {showMetalList && price_db.metals && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                        {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
+                          <div key={m} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, metal_name: m})}>{m}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:col-span-1">
+                    <InputGroup label="Mass" unit="g" val={formData.metal_mass} k="metal_mass" s={setFormData} d={formData} placeholder="0" />
+                  </div>
                 </div>
 
-                {/* 5. Linker Name */}
-                <div className="space-y-2 relative">
-                  <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">5. Linker Name</Label>
-                  <div className="relative group">
-                    <Input 
-                      placeholder="Input linker name..." 
-                      value={formData.linker_name} 
-                      onFocus={() => setShowLinkerList(true)} 
-                      onBlur={() => setTimeout(() => setShowLinkerList(false), 200)} 
-                      onChange={(e) => setFormData({...formData, linker_name: e.target.value})} 
-                      className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
-                    />
-                    <Database className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Linker</div>
-                  </div>
-                  {showLinkerList && price_db.linkers && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                      {Object.keys(price_db.linkers).filter(l => l.toLowerCase().includes(formData.linker_name.toLowerCase())).map(l => (
-                        <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, linker_name: l})}>{l}</div>
-                      ))}
+                {/* 5. Linker & Auto SMILES */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                  <div className="sm:col-span-2 space-y-2 relative">
+                    <Label className="text-[11px] font-bold text-zinc-500 ml-1 uppercase tracking-wider">5. Linker Name</Label>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Mohon diisi" 
+                        value={formData.linker_name} 
+                        onFocus={() => setShowLinkerList(true)} 
+                        onBlur={() => setTimeout(() => setShowLinkerList(false), 200)} 
+                        onChange={(e) => setFormData({...formData, linker_name: e.target.value})} 
+                        className="pl-11 pr-12 h-12 rounded-2xl border-zinc-300 bg-white font-medium focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all" 
+                      />
+                      <Database className="absolute left-4 top-4 w-4 h-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <div className="absolute right-4 top-4 text-[10px] font-black text-zinc-300 uppercase">Linker</div>
                     </div>
-                  )}
+                    {showLinkerList && price_db.linkers && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
+                        {Object.keys(price_db.linkers).filter(l => l.toLowerCase().includes(formData.linker_name.toLowerCase())).map(l => (
+                          <div key={l} className="px-5 py-3 text-sm hover:bg-indigo-50 cursor-pointer border-b border-zinc-50 font-semibold" onMouseDown={() => setFormData({...formData, linker_name: l})}>{l}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="sm:col-span-1">
+                    <InputGroup label="Mass" unit="mg" val={formData.linker_mass} k="linker_mass" s={setFormData} d={formData} placeholder="0" />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-bold text-zinc-400 ml-1 uppercase italic tracking-tighter">SMILES (Auto-filled)</Label>
-                  <Input value={formData.smiles} readOnly className="h-10 rounded-2xl border-none bg-zinc-50 text-zinc-500 font-mono text-[10px] italic shadow-inner" />
+                  <Input value={formData.smiles} readOnly placeholder="Auto-filled from database..." className="h-10 rounded-2xl border-none bg-zinc-50 text-zinc-500 font-mono text-[10px] italic shadow-inner" />
                 </div>
 
                 {/* 6. Product Mass */}
-                <InputGroup icon={<Scale className="w-4 h-4"/>} label="6. Product Mass" unit="mg" val={formData.product_mass} k="product_mass" s={setFormData} d={formData} placeholder="Input product mass..." />
+                <InputGroup icon={<Scale className="w-4 h-4"/>} label="6. Product Mass" unit="mg" val={formData.product_mass} k="product_mass" s={setFormData} d={formData} placeholder="0" />
 
                 <div className="grid grid-cols-2 gap-4">
                     <InputGroup icon={<Clock className="w-4 h-4"/>} label="9. Time" unit="h" val={formData.reaction_time} k="reaction_time" s={setFormData} d={formData} placeholder="0" />
@@ -266,22 +297,27 @@ export default function MOFScreening() {
           </div>
         </section>
 
-        <section className="lg:col-span-8 relative">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 min-h-[750px] flex flex-col overflow-hidden">
+        {/* RESULTS SECTION */}
+        <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
+          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden">
             {loading && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
             <header className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-12">
               <div className="space-y-2">
-                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
-                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-all duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
+                <h3 className="text-[10px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
+                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
                   {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible" : "Denied") : "Pending"}
                 </h1>
               </div>
-              {results && <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 font-bold uppercase tracking-widest shadow-lg">{results.stability_status}</Badge>}
+              {results && (
+                <div className="flex flex-col items-start sm:items-end gap-3">
+                    <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest shadow-lg">{results.stability_status}</Badge>
+                </div>
+              )}
             </header>
 
             {results ? (
-              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 
                 {/* Bagian 1: Metrik Hidrogen */}
                 <div className="space-y-6">
@@ -289,7 +325,7 @@ export default function MOFScreening() {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Hydrogen Metrics</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <ResultBox label="Working Uptake Gravimetric" val={results.gravimetric_h2} unit="wt%" target="5.5" ok={results.gravimetric_h2 >= 5.5} />
                     <ResultBox label="Working Uptake Volumetric" val={results.volumetric_h2} unit="g/L" target="40" ok={results.volumetric_h2 >= 40} />
                   </div>
@@ -313,7 +349,7 @@ export default function MOFScreening() {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Consumption</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                     <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="mJ" />
                     <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="mJ" />
                     <EconMiniCard icon={<Activity className="w-4 h-4 text-indigo-500" />} label="E Stirring" val={results.e_stirr} unit="mJ" />
@@ -326,22 +362,26 @@ export default function MOFScreening() {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure Analysis</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="flex justify-between items-center bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02] shadow-sm">
-                      <span className="text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
-                      <span className="font-mono font-bold text-2xl text-indigo-950">{results.delta_e} <span className="text-xs font-medium text-zinc-400 normal-case">kJ/mol</span></span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                    <div className="flex justify-between items-center bg-indigo-50/50 p-4 md:p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                      <span className="text-xl md:text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
+                      <span className="font-mono font-bold text-lg md:text-2xl text-indigo-950">
+                        {results.delta_e} <span className="text-sm font-medium text-zinc-400 normal-case">kJ/mol</span>
+                      </span>
                     </div>
-                    <div className="flex justify-between items-center bg-zinc-50 p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02] shadow-sm">
+                    <div className="flex justify-between items-center bg-zinc-50 p-4 md:p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02] shadow-sm">
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">RMSD</span>
-                      <span className="font-mono font-bold text-2xl text-zinc-800">{results.rmsd} <span className="text-xs font-medium text-zinc-400 normal-case">Å</span></span>
+                      <span className="font-mono font-bold text-lg md:text-2xl text-zinc-800">
+                        {results.rmsd} <span className="text-sm font-medium text-zinc-400 normal-case">Å</span>
+                      </span>
                     </div>
                   </div>
                 </div>
 
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-zinc-100">
-                <Loader2 className={`w-16 h-16 ${loading ? 'animate-spin text-indigo-600' : 'opacity-20'}`} />
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                <Loader2 className={`w-12 h-12 md:w-16 md:h-16 relative ${loading ? 'animate-spin text-indigo-600' : 'text-zinc-100 opacity-20'}`} />
               </div>
             )}
           </div>
@@ -368,8 +408,9 @@ function InputGroup({ icon, label, unit, val, k, s, d, placeholder }: any) {
       <div className="relative flex items-center group">
         {icon && <div className="absolute left-4 text-zinc-400 group-focus-within:text-indigo-600 transition-colors duration-300">{icon}</div>}
         <Input 
-          type="text" 
-          placeholder={placeholder || "Input value..."}
+          type="number" 
+          step="any"
+          placeholder={placeholder || "0"}
           value={val} 
           onChange={(e) => s({...d, [k]: e.target.value})} 
           className={`pr-12 rounded-xl md:rounded-2xl border-zinc-300 h-11 md:h-12 text-sm font-semibold focus-visible:ring-4 focus-visible:ring-indigo-100 transition-all shadow-sm ${icon ? 'pl-11' : 'pl-4'}`} 
@@ -390,7 +431,7 @@ function ResultBox({ icon, label, val, unit, target, ok }: any) {
             <span className="ml-2 text-lg font-medium text-zinc-400 normal-case leading-none">{unit}</span>
         </div>
         <div className="flex items-center gap-2 mt-2">
-            <p className="text-[10px] font-bold text-zinc-400 tracking-tight">Target: {target} <span className="normal-case">{unit}</span></p>
+            <p className="text-[10px] font-bold text-zinc-400 tracking-tight">Target: {target ? `≥ ${target}` : ''} <span className="normal-case">{unit}</span></p>
             {ok ? (
                 <div className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
                     <CheckCircle2 className="w-3 h-3" />
