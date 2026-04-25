@@ -343,16 +343,56 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* Bagian 3: Energi */}
+                {/* Bagian 3: Energy Synthesis (Table Layout & Metrics Boxes) */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Consumption</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Synthesis</h4>
                     <div className="h-px bg-zinc-100 flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                    <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy} unit="mJ" />
-                    <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss} unit="mJ" />
-                    <EconMiniCard icon={<Activity className="w-4 h-4 text-indigo-500" />} label="E Stirring" val={results.e_stirr} unit="mJ" />
+                  
+                  {/* Table Energi Sensible */}
+                  <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-zinc-50/50 border-b border-zinc-200 text-zinc-500">
+                          <tr>
+                            <th scope="col" className="px-6 py-4 font-bold text-xs uppercase tracking-wider border-r border-zinc-200" rowSpan={2}>
+                              Cp linker 1<br/><span className="text-[10px] font-medium text-zinc-400 normal-case">(J/mol.K)</span>
+                            </th>
+                            <th scope="col" className="px-6 py-3 font-bold text-xs uppercase tracking-wider text-center" colSpan={6}>
+                              Energi Sensible (J)
+                            </th>
+                          </tr>
+                          <tr className="bg-zinc-50 text-[11px] border-t border-zinc-200">
+                            <th scope="col" className="px-4 py-2 font-semibold">Solvent</th>
+                            <th scope="col" className="px-4 py-2 font-semibold">Additive</th>
+                            <th scope="col" className="px-4 py-2 font-semibold">Modulator</th>
+                            <th scope="col" className="px-4 py-2 font-semibold">Metal</th>
+                            <th scope="col" className="px-4 py-2 font-semibold">Linker</th>
+                            <th scope="col" className="px-4 py-2 font-semibold text-indigo-600">Total Sensible</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 bg-white">
+                          <tr className="hover:bg-zinc-50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-zinc-600 border-r border-zinc-100">{results.cp_linker || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_solvent || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_additive || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_modulator || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_metal || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_linker || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono font-bold text-indigo-600">{results.e_sensible_total || "0.00"}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Energy Metric Boxes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
+                    <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy || "0.00"} unit="MJ" />
+                    <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss || "0.00"} unit="MJ" />
+                    <EconMiniCard icon={<Activity className="w-4 h-4 text-blue-500" />} label="E Stirr" val={results.e_stirr || "0.00"} unit="MJ" />
+                    <EconMiniCard icon={<Zap className="w-4 h-4 text-emerald-500" />} label="E Tot" val={results.e_tot || "0.00"} unit="MJ" />
                   </div>
                 </div>
 
