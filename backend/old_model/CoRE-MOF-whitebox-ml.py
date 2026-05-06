@@ -118,10 +118,16 @@ def resolve_target(df: pd.DataFrame, target_name: str) -> str:
     raise ValueError(f"Target '{target_name}' tidak ditemukan. Cek alias: {TARGET_ALIASES.get(target_name, [])}")
 
 def build_equation(target_name, intercept, feature_names_poly, coefs):
-    # coefs di sini sudah termasuk intercept (idx 0) jika kita rangkai manual
+    """Construct human-readable equation string.
+    
+    Args:
+        target_name: Name of target variable
+        intercept: Model intercept (scalar)
+        feature_names_poly: Feature names from PolynomialFeatures.get_feature_names_out()
+        coefs: Coefficients array matching feature_names_poly (no bias term)
+    """
     terms = [f"{intercept:.6g}"]
-    # feature_names_poly sudah mengandung '1' (bias) di indeks 0
-    for name, coef in zip(feature_names_poly[1:], coefs[1:]):  # skip bias term
+    for name, coef in zip(feature_names_poly, coefs):
         if np.isfinite(coef) and abs(coef) >= 1e-12:
             sign = " + " if coef >= 0 else " - "
             terms.append(f"{sign}{abs(coef):.6g}*({name})")
@@ -189,7 +195,7 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
 
     Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
-    poly = PolynomialFeatures(degree=DEGREE, include_bias=True)
+    poly = PolynomialFeatures(degree=DEGREE, include_bias=False)
     Xtr_poly = poly.fit_transform(Xtr)
     Xte_poly = poly.transform(Xte)
 
@@ -208,14 +214,10 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
     r2_te = r2_score(yte, ytep)
 
     feat_poly_names = poly.get_feature_names_out(features)
-    # Rangakai koefisien seperti tampilan white-box: intercept + koef lainnya
     intercept = lr.intercept_
-    # Removed: coefs_full = np.concatenate(([intercept], lr.coef_))
 
-    # The 'coefs' argument in build_equation expects the list of coefficients corresponding
-    # to feat_poly_names *excluding* the intercept, which is passed separately.
-    # The previous code used np.concatenate(([0.0], lr.coef_[1:])), which makes sense if lr.coef_[0] is for the '1' term.
-    equation = build_equation(target_col, intercept, feat_poly_names, np.concatenate(([0.0], lr.coef_[1:])))
+    # include_bias=False: lr.coef_ maps 1:1 to feat_poly_names
+    equation = build_equation(target_col, intercept, feat_poly_names, lr.coef_)
 
     # Output dir per target
     tdir = OUTDIR / sanitize_name(target_col)
@@ -234,8 +236,8 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
     )
 
     pd.DataFrame({
-        "term": feat_poly_names,
-        "coefficient": np.concatenate(([lr.intercept_], lr.coef_[1:])) # FIX: Reverted to previous working version
+        "term": np.concatenate((["intercept"], feat_poly_names)),
+        "coefficient": np.concatenate(([lr.intercept_], lr.coef_))
     }).to_csv(tdir / "whitebox_coefficients.csv", index=False)
 
     # Pearson (pandas & manual) terhadap target
@@ -308,7 +310,7 @@ def run_train_test_ratio_cv(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
             X, y, test_size=test_size, random_state=RANDOM_STATE
         )
 
-        poly = PolynomialFeatures(degree=DEGREE, include_bias=True)
+        poly = PolynomialFeatures(degree=DEGREE, include_bias=False)
         Xtr_poly = poly.fit_transform(Xtr)
         Xte_poly = poly.transform(Xte)
 

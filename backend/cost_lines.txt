@@ -1,0 +1,1111 @@
+<a href="https://colab.research.google.com/github/TRIAXIS-MOF/TRIAXIS-MOF/blob/main/Cost%20Calculation%2C%20MCDM%20Screening%2C%20and%20Energy%20Analysis.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# perhitungan harga bahan dan biaya penyimpanan hidrogen pada MOFs
+Synthesis_Parameter = "Synthesis_Parameter_3.xlsx"
+Synthesis_Parameter_Price = "Synthesis_Parameter_Price.xlsx"
+eur_to_usd = 1.15  # kurs euro ke USD
+
+# nama kolom "kode bahan" di sheet 1
+solvent_col_name   = "Solvent_Code"
+additive_col_name  = "Additive_Code"
+modulator_col_name = "Modulator_Code"
+metal_col_name     = "Metal_Code"
+
+xls = pd.ExcelFile(Synthesis_Parameter)
+Syn1 = pd.read_excel(Synthesis_Parameter, sheet_name=xls.sheet_names[0])
+Syn2 = pd.read_excel(Synthesis_Parameter, sheet_name=xls.sheet_names[1])
+Syn3 = pd.read_excel(Synthesis_Parameter, sheet_name=xls.sheet_names[2]) if len(xls.sheet_names) > 2 else None
+
+# penyamaan format kode bahan
+def normalize_code_column(df, colname):
+    """Normalize code columns to consistent string format."""
+    if colname in df.columns:
+        df[colname] = pd.to_numeric(df[colname], errors='coerce')
+        df[colname] = df[colname].fillna(-9999).astype(int)
+        df[colname] = df[colname].astype(str)
+        df.loc[df[colname] == '-9999', colname] = ''
+
+# penerapan fungsi normalisasi kode
+for col in [solvent_col_name, additive_col_name, modulator_col_name, metal_col_name]:
+    normalize_code_column(Syn1, col)  # di sheet 1
+
+if "Solvent_Code" in Syn2.columns:
+    normalize_code_column(Syn2, "Solvent_Code")
+if "Metal_Code" in Syn3.columns:
+    normalize_code_column(Syn3, "Metal_Code")
+
+# pembuatan kamus (lookup dictionary) harga bahan
+s2_code_col = "Solvent_Code"
+s2_price_col = "Rel_Price_Technical_Grade (€/ml)"
+s3_code_col = "Metal_Code"
+s3_price_col = "Rel_Price_Technical_Grade (€/g)"
+
+print("Syn2 columns:", Syn2.columns.tolist())
+if Syn3 is not None:
+    print("Syn3 columns:", Syn3.columns.tolist())
+
+# lookup dictionaries
+if s2_code_col in Syn2.columns and s2_price_col in Syn2.columns:
+    lookup_dict_s2 = dict(zip(Syn2[s2_code_col].astype(str).str.strip(), Syn2[s2_price_col]))
+else:
+    raise ValueError("Check Syn2 headers — expected columns: 'Solvent_Code' and 'Rel_Price_Technical_Grade (€/ml)'")
+
+lookup_dict_s3 = {}
+if Syn3 is not None and s3_code_col in Syn3.columns and s3_price_col in Syn3.columns:
+    lookup_dict_s3 = dict(zip(Syn3[s3_code_col].astype(str).str.strip(), Syn3[s3_price_col]))
+else:
+    print("Warning: Metal sheet columns not found — skipping metal lookup.")
+
+# pencocokan kode bahan dengan harga satuan
+Syn1["Solvent_Price (€/mL)"]   = Syn1[solvent_col_name].map(lookup_dict_s2)
+Syn1["Additive_Price (€/mL)"]  = Syn1[additive_col_name].map(lookup_dict_s2)
+Syn1["Modulator_Price (€/mL)"] = Syn1[modulator_col_name].map(lookup_dict_s2)
+Syn1["Metal_Price (€/g)"]      = Syn1[metal_col_name].map(lookup_dict_s3) if Syn3 is not None else 0
+
+Syn1 = Syn1.fillna(0)
+
+# verifikasi hasil pencocokan (diagnostik)
+print("Mapping verification:")
+print("Unique solvent codes in Syn1:", Syn1[solvent_col_name].unique()[:10])
+print("Keys in Syn2 lookup:", list(lookup_dict_s2.keys())[:10])
+print("Unmatched solvent codes:",
+      [c for c in Syn1[solvent_col_name].unique() if c not in lookup_dict_s2])
+
+# perhitungan harga bahan berdasarkan volume/massa
+Syn1["Solvent Price (€)"]   = Syn1["Solvent_Price (€/mL)"]   * Syn1.get("Solvent_Volume (mL)", 0)
+Syn1["Additive Price (€)"]  = Syn1["Additive_Price (€/mL)"]  * Syn1.get("Additive_Volume (mL)", 0)
+Syn1["Modulator Price (€)"] = Syn1["Modulator_Price (€/mL)"] * Syn1.get("Modulator_Volume (mL)", 0)
+Syn1["Metal Price (€)"]     = Syn1["Metal_Price (€/g)"]      * (Syn1.get("Metal_Mass (mg)", 0) / 1000.0)
+# metal dibagi 1000 karena konversi mg ke g
+
+# penerapan faktor diskon untuk produksi skala industri
+ym = 0.56
+ym_linker = 0.67
+industrial_mass_mg = 1e7  # 10 kg = 10e7 mg
+
+# mencegah pembagian dengan angka 0
+Syn1["Product (mg)"] = Syn1.get("Product (mg)", 1).replace(0, 1)
+
+scale_factor = (Syn1["Product (mg)"] / industrial_mass_mg) ** ym
+scale_factor_linker = (Syn1["Product (mg)"] / industrial_mass_mg) ** ym_linker
+
+# penerapan faktor diskon ke semua kolom harga
+for col in ["Solvent Price (€)", "Additive Price (€)", "Modulator Price (€)", "Metal Price (€)"]:
+    Syn1[col] *= scale_factor
+
+if "Linker1 (€)" in Syn1.columns:
+    Syn1["Linker1 (€)"] *= scale_factor_linker
+if "Linker2 (€)" in Syn1.columns:
+    Syn1["Linker2 (€)"] *= scale_factor_linker
+
+# perhitungan total biaya bahan baku MOFs
+Syn1["MOF Total Price (€)"] = (
+    Syn1["Solvent Price (€)"] +
+    Syn1["Additive Price (€)"] +
+    Syn1["Modulator Price (€)"] +
+    Syn1["Metal Price (€)"] +
+    Syn1.get("Linker1 (€)", 0) +
+    Syn1.get("Linker2 (€)", 0)
+)
+
+# konversi harga ke satuan euro/kg dan USD/kg
+Syn1["MOF Price (€/kg)"] = Syn1["MOF Total Price (€)"] / (Syn1["Product (mg)"] / 1e6)
+Syn1["MOF Price (€/kg)"] = Syn1["MOF Price (€/kg)"].replace([float("inf")], 0)
+
+# mengonversi ke USD
+Syn1["MOF Price (USD/kg)"] = Syn1["MOF Price (€/kg)"] * eur_to_usd
+
+# perhitungan biaya spesifik penyimpanan hidrogen
+# harga MOF (USD/kg MOF) dibagi kapasitas gravimetrik (kg H₂/100 kg MOF)
+Syn1["H2 Specific Storage Cost (USD/kg H2)"] = Syn1["MOF Price (USD/kg)"] / (
+    Syn1.get("Uptake Grav - Working Cap [%wt]", 0) / 100.0
+)
+
+# pembersihan akhir dan penyimpanan hasil ke file baru
+Syn1 = Syn1.fillna(0)
+
+# menyimpan file harga MOF
+with pd.ExcelWriter(Synthesis_Parameter_Price, engine="openpyxl") as writer:
+    Syn1.to_excel(writer, sheet_name="Syn_Param", index=False)
+    Syn2.to_excel(writer, sheet_name="Solvent", index=False)
+    if Syn3 is not None:
+        Syn3.to_excel(writer, sheet_name="Metal", index=False)
+
+print(f"\nFinal results saved to: {Synthesis_Parameter_Price}")
+print("\nSheet1 (first 10 rows) — with MOF price and H₂ cost:")
+print(Syn1.head(5).to_string(index=False))
+print("\nSheet1 (last 10 rows):")
+print(Syn1.tail(5).to_string(index=False))
+eur_to_usd = 1.15
+
+# kolom komponen biaya dalam EUR dikonversi ke USD
+for col in ["Solvent Price (€)", "Additive Price (€)", "Modulator Price (€)",
+            "Metal Price (€)", "Linker1 (€)", "Linker2 (€)"]:
+    if col in Syn1.columns:
+        Syn1[col.replace("€", "USD")] = Syn1[col] * eur_to_usd
+
+# Konversi biaya menjadi biaya untuk menghasilkan 1 kg MOF
+Syn1["Product (kg)"] = Syn1["Product (mg)"] / 1_000_000
+Syn1["scaling_factor"] = Syn1["Product (kg)"].replace(0, np.nan)
+Syn1["scaling_factor"] = 1 / Syn1["scaling_factor"]
+
+# memperbarui semua biaya komponen menjadi biaya per 1 kg MOF
+for col in ["Solvent Price (USD)", "Additive Price (USD)",
+            "Modulator Price (USD)", "Metal Price (USD)",
+            "Linker1 (USD)", "Linker2 (USD)"]:
+     if col in Syn1.columns:
+        Syn1[col.replace(")", "/kg MOF)")] = Syn1[col] * Syn1["scaling_factor"]
+
+# memilih kolom yang berisi biaya tiap bahan pembentuk mof
+component_cols = [
+    "Solvent Price (USD/kg MOF)",
+    "Additive Price (USD/kg MOF)",
+    "Modulator Price (USD/kg MOF)",
+    "Metal Price (USD/kg MOF)",
+    "Linker1 (USD/kg MOF)",
+    "Linker2 (USD/kg MOF)"
+]
+available_components = [c for c in component_cols if c in Syn1.columns]
+
+# menghilangkan data ekstrim (outlier)
+MOF_price_95 = Syn1["MOF Price (USD/kg)"].quantile(0.95)
+Syn1_plot = Syn1[Syn1["MOF Price (USD/kg)"] <= MOF_price_95].copy()
+Syn1_plot.sort_values(by="MOF Price (USD/kg)", ascending=False, inplace=True)
+Syn1_plot.set_index("MOF_Name", inplace=True)
+
+# menentukan warna untuk setiap komponen pembentuk mof
+colors = [
+    "#17A4B8",  # pelarut
+    "#A9BF4F",  # aditif
+    "#F3D18D",  # modulator
+    "#9A5A7F",  # logam
+    "#4274B0",  # linker1
+    "#6C6278"   # linker2
+]
+colors = [colors[i] for i in range(len(available_components))]
+
+# membuat diagram batang bertumpuk (stacked bar chart)
+ax = Syn1_plot[available_components].plot(
+    kind='bar',
+    stacked=True,
+    figsize=(14, 7),
+    color=colors,
+    edgecolor='black',
+    linewidth=0.7,
+    logy=True
+)
+ax.grid(False)
+
+# mengatur label, judul, dan legenda dalam bahasa indonesia
+plt.ylabel("Biaya Komponen (USD) [Skala Logaritmik]")
+plt.xlabel("Nama MOFs")
+plt.title(
+    "Kontribusi Komponen Terhadap Biaya Total 1 kg MOFs (95 Persentil)",
+    fontsize=14
+)
+plt.legend(
+    title="Jenis Komponen",
+    labels=[
+        "Pelarut (USD/kg MOF)",
+        "Aditif (USD/kg MOF)",
+        "Modulator (USD/kg MOF)",
+        "Logam (USD/kg MOF)",
+        "Linker 1 (USD/kg MOF)",
+        "Linker 2 (USD/kg MOF)"
+    ][:len(available_components)],
+    bbox_to_anchor=(1, 1),
+    loc='upper right'
+)
+
+# hitung total biaya per bar (penjumlahan semua komponen)
+total_cost = Syn1_plot[available_components].sum(axis=1)
+for i, (mof_name, total) in enumerate(total_cost.items()):
+    ax.text(
+        i,
+        total * 1.05,
+        f"{total:.2f}",
+        ha='center',
+        va='bottom',
+        fontsize=7,
+        fontweight='bold',
+        rotation=45
+    )
+plt.tight_layout()
+plt.show()
+
+# Bar Chart
+selected_mofs = [
+    "ADASIJ","VAKLIF","FATQID","NAWXER",
+    "VOLPET","YAVWUQ","YUGLES","MAYKOO","IQECIS"
+]
+
+df_sel = Syn1_plot.loc[Syn1_plot.index.intersection(selected_mofs)].copy()
+
+component_cols = [
+    "Solvent Price (USD/kg MOF)",
+    "Additive Price (USD/kg MOF)",
+    "Modulator Price (USD/kg MOF)",
+    "Metal Price (USD/kg MOF)",
+    "Linker1 (USD/kg MOF)",
+    "Linker2 (USD/kg MOF)"
+]
+component_cols = [c for c in component_cols if c in df_sel.columns]
+
+def darken_color(hex_color, factor=0.6):
+    """Membuat warna lebih gelap. factor <1 → lebih gelap"""
+    rgb = to_rgb(hex_color)
+    dark_rgb = tuple(max(0, c * factor) for c in rgb)
+    return to_hex(dark_rgb)
+
+dfp = df_sel[component_cols].copy()
+dfp.columns = [c.replace(" (USD/kg MOF)", "") for c in dfp.columns]
+
+# Palet fill
+FILL_COLORS = [
+    "#17A4B8",  # Deep Teal Extra Bright
+    "#A9BF4F",  # Olive Green Extra Bright
+    "#F3D18D",  # Antique Gold Extra Bright
+    "#9A5A7F",  # Mulberry Shadow Extra Bright
+    "#4274B0",  # Midnight Blue Extra Bright
+    "#6C6278",  # Charcoal Gray Extra Bright
+]
+
+colors_plotly = [(fill, darken_color(fill, 0.6)) for fill in FILL_COLORS]
+
+# Figure
+fig = go.Figure()
+for col, (FILL_COLORS, border_color) in zip(dfp.columns, colors_plotly):
+    fig.add_trace(go.Bar(
+        x=dfp.index,
+        y=dfp[col],
+        name=col,
+        marker=dict(
+            color=FILL_COLORS,
+            opacity=0.90,
+            line=dict(color=border_color, width=1.4)
+        ),
+    ))
+
+# Total Cost di Atas Bar
+total_cost = dfp.sum(axis=1)
+fig.add_trace(go.Scatter(
+    x=dfp.index,
+    y=total_cost * 1.05,
+    mode="text",
+    text=[f"{v:,.2f}" for v in total_cost],
+    textposition="top center",
+    textfont=dict(size=18, family="Arial", color="black"),
+    showlegend=False
+))
+
+# Layout
+fig.update_layout(
+    barmode='stack',
+
+    xaxis_title="MOF",
+    yaxis_title="Component Cost (USD/kg MOF) — Log Scale",
+    yaxis_type="log",
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+    font=dict(family="Arial", size=18, color="black"),
+    margin=dict(l=80, r=40, t=60, b=80),
+    shapes=[
+        dict(
+            type="rect",
+            xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(color="black", width=2)
+        )
+    ],
+    xaxis=dict(
+        showline=True, linewidth=2, linecolor='black',
+        ticks="outside",
+        tickfont=dict(size=16, family="Arial")
+    ),
+    yaxis=dict(
+        showline=True, linewidth=2, linecolor='black',
+        ticks="outside",
+        tickfont=dict(size=16, family="Arial")
+    ),
+    width=1100,
+    height=650,
+    legend=dict(
+        title="Komponen",
+        font=dict(size=16, family="Arial"),
+        bordercolor="black",
+        borderwidth=1
+    )
+)
+fig.show()
+
+# Raincloud Plot
+df = Syn1_plot[[
+    "Solvent Price (USD/kg MOF)",
+    "Additive Price (USD/kg MOF)",
+    "Modulator Price (USD/kg MOF)",
+    "Metal Price (USD/kg MOF)",
+    "Linker1 (USD/kg MOF)",
+    "Linker2 (USD/kg MOF)",
+    "MOF Price (USD/kg)",
+    "H2 Specific Storage Cost (USD/kg H2)"
+]].copy()
+
+df.columns = [
+    "Solvent", "Additive", "Modulator", "Metal",
+    "Linker1", "Linker2", "MOF Price", "H2 Cost"
+]
+df_melt = df.melt(var_name="Component", value_name="Cost")
+df_melt = df_melt[df_melt["Cost"] > 0]
+components = df_melt["Component"].unique()
+
+# FIGURE
+fig = go.Figure()
+for comp in components:
+    vals = df_melt[df_melt["Component"] == comp]["Cost"]
+    # BOXPLOT
+    fig.add_trace(
+        go.Box(
+            x=vals,
+            y=[comp]*len(vals),
+            orientation="h",
+            boxpoints=False,
+            line=dict(color="black", width=2),
+            fillcolor="white",
+            showlegend=False
+        )
+    )
+    # SWARM (jitter)
+    jitter = np.random.uniform(-0.12, 0.12, size=len(vals))
+    fig.add_trace(
+        go.Scatter(
+            x=vals,
+            y=[comp]*len(vals),
+            mode="markers",
+            marker=dict(size=6, color="black", opacity=0.6),
+            showlegend=False
+        )
+    )
+
+# LOG SCALE + MINOR TICKS
+fig.update_xaxes(
+    type="log",
+    title="Cost (USD) — log scale",
+    showline=True,
+    linewidth=2,
+    linecolor="black",
+    mirror=True,
+    minor=dict(
+        ticks="inside",
+        ticklen=6,
+        showgrid=True,
+        gridcolor="#DDDDDD"
+    )
+)
+fig.update_yaxes(
+    title="Component",
+    showline=True,
+    linewidth=2,
+    linecolor="black",
+    mirror=True
+)
+fig.update_layout(
+    title="Raincloud Plot of MOF Component Cost (log scale)",
+    font=dict(size=16),
+    width=950,
+    height=650,
+    plot_bgcolor="white",
+    paper_bgcolor="white"
+)
+fig.show()
+
+# menampilkan ringkasan statistik dari komponen biaya bahan baku mof
+Syn1[[
+    "Solvent Price (USD/kg MOF)",
+    "Additive Price (USD/kg MOF)",
+    "Modulator Price (USD/kg MOF)",
+    "Metal Price (USD/kg MOF)",
+    "Linker1 (USD/kg MOF)",
+    "Linker2 (USD/kg MOF)",
+    "MOF Price (USD/kg)",
+    "H2 Specific Storage Cost (USD/kg H2)"
+]].describe()
+# pengaturan awal
+Synthesis_Parameter_Price = "Synthesis_Parameter_Price.xlsx"
+Synthesis_Parameter_Screened = "Synthesis_Parameter_Screened.xlsx"
+
+# menentukan nama sheet yang akan dibaca
+INPUT_SHEET = "Syn_Param"
+
+# menentukan nama kolom yang digunakan dalam proses seleksi
+COL_TOTAL_PRICE1     = "Linker1 (€)"
+COL_H2_SPECIFIC_COST = "H2 Specific Storage Cost (USD/kg H2)"
+COL_TIME_H           = "Time (h)"
+COL_TEMP_OC          = "Temperature (oC)"
+
+# penetapan nilai ambang batas (threshold)
+THRESH_H2_SPECIFIC_COST = 3.00e2  # 300 USD/kg H2
+THRESH_TIME_H           = 120     # jam
+THRESH_TEMP_OC          = 180     # derajat celsius
+
+# membaca data dari file excel
+xls = pd.ExcelFile(Synthesis_Parameter_Price)
+
+# pengecekan keberadaan sheet bernama "Syn_Param" di dalam file input
+if INPUT_SHEET not in xls.sheet_names:
+    raise SystemExit(f"ERROR: Sheet '{INPUT_SHEET}' not found in {Synthesis_Parameter_Price}")
+
+# membaca isi sheet "Syn_Param" ke dalam DataFrame bernama df
+df = pd.read_excel(Synthesis_Parameter_Price, sheet_name=INPUT_SHEET)
+
+# mencatat ukuran data (jumlah baris dan kolom) sebelum dilakukan eliminasi
+rows_before, cols_before = df.shape
+
+# menentukan kondisi eliminasi berdasarkan kriteria tertentu
+cond_price1_zero = df.get(COL_TOTAL_PRICE1, 0) == 0
+cond_h2_high     = df.get(COL_H2_SPECIFIC_COST, 0) > THRESH_H2_SPECIFIC_COST
+cond_time_long   = df.get(COL_TIME_H, 0) > THRESH_TIME_H
+cond_temp_high   = df.get(COL_TEMP_OC, 0) > THRESH_TEMP_OC
+
+# penggabungan semua kondisi dengan operator logika OR (|)
+eliminate_mask = cond_price1_zero | cond_h2_high | cond_time_long | cond_temp_high
+
+# pemisahan data berdasarkan hasil seleksi
+eliminated = df[eliminate_mask].copy()
+screened   = df[~eliminate_mask].copy()
+
+# mencatat ukuran data (jumlah baris dan kolom) setelah proses eliminasi
+rows_after, cols_after = screened.shape
+
+# penyimpanan hasil ke dalam file excel baru
+with pd.ExcelWriter(Synthesis_Parameter_Screened, engine="openpyxl") as writer:
+    screened.to_excel(writer, sheet_name="Syn_Param_Screened", index=False)
+    eliminated.to_excel(writer, sheet_name="Eliminated", index=False)
+
+# menampilkan ringkasan hasil proses screening
+print("Screening summary")
+print(f"Input file         : {Synthesis_Parameter_Price}")
+print(f"Output file        : {Synthesis_Parameter_Screened}")
+print(f"Rows before        : {rows_before}")
+print(f"Rows after         : {rows_after}")
+print(f"Rows eliminated    : {len(eliminated)}")
+print("Applied elimination rules:")
+print(f" - {COL_TOTAL_PRICE1} == 0")
+print(f" - {COL_H2_SPECIFIC_COST} > {THRESH_H2_SPECIFIC_COST:.0f}")
+print(f" - {COL_TIME_H} > {THRESH_TIME_H}")
+print(f" - {COL_TEMP_OC} > {THRESH_TEMP_OC}")
+
+# menampilkan pratinjau (preview) data hasil eliminasi dan hasil yang lolos seleksi
+print("Eliminated records (up to 5 rows):")
+if eliminated.empty:
+    print("  (None)")
+else:
+    print(eliminated.head(5).to_string(index=False))
+
+print("\nScreened records (up to 5 rows):")
+if screened.empty:
+    print("  (None)")
+else:
+    print(screened.head(5).to_string(index=False))
+
+# menghapus outlier dengan metode IQR (interquartile range)
+def remove_outliers(df, cols, k=1.5):
+    """
+    menghapus outlier statistik dari kolom numerik yang dipilih
+    berdasarkan metode interquartile range (IQR).
+    """
+    df_filtered = df.copy()
+    for col in cols:
+        q1 = df[col].quantile(0.25)
+        q3 = df[col].quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - k * iqr
+        upper_bound = q3 + k * iqr
+        df_filtered = df_filtered[
+            (df_filtered[col] >= lower_bound) & (df_filtered[col] <= upper_bound)
+        ]
+    return df_filtered
+
+# penerapan pembersihan outlier
+cols_to_filter = ["MOF Price (USD/kg)", "H2 Specific Storage Cost (USD/kg H2)"]
+Syn1_filtered = remove_outliers(Syn1, cols_to_filter)
+
+print(f"Jumlah data awal: {len(Syn1)}")
+print(f"Jumlah data setelah menghapus outlier: {len(Syn1_filtered)}")
+
+# batas kelayakan (thresholds)
+THRESH_H2_SPECIFIC_COST = 3.00e2  # 300 USD/kg H₂
+THRESH_TIME_H = 120               # jam
+THRESH_TEMP_OC = 180              # derajat C
+
+# menambahkan kolom "feasibility" (kelayakan)
+Syn1_filtered["Feasibility"] = Syn1_filtered.apply(
+    lambda x: (
+        "Sangat Layak"
+        if (x["MOF Price (USD/kg)"] <= 30)
+        and (x["H2 Specific Storage Cost (USD/kg H2)"] <= THRESH_H2_SPECIFIC_COST)
+        and (x["Time (h)"] <= THRESH_TIME_H)
+        and (x["Temperature (oC)"] <= THRESH_TEMP_OC)
+        else "Kurang/Tidak Layak"
+    ),
+    axis=1
+)
+
+# urutan kategori (agar sangat layak muncul pertama)
+Syn1_filtered["Feasibility"] = pd.Categorical(
+    Syn1_filtered["Feasibility"],
+    categories=["Sangat Layak", "Kurang/Tidak Layak"],
+    ordered=True
+)
+
+# klasifikasi linker price menjadi kategori ukuran
+Syn1_filtered["LinkerSizeClass"] = pd.qcut(
+    Syn1_filtered["Linker1 (€/g)"],
+    q=3,
+    labels=["Rendah", "Menengah", "Tinggi"]
+)
+
+# mapping ukuran diskrit (bukan angka asli)
+size_map = {
+    "Rendah": 14,
+    "Menengah": 22,
+    "Tinggi": 30
+}
+
+Syn1_filtered["LinkerSize"] = Syn1_filtered["LinkerSizeClass"].map(size_map)
+
+Syn1_zoom = Syn1_filtered[
+    Syn1_filtered["Feasibility"] == "Sangat Layak"
+].copy()
+
+# format 4 desimal untuk tampilan
+tampil = (
+    Syn1_filtered[
+        [
+            "MOF_Name", "Solvent_Name", "Feasibility",
+            "MOF Price (USD/kg)", "H2 Specific Storage Cost (USD/kg H2)",
+            "Time (h)", "Temperature (oC)"
+        ]
+    ]
+    .sort_values(["Feasibility", "MOF Price (USD/kg)"])
+    .reset_index(drop=True)
+    .copy()
+)
+
+tampil["MOF Price (USD/kg)"] = tampil["MOF Price (USD/kg)"].map(lambda x: f"{x:.4f}")
+tampil["H2 Specific Storage Cost (USD/kg H2)"] = tampil["H2 Specific Storage Cost (USD/kg H2)"].map(lambda x: f"{x:.4f}")
+
+display(tampil)
+pd.set_option('display.max_rows', None)
+
+# visualisasi hubungan harga MOF vs biaya penyimpanan H₂ (tanpa outlier)
+FILL_COLORS = [
+    "#17A4B8",
+    "#A9BF4F",
+    "#F3D18D",
+    "#9A5A7F",
+    "#4274B0",
+    "#6C6278",
+]
+solvent_symbols = {
+    "DMF": "circle",
+    "DEF": "square",
+    "DEA": "diamond",
+    "DMA": "triangle-up",
+    "H2O": "cross"
+}
+
+def base_layout(title: str, x_title: str = "", y_title: str = "") -> dict:
+    return dict(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        xaxis=dict(
+            title=x_title,
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            ticks="outside",
+            ticklen=8,
+            tickwidth=2,
+            minor=dict(
+                ticks="outside",
+                ticklen=4,
+                tickwidth=1
+            )
+        ),
+        yaxis=dict(
+            title=y_title,
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            showgrid=True,
+            ticks="outside",
+            ticklen=8,
+            tickwidth=2,
+            minor=dict(
+                ticks="outside",
+                ticklen=4,
+                tickwidth=1
+            )
+        ),
+        font=dict(family="Arial", size=14),
+        width=1300,
+        height=700,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+    )
+
+def plot_mof_cost_scatter(df, title):
+    fig = go.Figure()
+    color_map = {
+        "Sangat Layak": FILL_COLORS[0],
+        "Kurang/Tidak Layak": FILL_COLORS[3],
+    }
+    for key, sub in df.groupby("Feasibility"):
+        fig.add_trace(
+            go.Scatter(
+                x=sub["H2 Specific Storage Cost (USD/kg H2)"],
+                y=sub["MOF Price (USD/kg)"],
+                mode="markers",
+                name=key,
+                marker=dict(
+                    size=sub["LinkerSize"],
+                    color=color_map.get(key, FILL_COLORS[5]),
+                    symbol=sub["Solvent_Name"].map(solvent_symbols).fillna("circle"),
+                    opacity=0.75,
+                    line=dict(color="black", width=0.8),
+                ),
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Solvent: %{customdata[1]}<br>"
+                    "Linker Price: %{customdata[2]:.2f}<br>"
+                    "MOF Price: %{y:.2f}<br>"
+                    "H2 Cost: %{x:.2f}<extra></extra>"
+                ),
+                customdata=sub[
+                    ["MOF_Name", "Solvent_Name", "Linker1 (€/g)"]
+                ],
+            )
+        )
+
+    # legend dummy untuk bentuk solvent
+    for solv, sym in solvent_symbols.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None], y=[None],
+                mode="markers",
+                name=f"Solvent: {solv}",
+                marker=dict(
+                    symbol=sym,
+                    size=17,
+                    color="white",
+                    line=dict(color="black", width=1)
+                ),
+                showlegend=True
+            )
+        )
+
+    # legend dummy untuk ukuran linker
+    for label, sz in size_map.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None], y=[None],
+                mode="markers",
+                name=f"Harga Linker {label}",
+                marker=dict(size=sz, color="white", line=dict(color="black", width=1)),
+                showlegend=True
+            )
+        )
+
+    # garis ambang
+    fig.add_trace(
+        go.Scatter(
+            x=[THRESH_H2_SPECIFIC_COST, THRESH_H2_SPECIFIC_COST],
+            y=[df["MOF Price (USD/kg)"].min(), df["MOF Price (USD/kg)"].max()],
+            mode="lines",
+            name="Biaya H₂ ≤ 300",
+            line=dict(color="black", width=2, dash="dash"),
+            showlegend=False
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[
+                df["H2 Specific Storage Cost (USD/kg H2)"].min(),
+                df["H2 Specific Storage Cost (USD/kg H2)"].max()
+            ],
+            y=[30, 30],
+            mode="lines",
+            name="Harga MOF ≤ 30",
+            line=dict(color="black", width=2, dash="dash"),
+            showlegend=False
+        )
+    )
+    fig.update_layout(
+        **base_layout(
+            title=title,
+            x_title="Biaya Spesifik Penyimpanan H₂ (USD/kg H₂)",
+            y_title="Harga MOF (USD/kg)",
+        ),
+        legend=dict(x=0.02, y=0.98, bordercolor="black", borderwidth=1),
+    )
+
+    fig.update_xaxes(type="log")
+    fig.update_xaxes(
+        ticks="inside",
+        ticklen=8,
+        tickwidth=2,
+        minor=dict(
+            ticks="inside",
+            ticklen=4,
+            tickwidth=1,
+            showgrid=True
+        )
+    )
+    fig.update_yaxes(
+        ticks="outside",
+        ticklen=8,
+        tickwidth=2,
+        minor=dict(
+            ticks="outside",
+            ticklen=4,
+            tickwidth=1,
+            showgrid=True
+        )
+    )
+    fig.show()
+
+plot_mof_cost_scatter(
+    Syn1_filtered,
+    title="Harga MOF vs Biaya Penyimpanan H₂ (Tanpa Outlier)"
+)
+file_path = "Synthesis_Parameter_Screened.xlsx"
+sheet_name = "Syn_Param_Screened"
+output_table = "Top5_MOF_All_Methods.xlsx"
+output_png = "Top5_MOF_All_Methods_Spider_Chart.png"
+
+# Parameters used in scoring
+PARAMETERS = [
+    "Uptake Vol - Working Cap [g/L]",
+    "Temperature (oC)",
+    "Time (h)",
+    "H2 Specific Storage Cost (USD/kg H2)"
+]
+
+cost_criteria = ["Temperature (oC)", "Time (h)", "H2 Specific Storage Cost (USD/kg H2)"]
+
+# ================= LOAD DATA =================
+df = pd.read_excel(file_path, sheet_name=sheet_name)
+df.columns = df.columns.str.strip()
+X = df[PARAMETERS].astype(float)
+m, n = X.shape
+
+print(">>> Loaded parameter data")
+display(X)
+
+# ================= NORMALIZATION =================
+R = pd.DataFrame(index=X.index, columns=X.columns, dtype=float)
+for p in PARAMETERS:
+    col = X[p]
+    min_val, max_val = col.min(), col.max()
+    if max_val == min_val:
+        R[p] = 1.0
+    else:
+        if p in cost_criteria:
+            R[p] = (max_val - col) / (max_val - min_val)
+        else:
+            R[p] = (col - min_val) / (max_val - min_val)
+
+R = R.replace(0, 1e-12)
+print(">>> Normalized data (0–1 scale)")
+display(R)
+
+# ================= WEIGHTED SUM =================
+weights_ws = np.array([0.286, 0.143, 0.214, 0.357])
+df['Weighted_Score'] = (R.values @ weights_ws)
+df['Weighted_Rank'] = df['Weighted_Score'].rank(ascending=False, method='min')
+print(">>> Weighted Sum results")
+display(df.sort_values('Weighted_Rank', ascending=True)[['MOF_Name','Weighted_Score','Weighted_Rank'] + PARAMETERS])
+
+# ================= ENTROPY METHOD =================
+k = 1 / np.log(m)
+entropy = pd.Series(index=R.columns, dtype=float)
+for p in R.columns:
+    e_j = -k * ((R[p] * np.log(R[p])).sum())
+    entropy[p] = e_j
+d = 1 - entropy
+w_entropy = d / d.sum()
+df['Entropy_Score'] = (R * w_entropy.values).sum(axis=1)
+df['Entropy_Rank'] = df['Entropy_Score'].rank(ascending=False, method='min')
+print(">>> Entropy Method results")
+display(df.sort_values('Entropy_Rank', ascending=True)[['MOF_Name','Entropy_Score','Entropy_Rank'] + PARAMETERS])
+
+# ================= TOPSIS =================
+w = np.array([4, 2, 3, 5], dtype=float)
+w = w / w.sum()
+R_norm = R / np.sqrt((R ** 2).sum(axis=0))
+V = R_norm * w
+ideal = pd.Series(index=R.columns, dtype=float)
+anti_ideal = pd.Series(index=R.columns, dtype=float)
+for j in R.columns:
+    if j in cost_criteria:
+        ideal[j] = V[j].min()
+        anti_ideal[j] = V[j].max()
+    else:
+        ideal[j] = V[j].max()
+        anti_ideal[j] = V[j].min()
+D_pos = np.sqrt(((V - ideal) ** 2).sum(axis=1))
+D_neg = np.sqrt(((V - anti_ideal) ** 2).sum(axis=1))
+
+df['TOPSIS_Score'] = D_neg / (D_pos + D_neg)
+df['TOPSIS_Rank'] = df['TOPSIS_Score'].rank(ascending=False, method='min')
+
+print(">>> TOPSIS results")
+display(df.sort_values('TOPSIS_Rank', ascending=True)[['MOF_Name','TOPSIS_Score','TOPSIS_Rank'] + PARAMETERS])
+
+# ================= VIKOR =================
+weights = np.array([0.286, 0.143, 0.214, 0.357], dtype=float)
+f_star = pd.Series(index=R.columns, dtype=float)
+f_minus = pd.Series(index=R.columns, dtype=float)
+for j in R.columns:
+    if j in cost_criteria:
+        f_star[j] = R[j].min()
+        f_minus[j] = R[j].max()
+    else:
+        f_star[j] = R[j].max()
+        f_minus[j] = R[j].min()
+epsilon = 1e-12
+denominator = (f_star - f_minus).replace(0, epsilon)
+normalized_diff = (f_star - R) / denominator
+S = (weights * normalized_diff).sum(axis=1)
+R_i = (weights * normalized_diff).max(axis=1)
+v = 0.5
+
+S_star, S_minus = S.min(), S.max()
+R_star, R_minus = R_i.min(), R_i.max()
+
+Q = v * (S - S_star) / (S_minus - S_star + epsilon) + \
+    (1 - v) * (R_i - R_star) / (R_minus - R_star + epsilon)
+
+df['VIKOR_Score'] = Q
+df['VIKOR_Rank'] = df['VIKOR_Score'].rank(ascending=True, method='min')
+print(">>> VIKOR results")
+display(df.sort_values('VIKOR_Rank', ascending=True)[['MOF_Name','VIKOR_Score','VIKOR_Rank'] + PARAMETERS])
+
+# ================= PROMETHEE =================
+m = len(df)
+w = w_entropy.values
+def usual_preference(d):
+    """Usual criterion: P(a,b) = 0 if d ≤ 0; 1 if d > 0."""
+    return np.where(d > 0, 1, 0)
+pi_matrix = pd.DataFrame(0.0, index=df.index, columns=df.index)
+
+for i in df.index:
+    for j in df.index:
+        if i == j:
+            continue
+        pref_sum = 0
+        for k_idx, p_name in enumerate(PARAMETERS):
+            diff = R.loc[i, p_name] - R.loc[j, p_name]
+            P_ij = usual_preference(diff)
+            pref_sum += w[k_idx] * P_ij
+        pi_matrix.loc[i, j] = pref_sum
+phi_plus = pi_matrix.sum(axis=1) / (m - 1)
+phi_minus = pi_matrix.sum(axis=0) / (m - 1)
+phi_net = phi_plus - phi_minus
+
+df['PROMETHEE_LeavingFlow'] = phi_plus
+df['PROMETHEE_EnteringFlow'] = phi_minus
+df['PROMETHEE_Score'] = phi_net
+df['PROMETHEE_Rank'] = df['PROMETHEE_Score'].rank(ascending=False, method='min')
+
+print(">>> PROMETHEE results")
+display(df.sort_values('PROMETHEE_Rank', ascending=True)[['MOF_Name','PROMETHEE_LeavingFlow', 'PROMETHEE_EnteringFlow', 'PROMETHEE_Score', 'PROMETHEE_Rank'] + PARAMETERS])
+
+# ================= TOP 5 COMPARISON =================
+methods_rank = ['Weighted_Rank','Entropy_Rank','TOPSIS_Rank','VIKOR_Rank','PROMETHEE_Rank']
+top5_compare = pd.DataFrame()
+for method in methods_rank:
+    top5_compare[method] = df.sort_values(by=method).head(5)['MOF_Name'].values
+print(">>> Top 5 MOF comparison table")
+display(top5_compare)
+top5_compare.to_excel(output_table, index=False)
+print(f"Saved: {output_table}")
+
+# ================= SPIDER CHARTS =================
+methods_score = ['Weighted_Score','Entropy_Score','TOPSIS_Score','VIKOR_Score','PROMETHEE_Score']
+methods_name  = ['Weighted Sum','Entropy','TOPSIS','VIKOR','PROMETHEE']
+
+for m_idx, method in enumerate(methods_score):
+    top5_idx = df.sort_values(by=method, ascending=False).head(5).index
+    norm_top5 = R.loc[top5_idx]
+
+    labels = PARAMETERS
+    num_vars = len(labels)
+    angles = np.linspace(0, 2*np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(8,8), subplot_kw=dict(polar=True))
+    for idx in top5_idx:
+        values = norm_top5.loc[idx].tolist()
+        values += values[:1]
+        ax.plot(angles, values, linewidth=1, label=df.loc[idx,'MOF_Name'])
+        ax.fill(angles, values, alpha=0.1)
+
+    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+    ax.set_ylim(0, 1)
+    ax.set_title(f"Top 5 MOFs ({methods_name[m_idx]})", y=1.1, fontsize=14, fontweight='bold')
+    ax.legend(loc='upper right', bbox_to_anchor=(1.25, 1.05))
+    plt.tight_layout()
+    png_file = f"Top5_MOF_{methods_name[m_idx].replace(' ','_')}_Spider_Chart.png"
+    plt.savefig(png_file, dpi=300, bbox_inches='tight')
+    plt.show()
+    print(f"Saved: {png_file}")
+
+# =================== CORRELATION ===================
+print("\n>>> Correlation analysis (Spearman & Kendall)")
+corr_table = pd.DataFrame(columns=['Method1','Method2','SpearmanRho','KendallTau'])
+for i in range(len(methods_score)):
+    for j in range(i+1,len(methods_score)):
+        rho, _ = spearmanr(df[methods_score[i]], df[methods_score[j]])
+        tau, _ = kendalltau(df[methods_score[i]], df[methods_score[j]])
+        corr_table = pd.concat([corr_table,pd.DataFrame({
+            'Method1':[methods_name[i]],
+            'Method2':[methods_name[j]],
+            'SpearmanRho':[rho],
+            'KendallTau':[tau]
+        })], ignore_index=True)
+display(corr_table)
+
+## =================== CORRELATION BETWEEN METHODS (HEATMAP) ===================
+print("=== STEP 4: Correlation Between MCDM Methods ===")
+corr_matrix = df[methods_score].corr(method='spearman')
+plt.figure(figsize=(8,6))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
+plt.title("Spearman Correlation Heatmap — MCDM Methods", fontsize=14)
+plt.show()
+
+## =================== HISTOGRAM OF PARAMETERS WITH MEAN & SPEARMAN ===================
+print("=== STEP 3: Histogram of MOF Parameters with Mean & Spearman Correlation ===")
+n_params = len(PARAMETERS)
+fig, axes = plt.subplots(1, n_params, figsize=(5*n_params,5))
+colors = cm.get_cmap('Set2', n_params)
+
+for idx, p in enumerate(PARAMETERS):
+    ax = axes[idx]
+    data = df[p]
+
+    # Histogram
+    ax.hist(data, bins=15, alpha=0.6, color=colors(idx), edgecolor='black')
+
+    # Mean line
+    mean_val = data.mean()
+    ax.axvline(mean_val, color='red', linestyle='--', linewidth=2, label=f'Mean = {mean_val:.2f}')
+
+    # Spearman correlation with Weighted_Score
+    rho, _ = spearmanr(data, df['Weighted_Score'])
+    ax.text(0.95, 0.95, f'Spearman ρ={rho:.2f}', transform=ax.transAxes,
+            ha='right', va='top', fontsize=12, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+
+    ax.set_title(p, fontsize=14)
+    ax.set_xlabel("Value")
+    ax.set_ylabel("Frequency")
+    ax.legend()
+
+plt.tight_layout()
+plt.show()
+
+# =================== BORDA COUNT ===================
+print("\n>>> Borda count consensus ranking")
+rank_df = df[methods_score].rank(ascending=False, method='min')
+borda_scores = (len(df)-rank_df+1).sum(axis=1)
+df['Consensus_Borda_Score'] = borda_scores
+df['Consensus_Borda_Rank'] = borda_scores.rank(ascending=False, method='min')
+display(df.sort_values('Consensus_Borda_Rank', ascending=True)[['MOF_Name','Consensus_Borda_Score','Consensus_Borda_Rank'] + methods_score])
+
+## =================== BORDA COUNT CONSENSUS ===================
+print("=== STEP 5: Borda Count Consensus Ranking ===")
+rank_df = df[methods_score].rank(ascending=False, method='min')
+borda_scores = (len(df)-rank_df+1).sum(axis=1)
+df['Consensus_Borda_Score'] = borda_scores
+df['Consensus_Borda_Rank'] = borda_scores.rank(ascending=False, method='min')
+
+plt.figure(figsize=(12,6))
+sns.barplot(x='MOF_Name', y='Consensus_Borda_Score', data=df.sort_values('Consensus_Borda_Rank'), palette='viridis')
+plt.xticks(rotation=45, ha='right')
+plt.title("Borda Count — Consensus Ranking of MOFs", fontsize=14)
+plt.show()
+
+
+# =================== TOP 5 STABILITY ===================
+print("\n>>> Stability of Top-5 across methods")
+top5_dict = {}
+for method in methods_score:
+    top5_dict[method] = df.sort_values(by=method, ascending=False).head(5)['MOF_Name'].tolist()
+top5_flat = [mof for sublist in top5_dict.values() for mof in sublist]
+stability_count = pd.Series(top5_flat).value_counts()
+stability_table = pd.DataFrame({'MOF_Name':stability_count.index,'Top5_Frequency':stability_count.values})
+stability_table = stability_table.sort_values(by='Top5_Frequency', ascending=False)
+display(stability_table)
+
+## =================== TOP 5 STABILITY ACROSS METHODS (BAR CHART) ===================
+print("=== STEP 6: Top 5 MOF Stability Across Methods ===")
+top5_dict = {}
+for method in methods_score:
+    top5_dict[method] = df.sort_values(by=method, ascending=False).head(5)['MOF_Name'].tolist()
+top5_flat = [mof for sublist in top5_dict.values() for mof in sublist]
+stability_count = pd.Series(top5_flat).value_counts()
+stability_table = pd.DataFrame({'MOF_Name':stability_count.index,'Top5_Frequency':stability_count.values})
+stability_table = stability_table.sort_values(by='Top5_Frequency', ascending=False)
+
+plt.figure(figsize=(10,6))
+sns.barplot(x='MOF_Name', y='Top5_Frequency', data=stability_table, palette='magma')
+plt.xticks(rotation=45, ha='right')
+plt.title("Top 5 MOF Stability Across Methods", fontsize=14)
+plt.show()
+
+# =================== SPIDER CHART ===================
+print("\n>>> Spider chart for consensus Top-5")
+top5_most_stable = stability_table.head(5)['MOF_Name'].tolist()
+norm_params = df[PARAMETERS].copy()
+norm_params = (norm_params - norm_params.min())/(norm_params.max()-norm_params.min())
+angles = np.linspace(0,2*np.pi,len(PARAMETERS),endpoint=False).tolist()
+angles += angles[:1]
+
+fig, ax = plt.subplots(figsize=(8,8),subplot_kw=dict(polar=True))
+colors = cm.get_cmap('tab10',5)
+for idx,mof in enumerate(top5_most_stable):
+    values = norm_params[df['MOF_Name']==mof].iloc[0].tolist()
+    values += values[:1]
+    ax.plot(angles,values,linewidth=2,label=mof,color=colors(idx))
+    ax.fill(angles,values,alpha=0.1,facecolor=colors(idx))
+ax.set_thetagrids(np.degrees(angles[:-1]),PARAMETERS)
+ax.set_ylim(0,1)
+ax.set_title("Consensus Top-5 MOFs", y=1.1)
+ax.legend(loc='upper right', bbox_to_anchor=(1.3,1.05))
+plt.tight_layout()
+plt.show()
+
+## =================== HEATMAP OF TOP 5 MOF METHOD SCORES ===================
+print("=== STEP 8: Heatmap of Top 5 MOFs Method Scores ===")
+top5_idx = df.sort_values('Consensus_Borda_Rank').head(5).index
+top5_detailed = df.loc[top5_idx, ['MOF_Name'] + methods_score]
+
+plt.figure(figsize=(10,6))
+sns.heatmap(top5_detailed.set_index('MOF_Name'), annot=True, cmap='YlGnBu', fmt=".3f")
+plt.title("Heatmap of Method Scores — Top 5 MOFs", fontsize=14)
+plt.show()
+
+# =================== TOP 5 DETAILED ===================
+print("\n>>> Detailed view of Top-5")
+top5_idx = df.sort_values('Consensus_Borda_Rank').head(5).index
+top5_detailed = df.loc[top5_idx, ['MOF_Name'] + PARAMETERS + methods_score + ['Consensus_Borda_Score','Consensus_Borda_Rank']]
+display(top5_detailed)
+top5_detailed.to_excel("Top5_MOF_Parameters_and_Scores.xlsx", index=False)
+print("Saved: Top5_MOF_Parameters_and_Scores.xlsx")
+
+
+# =================== SAVE TABLES ===================
+df.to_excel("MOF_All_Methods_With_Consensus.xlsx", index=False)
+stability_table.to_excel("MOF_Top5_Stability.xlsx", index=False)
+top5_detailed.to_excel("Top5_MOF_Parameters_and_Scores.xlsx", index=False)
+print("✅ All tables saved — MOF_All_Methods_With_Consensus.xlsx, MOF_Top5_Stability.xlsx, Top5_MOF_Parameters_and_Scores.xlsx")

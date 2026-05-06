@@ -135,7 +135,7 @@ async def test_structure_analysis_corrupt_content_ase_parser(client, invalid_cif
     file, the router must catch the ValueError and return 400 Bad Request.
     """
     with patch("services.structure_parser.ASE_AVAILABLE", True), \
-         patch("services.structure_parser.ase_read", side_effect=Exception("ASE parse error")):
+         patch("services.structure_parser.ase_read", create=True, side_effect=Exception("ASE parse error")):
         files = {"file": ("corrupt.cif", invalid_cif_content, "application/octet-stream")}
         response = await client.post("/api/structure", files=files)
 
@@ -227,7 +227,7 @@ async def test_temp_file_cleaned_up_on_parse_error(client, invalid_cif_content):
     files_before = set(os.listdir(upload_dir)) if upload_dir.exists() else set()
 
     with patch("services.structure_parser.ASE_AVAILABLE", True), \
-         patch("services.structure_parser.ase_read", side_effect=Exception("ASE parse error")):
+         patch("services.structure_parser.ase_read", create=True, side_effect=Exception("ASE parse error")):
         response = await client.post(
             "/api/structure",
             files={"file": ("error_test.cif", invalid_cif_content, "application/octet-stream")}

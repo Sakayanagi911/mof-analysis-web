@@ -102,12 +102,19 @@ def collect_features(df: pd.DataFrame, feature_keys: list, aliases_map: dict) ->
     return present_cols
 
 def build_equation(target_name, intercept, feature_names_poly, coefs):
+    """Construct human-readable equation string.
+    
+    Args:
+        target_name: Name of target variable
+        intercept: Model intercept (scalar)
+        feature_names_poly: Feature names from PolynomialFeatures.get_feature_names_out()
+        coefs: Coefficients array matching feature_names_poly (no bias term)
+    """
     terms = [f"{intercept:.6g}"]
-    for name, coef in zip(feature_names_poly[1:], coefs[1:]):  # skip bias term
-        if abs(coef) < 1e-12:
-            continue
-        sign = " + " if coef >= 0 else " - "
-        terms.append(f"{sign}{abs(coef):.6g}*({name})")
+    for name, coef in zip(feature_names_poly, coefs):
+        if np.isfinite(coef) and abs(coef) >= 1e-12:
+            sign = " + " if coef >= 0 else " - "
+            terms.append(f"{sign}{abs(coef):.6g}*({name})")
     return f"{target_name} ≈ " + "".join(terms)
 
 def pearson_manual(x: np.ndarray, y: np.ndarray) -> float:
@@ -182,7 +189,7 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
 
     Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
-    poly = PolynomialFeatures(degree=DEGREE, include_bias=True)
+    poly = PolynomialFeatures(degree=DEGREE, include_bias=False)
     Xtr_poly = poly.fit_transform(Xtr)
     Xte_poly = poly.transform(Xte)
 
@@ -198,8 +205,8 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
     r2_te = r2_score(yte, ytep)
 
     feat_poly_names = poly.get_feature_names_out(features)
-    # Concatenate 0 for bias to align with build_equation skipping bias
-    equation = build_equation(target_col, lr.intercept_, feat_poly_names, np.concatenate(([0.0], lr.coef_[1:])))
+    # include_bias=False: lr.coef_ maps 1:1 to feat_poly_names
+    equation = build_equation(target_col, lr.intercept_, feat_poly_names, lr.coef_)
 
     # Save TXT/CSV artifacts per-target
     tname = sanitize_name(target_col)
@@ -214,8 +221,8 @@ def run_whitebox_for_target(df: pd.DataFrame, target_col: str) -> None:
     )
 
     pd.DataFrame({
-        "term": feat_poly_names,
-        "coefficient": np.concatenate(([lr.intercept_], lr.coef_[1:]))
+        "term": np.concatenate((["intercept"], feat_poly_names)),
+        "coefficient": np.concatenate(([lr.intercept_], lr.coef_))
     }).to_csv(OUTDIR / f"whitebox_coefficients__{tname}.csv", index=False)
 
     pearson_pandas = {f: data[f].corr(data[target_col]) for f in features}

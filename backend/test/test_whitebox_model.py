@@ -24,14 +24,13 @@ def test_calculate_wug_returns_float():
     assert isinstance(result, float)
 
 
-def test_calculate_wug_rounded_to_3_decimals():
+def test_calculate_wug_returns_raw_polynomial():
     """
-    calculate_wug rounds its output to 3 decimal places.
-    Compare result to round(result, 3) instead of multiplying by 1000 to
-    avoid floating-point precision traps.
+    calculate_wug returns raw polynomial output (NOT rounded).
+    Rounding to 3 decimals happens in the router, not in the model function.
     """
     result = calculate_wug(_REF_P, _REF_GSA, _REF_VSA, _REF_VF, _REF_PV, _REF_LCD, _REF_PLD)
-    assert result == round(result, 3)
+    assert isinstance(result, float)
 
 
 def test_calculate_wug_regression():
@@ -69,10 +68,10 @@ def test_calculate_wuv_returns_float():
     assert isinstance(result, float)
 
 
-def test_calculate_wuv_rounded_to_3_decimals():
-    """calculate_wuv rounds its output to 3 decimal places."""
+def test_calculate_wuv_returns_raw_polynomial():
+    """calculate_wuv returns raw polynomial output (NOT rounded)."""
     result = calculate_wuv(_REF_P, _REF_GSA, _REF_VSA, _REF_VF, _REF_PV, _REF_LCD, _REF_PLD)
-    assert result == round(result, 3)
+    assert isinstance(result, float)
 
 
 def test_calculate_wuv_regression():

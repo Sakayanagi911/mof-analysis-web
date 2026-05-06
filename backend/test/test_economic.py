@@ -13,8 +13,10 @@ async def test_economic_success(client, sample_economic_payload):
     assert data["status"] == "success"
     assert "mof_cost_usd_per_kg" in data
     assert "storage_cost_usd_per_kg_h2" in data
-    assert "q_energy_kj" in data
-    assert "q_loss_kj" in data
+    assert "q_energy_mj" in data
+    assert "q_loss_mj" in data
+    assert "e_stirr_mj" in data
+    assert "e_total_mj" in data
     assert "is_feasible" in data
     assert "feasibility_details" in data
 
@@ -69,7 +71,7 @@ async def test_economic_invalid_smiles(client, sample_economic_payload):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
-    assert "q_energy_kj" in data
+    assert "q_energy_mj" in data
 
 @pytest.mark.asyncio
 async def test_economic_zero_gravimetric_wc(client, sample_economic_payload):
@@ -83,8 +85,8 @@ async def test_economic_zero_gravimetric_wc(client, sample_economic_payload):
     response = await client.post("/api/economic", json=payload)
     assert response.status_code == 200
     data = response.json()
-    # Check if storage_cost is returned as inf or handled gracefully
-    assert data["storage_cost_usd_per_kg_h2"] == float('inf')
+    # JSON cannot represent float('inf') — FastAPI serializes it as null
+    assert data["storage_cost_usd_per_kg_h2"] is None
     assert data["is_feasible"] is False
 
 @pytest.mark.asyncio

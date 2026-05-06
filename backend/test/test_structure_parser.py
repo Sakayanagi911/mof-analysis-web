@@ -340,6 +340,6 @@ def test_parse_cif_file_ase_raises_value_error(sample_cif_content):
     parse_cif_file must propagate a ValueError.
     """
     with patch("services.structure_parser.ASE_AVAILABLE", True), \
-         patch("services.structure_parser.ase_read", side_effect=Exception("ASE parse error")):
+         patch("services.structure_parser.ase_read", create=True, side_effect=Exception("ASE parse error")):
         with pytest.raises(ValueError, match="Gagal membaca file CIF"):
             parse_cif_file(b"anything", "bad.cif")

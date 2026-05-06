@@ -106,7 +106,7 @@ async def test_get_3d_view_corrupt_content_ase_parser(client, invalid_cif_conten
     a corrupt file, the router's general Exception handler must return 500.
     """
     with patch("services.structure_parser.ASE_AVAILABLE", True), \
-         patch("services.structure_parser.ase_read", side_effect=Exception("ASE parse error")):
+         patch("services.structure_parser.ase_read", create=True, side_effect=Exception("ASE parse error")):
         files = {"file": ("corrupt.cif", invalid_cif_content, "application/octet-stream")}
         response = await client.post("/api/structure/3d-view", files=files)
 

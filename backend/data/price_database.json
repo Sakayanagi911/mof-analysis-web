@@ -1,5 +1,5 @@
 {
-    "eur_to_usd": 1.08,
+    "eur_to_usd": 1.15,
     "metals": {
       "Cu(NO₃)₂·2H₂O": {
         "price_eur_per_g": 0.4461964628169614,
@@ -576,8 +576,8 @@
       }
     },
     "scale_factors": {
-      "ym": -0.38,
-      "ym_linker": -0.38,
+      "ym": 0.56,
+      "ym_linker": 0.67,
       "industrial_mass_mg": 10000000
     }
   }

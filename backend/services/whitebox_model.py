@@ -2,6 +2,10 @@
 Modul Whitebox Model untuk prediksi Working Uptake MOF.
 Menggunakan persamaan polynomial eksplisit (Persamaan 4-1 dan 4-2).
 Tidak memerlukan sklearn atau file koefisien eksternal.
+
+Koefisien diekstrak dari polynomial regression (degree=2) pada dataset
+CoRE-MOF / merged_mof_data_160k_5bar.xlsx, train/test split 80/20, seed=42.
+Fitur: Density, GSA, VSA, VF, PV, LCD, PLD.
 """
 
 # Threshold DOE 2025
@@ -9,8 +13,20 @@ DOE_TARGET_GRAV = 5.5   # wt.%
 DOE_TARGET_VOL = 40.0   # g H2/L
 
 
-def calculate_wug(p, GSA, VSA, VF, PV, LCD, PLD):
-    # Rumus Persamaan (4-1) sesuai Gambar
+def calculate_wug(density, GSA, VSA, VF, PV, LCD, PLD):
+    """
+    Persamaan (4-1): Working Uptake Gravimetrik [wt.%]
+    
+    Args:
+        density: Crystal Density [g/cm³]
+        GSA: Gravimetric Surface Area [m²/g]
+        VSA: Volumetric Surface Area [m²/cm³]
+        VF: Void Fraction [-]
+        PV: Pore Volume [cm³/g]
+        LCD: Largest Cavity Diameter [Å]
+        PLD: Pore Limiting Diameter [Å]
+    """
+    p = float(density)
     return (
         -4.47194 + (1.77349 * p) + (0.000511149 * GSA) + (0.00163429 * VSA) + 
         (3.92696 * VF) + (5.59522 * PV) - (0.0764434 * LCD) + (0.262302 * PLD) - 
@@ -26,9 +42,20 @@ def calculate_wug(p, GSA, VSA, VF, PV, LCD, PLD):
         (0.000244913 * (PLD**2))
     )
 
-def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
-
-    p = float(p)
+def calculate_wuv(density, GSA, VSA, VF, PV, LCD, PLD):
+    """
+    Persamaan (4-2): Working Uptake Volumetrik [g H₂/L]
+    
+    Args:
+        density: Crystal Density [g/cm³]
+        GSA: Gravimetric Surface Area [m²/g]
+        VSA: Volumetric Surface Area [m²/cm³]
+        VF: Void Fraction [-]
+        PV: Pore Volume [cm³/g]
+        LCD: Largest Cavity Diameter [Å]
+        PLD: Pore Limiting Diameter [Å]
+    """
+    p = float(density)
     GSA = float(GSA)
     VSA = float(VSA)
     VF = float(VF)
@@ -53,7 +80,7 @@ def calculate_wuv(p, GSA, VSA, VF, PV, LCD, PLD):
     return wuv
 
 
-def predict_working_capacity(p: float, gsa: float, vsa: float,
+def predict_working_capacity(density: float, gsa: float, vsa: float,
                               vf: float, pv: float,
                               lcd: float, pld: float) -> dict:
     """
@@ -61,7 +88,7 @@ def predict_working_capacity(p: float, gsa: float, vsa: float,
     menggunakan persamaan polynomial eksplisit.
 
     Parameters:
-        p: Tekanan operasi [bar]
+        density: Crystal Density [g/cm³]
         gsa: Gravimetric Surface Area [m²/g]
         vsa: Volumetric Surface Area [m²/cm³]
         vf: Void Fraction [-]
@@ -73,10 +100,10 @@ def predict_working_capacity(p: float, gsa: float, vsa: float,
         dict dengan keys: gravimetric_wc, volumetric_wc, is_feasible
     """
     # Hitung WUG (Persamaan 4-1)
-    gravimetric_wc = calculate_wug(p, gsa, vsa, vf, pv, lcd, pld)
+    gravimetric_wc = calculate_wug(density, gsa, vsa, vf, pv, lcd, pld)
 
     # Hitung WUV (Persamaan 4-2)
-    volumetric_wc = calculate_wuv(p, gsa, vsa, vf, pv, lcd, pld)
+    volumetric_wc = calculate_wuv(density, gsa, vsa, vf, pv, lcd, pld)
 
     # Feasibility check terhadap threshold DOE 2025
     is_feasible = (gravimetric_wc >= DOE_TARGET_GRAV) and (volumetric_wc >= DOE_TARGET_VOL)

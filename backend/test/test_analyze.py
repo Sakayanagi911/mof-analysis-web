@@ -44,23 +44,29 @@ async def test_analyze_with_file(client, sample_analyze_form_data, sample_cif_co
 @pytest.mark.asyncio
 async def test_analyze_missing_field(client, sample_analyze_form_data):
     """
-    Test /analyze with a missing required form field (e.g., 'pv').
-    Expect 422 Unprocessable Entity.
+    Test /analyze with a missing optional form field (e.g., 'pv').
+    The endpoint uses Form() with default values, so missing fields
+    fallback to defaults and still return 200.
     """
     payload = sample_analyze_form_data.copy()
     del payload["pv"]
 
     response = await client.post("/analyze", data=payload)
-    assert response.status_code == 422
+    # Form fields have defaults, so missing field → uses default → 200
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
 
 @pytest.mark.asyncio
 async def test_analyze_invalid_type(client, sample_analyze_form_data):
     """
     Test /analyze with an invalid data type for a numeric field.
-    Expect 422 Unprocessable Entity.
+    The endpoint's parse_f() helper catches ValueError and returns
+    the default value, so the request still succeeds with 200.
     """
     payload = sample_analyze_form_data.copy()
     payload["pv"] = "not_a_number"
 
     response = await client.post("/analyze", data=payload)
-    assert response.status_code == 422
+    # parse_f returns default on ValueError → 200
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"

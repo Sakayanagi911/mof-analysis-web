@@ -71,6 +71,7 @@ def test_calculate_storage_cost_zero_wc():
 def test_calculate_energy_basic():
     """
     Test energy calculation returns expected keys and values.
+    Sekarang mengembalikan nilai dalam MJ (Mega Joule) sesuai analysis.py.
     """
     # SMILES for H3BTC
     smiles = "C(=O)(O)c1cc(cc(c1)C(=O)O)C(=O)O"
@@ -78,15 +79,19 @@ def test_calculate_energy_basic():
     time = 24.0
 
     result = calculate_energy(smiles, temp, time)
-    assert "q_energy_kj" in result
-    assert "q_loss_kj" in result
+    assert "q_energy_mj" in result
+    assert "q_loss_mj" in result
+    assert "e_stirr_mj" in result
+    assert "e_total_mj" in result
     assert "cp_value" in result
-    assert result["q_energy_kj"] > 0
-    assert result["q_loss_kj"] > 0
+    assert result["q_energy_mj"] > 0
+    assert result["q_loss_mj"] > 0
+    assert result["e_stirr_mj"] > 0
 
 def test_calculate_energy_loss_proportionality():
     """
-    Test that heat loss is proportional to reaction time.
+    Test that heat loss adalah proportional dengan reaction time (linear relationship).
+    Dengan formula baru: q_loss_mj = (0.11 * delta_t * t_seconds) / (heat_eff * 1_000_000)
     """
     smiles = "OC(=O)c1ccc(cc1)C(O)=O"
     temp = 100.0
@@ -94,7 +99,11 @@ def test_calculate_energy_loss_proportionality():
     res_short = calculate_energy(smiles, temp, 10.0)
     res_long = calculate_energy(smiles, temp, 40.0)
 
-    assert res_long["q_loss_kj"] > res_short["q_loss_kj"]
+    # Heat loss harus lebih besar untuk waktu lebih lama (linear relationship)
+    assert res_long["q_loss_mj"] > res_short["q_loss_mj"]
+    # Sekitar 4x lebih besar (40/10 = 4)
+    ratio = res_long["q_loss_mj"] / res_short["q_loss_mj"]
+    assert 3.8 < ratio < 4.2  # Toleransi untuk floating point
 
 def test_run_economic_analysis_output():
     """
@@ -111,7 +120,8 @@ def test_run_economic_analysis_output():
 
     expected_keys = [
         "mof_cost_usd_per_kg", "storage_cost_usd_per_kg_h2",
-        "q_energy_kj", "q_loss_kj", "is_feasible", "feasibility_details"
+        "q_energy_mj", "q_loss_mj", "e_stirr_mj", "e_total_mj",
+        "is_feasible", "feasibility_details"
     ]
     for key in expected_keys:
         assert key in result
@@ -119,19 +129,20 @@ def test_run_economic_analysis_output():
 def test_run_economic_analysis_feasibility_flags():
     """
     Test that is_feasible correctly reflects combined constraints.
+    Uses exact metal/linker names from price_database.json (with unicode subscripts).
     """
-    # 1. Everything OK
+    # 1. Everything OK — use exact keys from price DB
     res_ok = run_economic_analysis(
-        metal_name="Zn(NO3)2", linker_name="H2BDC",
+        metal_name="Zn(NO₃)₂·6H₂O", linker_name="H₂BDC",
         reaction_time=12.0, temperature=100.0,
         smiles="C1=CC=CC=C1", gravimetric_wc=10.0
     )
-    # Zn(NO3)2 and H2BDC are cheap, so this should be feasible
+    # Zn(NO₃)₂·6H₂O and H₂BDC are cheap, so this should be feasible
     assert res_ok["is_feasible"] is True
 
     # 2. Too hot
     res_hot = run_economic_analysis(
-        metal_name="Zn(NO3)2", linker_name="H2BDC",
+        metal_name="Zn(NO₃)₂·6H₂O", linker_name="H₂BDC",
         reaction_time=12.0, temperature=MAX_TEMPERATURE + 10,
         smiles="C1=CC=CC=C1", gravimetric_wc=10.0
     )
@@ -140,7 +151,7 @@ def test_run_economic_analysis_feasibility_flags():
 
     # 3. Too long
     res_long = run_economic_analysis(
-        metal_name="Zn(NO3)2", linker_name="H2BDC",
+        metal_name="Zn(NO₃)₂·6H₂O", linker_name="H₂BDC",
         reaction_time=MAX_REACTION_TIME + 1, temperature=100.0,
         smiles="C1=CC=CC=C1", gravimetric_wc=10.0
     )
