@@ -68,6 +68,16 @@ class EconomicRequest(BaseModel):
     temperature: float     # Temperatur reaksi (°C)
     smiles: str            # SMILES linker
     gravimetric_wc: float = 5.0  # Opsional, dari API #1
+    # Tambahan field untuk mass dan volume dari user input
+    product_mass_mg: Optional[float] = 50.0
+    metal_mass_mg: Optional[float] = 100.0
+    linker_mass_mg: Optional[float] = 50.0
+    solvent_name: Optional[str] = "-"
+    solvent_volume_ml: Optional[float] = 0.0
+    additive_name: Optional[str] = "-"
+    additive_volume_ml: Optional[float] = 0.0
+    modulator_name: Optional[str] = "-"
+    modulator_volume_ml: Optional[float] = 0.0
 
 class EconomicResponse(BaseModel):
     status: str

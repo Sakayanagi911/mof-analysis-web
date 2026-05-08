@@ -118,6 +118,15 @@ export default function MOFScreening() {
 
   // Kalkulasi Live Cost Berdasarkan Database & Input
   const dynamicCosts = useMemo(() => {
+    // PERBAIKAN: Gunakan hasil dari backend, bukan perhitungan lokal
+    if (results && results.mof_cost && results.storage_cost) {
+      return {
+        mof_cost: results.mof_cost.toFixed(2),
+        storage_cost: results.storage_cost.toFixed(2)
+      };
+    }
+
+    // Fallback ke perhitungan lokal hanya jika backend belum ada hasil
     const getPrice = (cat: string, name: string) => {
       if (!name || name === "-") return 0;
       return price_db[cat]?.[name]?.price_eur_per_ml ?? price_db[cat]?.[name]?.price_eur_per_g ?? 0;
@@ -146,7 +155,7 @@ export default function MOFScreening() {
       mof_cost: mofCost.toFixed(2),
       storage_cost: storageCost.toFixed(2)
     };
-  }, [formData, price_db, results?.gravimetric_h2]);
+  }, [formData, price_db, results]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
@@ -311,7 +320,7 @@ export default function MOFScreening() {
                     )}
                   </div>
                   <div className="sm:col-span-1">
-                    <InputGroup label="Mass" unit="g" val={formData.metal_mass} k="metal_mass" s={setFormData} d={formData} placeholder="0" />
+                    <InputGroup label="Mass" unit="mg" val={formData.metal_mass} k="metal_mass" s={setFormData} d={formData} placeholder="0" />
                   </div>
                 </div>
 
