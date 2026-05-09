@@ -138,9 +138,16 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
         
         return default
 
-    # Validasi input
+    # Validasi input - product_mass harus > 0
+    # Jika tidak ada product_mass, estimate dari metal + linker mass
     if product_mass_mg <= 0:
-        product_mass_mg = max(metal_mass_mg + linker_mass_mg, 1.0)
+        # Default estimate: sum of metal + linker mass (assuming ~100% yield)
+        # Ini adalah conservative estimate
+        product_mass_mg = max(metal_mass_mg + linker_mass_mg, 100.0)
+        
+        # Jika masih 0, gunakan default minimum
+        if product_mass_mg <= 0:
+            product_mass_mg = 100.0
     
     # 1. LOOKUP HARGA dari database (Technical Grade prices)
     metal_price_eur_per_g = get_price("metals", metal_name, 0.01)

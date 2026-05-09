@@ -505,8 +505,8 @@
     }
   },
   "smiles_mapping": {
-    "description": "SMILES to Linker Name mapping from Synthesis_Parameter_3.xlsx",
-    "total_entries": 61,
+    "description": "SMILES to Linker Name mapping (cleaned - only valid prices)",
+    "total_entries": 46,
     "mapping": {
       "COC1=C(C=C(C(=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)OC)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "(R)-H₄L",
@@ -516,11 +516,6 @@
       "C(C)OC1=C(C2=CC=C(C=C2C(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=C(C=C(C2=CC(=CC=C12)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)OCC": {
         "linker_name": "(R)-H₄L",
         "price_eur_per_g": 161.5,
-        "source": "Linker1"
-      },
-      "C(=O)(O)C=1C=C2C=CC(=CC2=CC1)N(C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC2=CC=C(C=C2C=C1)C(=O)O": {
-        "linker_name": "H₆L",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "C(=O)(O)C1=CC=C(C=C1)C1=CC(=CC(=C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
@@ -538,29 +533,9 @@
         "price_eur_per_g": 74.8,
         "source": "Linker1"
       },
-      "C(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
-        "linker_name": "L4-H4",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
-      "N=1NN=NC1C1=CC=C(C(=O)NC=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
-        "linker_name": "H₃L4",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
-      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C#CC#CC1=CC(=CC(=C1)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O": {
-        "linker_name": "LH₆(3)",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
       "P(=O)(O)(O)O": {
         "linker_name": "L",
         "price_eur_per_g": 0.01474706,
-        "source": "Linker1"
-      },
-      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC=C(C=C1)[C]1CC(=CC(=C1)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
-        "linker_name": "L4",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "N1=CC(=CC=C1)C(=O)NCCNC(=O)C=1C=NC=CC1": {
@@ -603,11 +578,6 @@
         "price_eur_per_g": 76.67,
         "source": "Linker1"
       },
-      "N1(C=NC=C1)C1=CC=C(C=C1)C=1N=CNC1": {
-        "linker_name": "HL",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
       "C1(=CC(=CC(=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H3L3H2O",
         "price_eur_per_g": 219.29999999999998,
@@ -623,29 +593,9 @@
         "price_eur_per_g": 219.29999999999998,
         "source": "Linker1"
       },
-      "O=C(Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O)c1cc(cnc1)C(=O)Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O": {
-        "linker_name": "H₄PANAD",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
-      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC2=CC3=CC(=CC3=CC2=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
-        "linker_name": "H4bdfdpa",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
-      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC(=CC(=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
-        "linker_name": "H6BTTI",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
       "C(=O)(O)C1=CC=C(C=C1)C(C1=CC=C(C=C1)C(=O)O)(C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "L1-H4",
         "price_eur_per_g": 144.5,
-        "source": "Linker1"
-      },
-      "C1(=CC(=CC(=C1)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
-        "linker_name": "H6-1",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
@@ -708,11 +658,6 @@
         "price_eur_per_g": 0.22865000000000002,
         "source": "Linker1"
       },
-      "C1=C(C=CC2=CC3=CC(=CC=C3C=C12)C=1C=C(C=C(C1)C(=O)O)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
-        "linker_name": "H₄ADDI",
-        "price_eur_per_g": 0.0,
-        "source": "Linker1"
-      },
       "N=1SN=C2C1C(=CC=C2C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=2C=C(C=C(C2)C(=O)O)C(=O)O": {
         "linker_name": "H₄L",
         "price_eur_per_g": 205.54,
@@ -721,11 +666,6 @@
       "COC1=C(C(=CC(=C1)C(=O)O)OC)C1=C(C=C(C=C1OC)C(=O)O)OC": {
         "linker_name": "H₂L",
         "price_eur_per_g": 30.429999999999996,
-        "source": "Linker1"
-      },
-      "O=C(C(=O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
-        "linker_name": "H₄BDPO",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
@@ -751,11 +691,6 @@
       "C(=O)(O)C1=CC=C(C=C1)N=NC1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H₂AzDC",
         "price_eur_per_g": 10.166,
-        "source": "Linker1"
-      },
-      "O=C1C2=CC(=CC=C2C=2C=CC(=CC12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
-        "linker_name": "H₄OFDI",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=NC=C(C=N1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
@@ -786,16 +721,6 @@
       "C(=O)(O)C=1C=C(COC=2C=C(C=C(C(=O)O)C2)C(=O)O)C=C(C1)C(=O)O": {
         "linker_name": "H₄L",
         "price_eur_per_g": 462.4,
-        "source": "Linker1"
-      },
-      "N(=O)(O)C1=C(C(=CC(=C1)C(=O)O)N(=O)O)C1=C(C=C(C=C1N(=O)O)C(=O)O)N(=O)O": {
-        "linker_name": "H₂dnpdc (asam 2,6-dinitropyridine-4,4'-dicarboxylic)",
-        "price_eur_per_g": null,
-        "source": "Linker1"
-      },
-      "CC1=C(C=C(C(=C1)C1=C(C=C(C(=C1)C)C1=C(C=C(C(=C1)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C)C)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
-        "linker_name": "H₄LIV",
-        "price_eur_per_g": 0.0,
         "source": "Linker1"
       },
       "N12CCN(CC1)CC2": {
