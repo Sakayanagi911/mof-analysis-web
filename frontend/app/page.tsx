@@ -17,7 +17,6 @@ export default function MOFScreening() {
   const [results, setResults] = useState<any>(null);
   const [price_db, setPriceDb] = useState<any>({ 
     metals: {}, 
-    linkers: {}, 
     solvents: {}, 
     additives: {}, 
     modulators: {} 
@@ -151,7 +150,9 @@ export default function MOFScreening() {
     const aCost = Number(formData.additive_volume || 0) * getPrice('additives', formData.additive_name);
     const mCost = Number(formData.modulator_volume || 0) * getPrice('modulators', formData.modulator_name);
     const metCost = Number(formData.metal_mass || 0) * getPrice('metals', formData.metal_name);
-    const linCost = (Number(formData.linker_mass || 0) / 1000) * getPrice('linkers', formData.linker_name); // Linker dalam mg
+    // Linker cost dari SMILES mapping (bukan dari linkers section yang sudah dihapus)
+    const linkerData = smilesMapping[formData.smiles];
+    const linCost = linkerData ? (Number(formData.linker_mass || 0) / 1000) * linkerData.price_eur_per_g : 0;
 
     const totalCostEur = sCost + aCost + mCost + metCost + linCost;
     const eurToUsd = price_db.eur_to_usd || 1.08;

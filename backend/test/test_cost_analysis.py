@@ -13,7 +13,7 @@ def test_load_price_database():
     db = load_price_database()
     assert isinstance(db, dict)
     assert "metals" in db
-    assert "linkers" in db
+    assert "smiles_mapping" in db
     assert "eur_to_usd" in db
     assert "scale_factors" in db
     assert isinstance(db["eur_to_usd"], float)

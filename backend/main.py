@@ -37,9 +37,9 @@ async def get_prices():
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        return {"error": "File not found", "metals": {}, "linkers": {}}
+        return {"error": "File not found", "metals": {}, "solvents": {}}
     except Exception as e:
-        return {"error": str(e), "metals": {}, "linkers": {}}
+        return {"error": str(e), "metals": {}, "solvents": {}}
 
 @app.get("/get-smiles-mapping")
 async def get_smiles_mapping():
