@@ -1,195 +1,165 @@
 {
   "eur_to_usd": 1.15,
+  "scale_factors": {
+    "ym": 0.56,
+    "ym_linker": 0.67,
+    "industrial_mass_mg": 10000000
+  },
   "metals": {
     "Cu(NO₃)₂·2H₂O": {
-      "price_eur_per_g": 0.4461964628169614,
+      "price_eur_per_g": 0.0025499999999999997,
       "cas": "19004-19-3",
-      "vendor": "Sigma Aldrich"
+      "code": "28"
     },
     "Cu(NO₃)₂·2.5H₂O": {
-      "price_eur_per_g": 0.4461964628169614,
+      "price_eur_per_g": 0.0025499999999999997,
       "cas": "19004-19-4",
-      "vendor": "Sigma Aldrich"
+      "code": "29"
     },
     "Cu(NO₃)₂·3H₂O": {
-      "price_eur_per_g": 1.128808383233533,
+      "price_eur_per_g": 0.0025499999999999997,
       "cas": "10031-43-3",
-      "vendor": "Sigma Aldrich"
+      "code": "30"
+    },
+    "Cu(NO₃)₂·4H₂O": {
+      "price_eur_per_g": 0.0025499999999999997,
+      "cas": "13478-38-1",
+      "code": "31"
     },
     "Cu(NO₃)₂·6H₂O": {
-      "price_eur_per_g": 1.638,
-      "cas": "13478-38-1",
-      "vendor": "Sigma Aldrich"
+      "price_eur_per_g": 0.0025499999999999997,
+      "cas": "13778-31-9",
+      "code": "32"
     },
     "CuSO₄·5H₂O": {
-      "price_eur_per_g": 0.0666063080536128,
+      "price_eur_per_g": 0.00051,
       "cas": "7758-99-8",
-      "vendor": "Sigma Aldrich"
+      "code": "33"
     },
     "CuCl₂·2H₂O": {
-      "price_eur_per_g": 0.6652461111111111,
+      "price_eur_per_g": 0.0034,
       "cas": "10125-13-0",
-      "vendor": "Sigma Aldrich"
+      "code": "34"
     },
-    "Cu(BF₄)₂": {
+    "CuCl₂·3H₂O": {
+      "price_eur_per_g": 0.0034,
+      "cas": "10025-89-3",
+      "code": "35"
+    },
+    "Cu(BF₄)₂·6H₂O": {
       "price_eur_per_g": 0.009904112507990623,
       "cas": "207121-39-9",
-      "vendor": "AB Enterprises"
+      "code": "36"
     },
     "CuI": {
       "price_eur_per_g": 0.00425,
       "cas": "7681-65-4",
-      "vendor": "Jiangsu Juming Chemical Technology Co., Ltd."
+      "code": "37"
     },
-    "Cu(OAc)₂": {
+    "Cu(OAc)₂·H₂O": {
       "price_eur_per_g": 0.000425,
       "cas": "142-71-2",
-      "vendor": "Shandong Shengbang Import and Export Co., Ltd."
+      "code": "38"
     },
     "CuBr₂": {
       "price_eur_per_g": 0.0085,
       "cas": "7789-45-9",
-      "vendor": "Suzhou Senfeida Chemical Co., Ltd."
+      "code": "39"
     },
-    "Cu(ClO₄)₂": {
+    "Cu(ClO₄)₂·6H₂O": {
       "price_eur_per_g": 0.0022086170892819086,
       "cas": "10294-46-9",
-      "vendor": "Chem Lab"
+      "code": "40"
     },
     "Co(NO₃)₂·6H₂O": {
-      "price_eur_per_g": 0.3477604313222538,
+      "price_eur_per_g": 0.0085,
       "cas": "10026-22-9",
-      "vendor": "Thermo Fisher"
+      "code": "41"
     },
     "Co(ClO₄)₂·6H₂O": {
-      "price_eur_per_g": 0.7782991316132715,
+      "price_eur_per_g": 0.0018520690389942467,
       "cas": "13478-20-1",
-      "vendor": "Fisher Scientific"
+      "code": "42"
     },
     "CoSO₄·7H₂O": {
-      "price_eur_per_g": 0.2103557551065267,
+      "price_eur_per_g": 0.00425,
       "cas": "10026-24-1",
-      "vendor": "Sigma Aldrich"
+      "code": "43"
     },
     "Zn(NO₃)₂·4H₂O": {
-      "price_eur_per_g": 0.1039923297187062,
+      "price_eur_per_g": 0.000841849563179203,
       "cas": "19154-63-3",
-      "vendor": "Phytotech Lab"
+      "code": "44"
     },
     "Zn(NO₃)₂·6H₂O": {
-      "price_eur_per_g": 0.2128,
+      "price_eur_per_g": 0.001287534626038781,
       "cas": "10196-18-6",
-      "vendor": "Sigma Aldrich"
+      "code": "45"
     },
-    "Zn(CH₃COO)₂": {
+    "Zn(CH₃COO)₂·2H₂O": {
       "price_eur_per_g": 0.0023715000000000003,
       "cas": "5970-45-6",
-      "vendor": "W&Q Fine Chemicals"
+      "code": "46"
     },
     "ZnCl₂": {
       "price_eur_per_g": 0.000425,
       "cas": "7646-85-7",
-      "vendor": "Shandong Dexiang International Trade Co., Ltd."
+      "code": "47"
     },
     "Ni(NO₃)₂·6H₂O": {
-      "price_eur_per_g": 0.3319838056680162,
+      "price_eur_per_g": 0.002125,
       "cas": "13478-00-7",
-      "vendor": "Sigma Aldrich"
+      "code": "48"
+    },
+    "Ni(NO₃)₂·7H₂O": {
+      "price_eur_per_g": 0.002125,
+      "cas": "13478-00-7",
+      "code": "49"
     },
     "Mn(NO₃)₂·4H₂O": {
-      "price_eur_per_g": 0.20005031749414018,
+      "price_eur_per_g": 0.0013865757511186873,
       "cas": "13446-34-9",
-      "vendor": "Alfa Aesar"
+      "code": "50"
     },
     "MnCl₂·4H₂O": {
-      "price_eur_per_g": 0.3663967611336032,
+      "price_eur_per_g": 0.0068,
       "cas": "13446-34-9",
-      "vendor": "Sigma Aldrich"
+      "code": "51"
     },
-    "Cd(NO₃)₂": {
+    "Cd(NO₃)₂·4H₂O": {
       "price_eur_per_g": 0.0007923290006392499,
       "cas": "10022-68-1",
-      "vendor": "Zama Chemical"
+      "code": "52"
     },
-    "CdSO₄": {
+    "Cd(NO₃)₂·6H₂O": {
+      "price_eur_per_g": 0.0007923290006392499,
+      "cas": "10022-68-1",
+      "code": "53"
+    },
+    "CdSO₄·8H₂O": {
       "price_eur_per_g": 0.0011884935009588745,
       "cas": "7790-84-3",
-      "vendor": "Zama Chemical"
+      "code": "54"
     },
-    "Cd(CH₃COO)₂": {
+    "Cd(CH₃COO)₂·2H₂O": {
       "price_eur_per_g": 0.0009904112507990624,
       "cas": "5743-04-4",
-      "vendor": "The Truth Labs"
+      "code": "55"
     },
-    "Cd(ClO₄)₂": {
+    "Cd(ClO₄)₂·6H₂O": {
       "price_eur_per_g": 0.0018520690389942467,
       "cas": "10326-27-9",
-      "vendor": "Chem lab"
+      "code": "56"
     },
     "Mg(NO₃)₂·6H₂O": {
-      "price_eur_per_g": 0.14332,
+      "price_eur_per_g": 0.0006338632005113999,
       "cas": "13446-18-9",
-      "vendor": "Sigma Aldrich"
+      "code": "57"
     },
     "LiOH": {
       "price_eur_per_g": 0.00425,
       "cas": "1310-65-2",
-      "vendor": "Jinan Future Chemical Co., Ltd."
-    },
-    "Cu(NO₃)₂": {
-      "price_eur_per_g": 0.0025499999999999997,
-      "cas": "19004-19-3",
-      "vendor": "W&Q Fine Chemicals"
-    },
-    "CuSO₄": {
-      "price_eur_per_g": 0.00051,
-      "cas": "7758-99-8",
-      "vendor": "Hebei Pusuo Import & Export Co., Ltd."
-    },
-    "CuCl₂": {
-      "price_eur_per_g": 0.0034,
-      "cas": "10125-13-0",
-      "vendor": "W&Q Fine Chemicals"
-    },
-    "Co(NO₃)₂": {
-      "price_eur_per_g": 0.0085,
-      "cas": "10026-22-9",
-      "vendor": "Hainan Xinda Chuancheng Petrochemical Co., Ltd."
-    },
-    "Co(ClO₄)₂": {
-      "price_eur_per_g": 0.0018520690389942467,
-      "cas": "13478-20-1",
-      "vendor": "Chem Lab"
-    },
-    "CoSO₄": {
-      "price_eur_per_g": 0.00425,
-      "cas": "10026-24-1",
-      "vendor": "W&Q Fine Chemicals"
-    },
-    "Zn(NO₃)₂": {
-      "price_eur_per_g": 0.000841849563179203,
-      "cas": "19154-63-3",
-      "vendor": "JK Chemicals"
-    },
-    "Ni(NO₃)₂": {
-      "price_eur_per_g": 0.002125,
-      "cas": "13478-00-7",
-      "vendor": "Zhengzhou Delong Chemical Co., Ltd."
-    },
-    "Mn(NO₃)₂": {
-      "price_eur_per_g": 0.0013865757511186873,
-      "cas": "13446-34-9",
-      "vendor": "SV Trading Company"
-    },
-    "MnCl₂": {
-      "price_eur_per_g": 0.0068,
-      "cas": "13446-34-9",
-      "vendor": "Ningbo Surest Chemical Co., Ltd."
-    },
-    "Mg(NO₃)₂": {
-      "price_eur_per_g": 0.0006338632005113999,
-      "cas": "13446-18-9",
-      "vendor": "NRS Chemicals LLP"
+      "code": "58"
     }
   },
   "linkers": {
@@ -519,248 +489,667 @@
     "H₄L": {
       "price_eur_per_g": 205.54,
       "cas": "1627605-35-9",
-      "vendor": "AmBeed"
+      "vendor": "AmBeed",
+      "smiles": "N=1SN=C2C1C(=CC=C2C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=2C=C(C=C(C2)C(=O)O)C(=O)O"
     },
     "H4L": {
       "price_eur_per_g": 0.0182,
       "cas": "64-18-6",
-      "vendor": "AlfaAesar"
+      "vendor": "AlfaAesar",
+      "smiles": "C(=O)O"
     }
   },
   "solvents": {
     "DEA": {
       "price_eur_per_ml": 0.0020756850445691646,
       "cas": "91-66-7",
-      "vendor": "PT Graha Jaya Pratama Kinerja "
+      "code": "0"
     },
     "DMA": {
-      "price_eur_per_ml": 0.22858512678457277,
+      "price_eur_per_ml": 0.001961014276582143,
       "cas": "127-19-5",
-      "vendor": "Sigma Aldrich"
+      "code": "1"
     },
     "DMAc": {
       "price_eur_per_ml": 0.001961014276582143,
       "cas": "127-19-5",
-      "vendor": "Trimax Chemicals"
+      "code": "2"
     },
     "DMF": {
       "price_eur_per_ml": 0.0006536714255273811,
       "cas": "68-12-2",
-      "vendor": "Trimax Chemicals"
+      "code": "3"
     },
     "DEF": {
       "price_eur_per_ml": 0.00039147777647560196,
       "cas": "68-84-2",
-      "vendor": "Lonwin Industry Group Limited Co., Ltd."
+      "code": "4"
     },
     "NMP": {
       "price_eur_per_ml": 0.0017342101001491582,
       "cas": "872-50-4",
-      "vendor": "Jigs Chemical"
+      "code": "5"
     },
     "DMSO": {
       "price_eur_per_ml": 0.00047425721819731515,
       "cas": "67-68-5",
-      "vendor": "Jiangsu Juming Chemical Technology Co., Ltd."
+      "code": "6"
     },
     "DMPU": {
       "price_eur_per_ml": 0.214143832,
       "cas": "2687-91-4",
-      "vendor": "Otto Chemie pvt ltd"
+      "code": "7"
     },
     "HFP": {
       "price_eur_per_ml": 0.0013762082186234816,
       "cas": "920-66-1",
-      "vendor": "Jinan Qinmu Fine Chemical Co., Ltd."
+      "code": "8"
     },
     "NaOH": {
-      "price_eur_per_ml": 1.01108,
+      "price_eur_per_ml": 0.0021104836991263586,
       "cas": "1310-73-2",
-      "vendor": "Sigma Aldrich"
+      "code": "9"
     },
     "H2O": {
       "price_eur_per_ml": 0.00019044321329639887,
       "cas": "7732-18-5",
-      "vendor": "Mika Chemical"
+      "code": "10"
     },
     "MeOH": {
       "price_eur_per_ml": 0.00037289580225868314,
       "cas": "67-56-1",
-      "vendor": "PT. Anugrah Putra Kencana"
+      "code": "11"
     },
     "EtOH": {
       "price_eur_per_ml": 0.0005843426379714467,
       "cas": "64-17-5",
-      "vendor": "Trimax Chemicals"
+      "code": "12"
     },
     "Cellosolve": {
       "price_eur_per_ml": 0.0008913701257191561,
       "cas": "110-80-5",
-      "vendor": "Shubham Fine Chem"
+      "code": "13"
     },
     "MeCN": {
       "price_eur_per_ml": 0.00033887833954826334,
       "cas": "75-05-8",
-      "vendor": "Shandong Dexiang International Trade Co.,Ltd"
+      "code": "14"
     },
-    "Dioxane": {
-      "price_eur_per_ml": 0.0004458017851054762,
-      "cas": "123-91-1",
-      "vendor": "Shandong Dexiang International Trade Co.,Ltd"
-    },
-    "CH2Cl2": {
-      "price_eur_per_ml": 0.00045701150117195816,
-      "cas": "75-09-2",
-      "vendor": "Zibo Aiheng New Material Co.,Ltd"
-    },
-    "DMA ": {
-      "price_eur_per_ml": 0.001961014276582143,
-      "cas": "127-19-5",
-      "vendor": "Trimax Chemicals"
-    },
-    "NaOH ": {
-      "price_eur_per_ml": 0.0021104836991263586,
-      "cas": "1310-73-2",
-      "vendor": "HK Chemicals"
-    },
-    "HNO3 ": {
+    "HNO3": {
       "price_eur_per_ml": 0.0016641806946516087,
       "cas": "7697-37-2",
-      "vendor": "KEY Chemicals"
+      "code": "16"
     },
     "NH3": {
       "price_eur_per_ml": 0.00014856168761985932,
       "cas": "7664-41-7",
-      "vendor": "Om Sai Enterprises"
+      "code": "17"
     },
     "HBF4": {
       "price_eur_per_ml": 0.0005942467504794373,
       "cas": "16872-11-0",
-      "vendor": "Jay Unnati Chem"
+      "code": "18"
     },
     "HCl": {
       "price_eur_per_ml": 0.00013003270637119114,
       "cas": "7647-01-0",
-      "vendor": "Qingdao Langyi Industrial Co.,Ltd"
+      "code": "19"
     },
     "H3PMo12O40": {
       "price_eur_per_ml": 0.013969030790539102,
       "cas": "12501-23-4",
-      "vendor": "Hebei Kenbin Technology Co.,Ltd"
+      "code": "20"
     },
     "AcOH": {
       "price_eur_per_ml": 0.000361815143191988,
       "cas": "64-19-7",
-      "vendor": "Hebei Jinchangsheng Chemical Technology Co.,Ltd"
+      "code": "21"
     },
     "Triethylamine": {
       "price_eur_per_ml": 0.0008764273392286384,
       "cas": "121-44-8",
-      "vendor": "Inner Mongolia Harbor Trade Chemicals Co.,Ltd"
+      "code": "22"
     },
     "EG": {
       "price_eur_per_ml": 0.0024300939860430427,
       "cas": "107-21-1",
-      "vendor": "Inner Mongolia Harbor Trade Chemicals Co.,Ltd"
+      "code": "23"
     },
-    "CH3ONa ": {
+    "CH3ONa": {
       "price_eur_per_ml": 0.0006691338205838482,
       "cas": "124-41-4",
-      "vendor": "Weihai Jindo Chemical Co.,Ltd"
+      "code": "24"
+    },
+    "Dioxane": {
+      "price_eur_per_ml": 0.0004458017851054762,
+      "cas": "123-91-1",
+      "code": "25"
     },
     "1,4-dioxane": {
       "price_eur_per_ml": 0.0004458017851054762,
       "cas": "123-91-1",
-      "vendor": "Shandong Dexiang International Trade Co.,Ltd"
+      "code": "26"
+    },
+    "CH2Cl2": {
+      "price_eur_per_ml": 0.00045701150117195816,
+      "cas": "75-09-2",
+      "code": "27"
+    },
+    "-": {
+      "price_eur_per_ml": 0.0,
+      "cas": "-",
+      "code": "0"
     }
   },
   "additives": {
-    "H2O": {
-      "price_eur_per_ml": 0.083848122971255
+    "DEA": {
+      "price_eur_per_ml": 0.0020756850445691646
+    },
+    "DMA": {
+      "price_eur_per_ml": 0.001961014276582143
+    },
+    "DMAc": {
+      "price_eur_per_ml": 0.001961014276582143
+    },
+    "DMF": {
+      "price_eur_per_ml": 0.0006536714255273811
+    },
+    "DEF": {
+      "price_eur_per_ml": 0.00039147777647560196
     },
     "NMP": {
-      "price_eur_per_ml": 0.1669509425414815
-    },
-    "EtOH": {
-      "price_eur_per_ml": 0.2137233804822765
-    },
-    "MeOH": {
-      "price_eur_per_ml": 0.08065203362153926
+      "price_eur_per_ml": 0.0017342101001491582
     },
     "DMSO": {
-      "price_eur_per_ml": 0.2950137785002447
+      "price_eur_per_ml": 0.00047425721819731515
+    },
+    "DMPU": {
+      "price_eur_per_ml": 0.214143832
+    },
+    "HFP": {
+      "price_eur_per_ml": 0.0013762082186234816
+    },
+    "NaOH": {
+      "price_eur_per_ml": 0.0021104836991263586
+    },
+    "H2O": {
+      "price_eur_per_ml": 0.00019044321329639887
+    },
+    "MeOH": {
+      "price_eur_per_ml": 0.00037289580225868314
+    },
+    "EtOH": {
+      "price_eur_per_ml": 0.0005843426379714467
+    },
+    "Cellosolve": {
+      "price_eur_per_ml": 0.0008913701257191561
     },
     "MeCN": {
-      "price_eur_per_ml": 0.15560378153093238
+      "price_eur_per_ml": 0.00033887833954826334
+    },
+    "HNO3": {
+      "price_eur_per_ml": 0.0016641806946516087
+    },
+    "NH3": {
+      "price_eur_per_ml": 0.00014856168761985932
+    },
+    "HBF4": {
+      "price_eur_per_ml": 0.0005942467504794373
+    },
+    "HCl": {
+      "price_eur_per_ml": 0.00013003270637119114
+    },
+    "H3PMo12O40": {
+      "price_eur_per_ml": 0.013969030790539102
+    },
+    "AcOH": {
+      "price_eur_per_ml": 0.000361815143191988
+    },
+    "Triethylamine": {
+      "price_eur_per_ml": 0.0008764273392286384
+    },
+    "EG": {
+      "price_eur_per_ml": 0.0024300939860430427
+    },
+    "CH3ONa": {
+      "price_eur_per_ml": 0.0006691338205838482
     },
     "Dioxane": {
-      "price_eur_per_ml": 0.11668988629731668
+      "price_eur_per_ml": 0.0004458017851054762
+    },
+    "1,4-dioxane": {
+      "price_eur_per_ml": 0.0004458017851054762
+    },
+    "CH2Cl2": {
+      "price_eur_per_ml": 0.00045701150117195816
     },
     "-": {
       "price_eur_per_ml": 0.0
     }
   },
   "modulators": {
-    "HNO3": {
-      "price_eur_per_ml": 0.07189417865882522,
-      "cas": "7697-37-2"
+    "DEA": {
+      "price_eur_per_ml": 0.0020756850445691646,
+      "cas": "91-66-7"
     },
-    "HCl": {
-      "price_eur_per_ml": 0.04162671354499609,
-      "cas": "7647-01-0"
+    "DMA": {
+      "price_eur_per_ml": 0.001961014276582143,
+      "cas": "127-19-5"
     },
-    "HBF4": {
-      "price_eur_per_ml": 0.440017,
-      "cas": "16872-11-0"
+    "DMAc": {
+      "price_eur_per_ml": 0.001961014276582143,
+      "cas": "127-19-5"
     },
-    "AcOH": {
-      "price_eur_per_ml": 0.03416435826408125,
-      "cas": "64-19-7"
+    "DMF": {
+      "price_eur_per_ml": 0.0006536714255273811,
+      "cas": "68-12-2"
     },
-    "H3PMo12O40": {
-      "price_eur_per_ml": 0.04162671354499609,
-      "cas": "12501-23-4"
+    "DEF": {
+      "price_eur_per_ml": 0.00039147777647560196,
+      "cas": "68-84-2"
+    },
+    "NMP": {
+      "price_eur_per_ml": 0.0017342101001491582,
+      "cas": "872-50-4"
+    },
+    "DMSO": {
+      "price_eur_per_ml": 0.00047425721819731515,
+      "cas": "67-68-5"
+    },
+    "DMPU": {
+      "price_eur_per_ml": 0.214143832,
+      "cas": "2687-91-4"
+    },
+    "HFP": {
+      "price_eur_per_ml": 0.0013762082186234816,
+      "cas": "920-66-1"
     },
     "NaOH": {
-      "price_eur_per_ml": 1.01108,
+      "price_eur_per_ml": 0.0021104836991263586,
       "cas": "1310-73-2"
     },
-    "Triethylamine": {
-      "price_eur_per_ml": 0.16485545848426733,
-      "cas": "121-44-8"
+    "H2O": {
+      "price_eur_per_ml": 0.00019044321329639887,
+      "cas": "7732-18-5"
     },
-    "TEA": {
-      "price_eur_per_ml": 0.16485545848426733,
+    "MeOH": {
+      "price_eur_per_ml": 0.00037289580225868314,
+      "cas": "67-56-1"
+    },
+    "EtOH": {
+      "price_eur_per_ml": 0.0005843426379714467,
+      "cas": "64-17-5"
+    },
+    "Cellosolve": {
+      "price_eur_per_ml": 0.0008913701257191561,
+      "cas": "110-80-5"
+    },
+    "MeCN": {
+      "price_eur_per_ml": 0.00033887833954826334,
+      "cas": "75-05-8"
+    },
+    "HNO3": {
+      "price_eur_per_ml": 0.0016641806946516087,
+      "cas": "7697-37-2"
+    },
+    "NH3": {
+      "price_eur_per_ml": 0.00014856168761985932,
+      "cas": "7664-41-7"
+    },
+    "HBF4": {
+      "price_eur_per_ml": 0.0005942467504794373,
+      "cas": "16872-11-0"
+    },
+    "HCl": {
+      "price_eur_per_ml": 0.00013003270637119114,
+      "cas": "7647-01-0"
+    },
+    "H3PMo12O40": {
+      "price_eur_per_ml": 0.013969030790539102,
+      "cas": "12501-23-4"
+    },
+    "AcOH": {
+      "price_eur_per_ml": 0.000361815143191988,
+      "cas": "64-19-7"
+    },
+    "Triethylamine": {
+      "price_eur_per_ml": 0.0008764273392286384,
       "cas": "121-44-8"
     },
     "EG": {
-      "price_eur_per_ml": 0.120215,
+      "price_eur_per_ml": 0.0024300939860430427,
       "cas": "107-21-1"
     },
+    "CH3ONa": {
+      "price_eur_per_ml": 0.0006691338205838482,
+      "cas": "124-41-4"
+    },
     "Dioxane": {
-      "price_eur_per_ml": 0.11668988629731668,
+      "price_eur_per_ml": 0.0004458017851054762,
       "cas": "123-91-1"
     },
-    "C4H8O2": {
-      "price_eur_per_ml": 0.11668988629731668,
+    "1,4-dioxane": {
+      "price_eur_per_ml": 0.0004458017851054762,
       "cas": "123-91-1"
     },
-    "H2O": {
-      "price_eur_per_ml": 0.083848122971255,
-      "cas": "7732-18-5"
-    },
-    "CH3COOH": {
-      "price_eur_per_ml": 0.03416435826408125,
-      "cas": "64-19-7"
+    "CH2Cl2": {
+      "price_eur_per_ml": 0.00045701150117195816,
+      "cas": "75-09-2"
     },
     "-": {
       "price_eur_per_ml": 0.0,
       "cas": "-"
     }
   },
-  "scale_factors": {
-    "ym": 0.56,
-    "ym_linker": 0.67,
-    "industrial_mass_mg": 10000000
+  "smiles_mapping": {
+    "description": "SMILES to Linker Name mapping from Synthesis_Parameter_3.xlsx",
+    "total_entries": 61,
+    "mapping": {
+      "COC1=C(C=C(C(=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)OC)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "(R)-H₄L",
+        "price_eur_per_g": 161.5,
+        "source": "Linker1"
+      },
+      "C(C)OC1=C(C2=CC=C(C=C2C(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=C(C=C(C2=CC(=CC=C12)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)OCC": {
+        "linker_name": "(R)-H₄L",
+        "price_eur_per_g": 161.5,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C2C=CC(=CC2=CC1)N(C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC2=CC=C(C=C2C=C1)C(=O)O": {
+        "linker_name": "H₆L",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C1=CC(=CC(=C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "H₃BBC",
+        "price_eur_per_g": 6.867999999999999,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O": {
+        "linker_name": "H3(btb)",
+        "price_eur_per_g": 48.279999999999994,
+        "source": "Linker1"
+      },
+      "C(C)C1(C2=CC(=CC=C2C=2C1=C1C(=C3C=4C=CC(=CC4C(C23)(CC)CC)C2=CC=C(C(=O)O)C=C2)C(C2=CC(=CC=C21)C2=CC=C(C(=O)O)C=C2)(CC)CC)C2=CC=C(C(=O)O)C=C2)CC": {
+        "linker_name": "H₃L",
+        "price_eur_per_g": 74.8,
+        "source": "Linker1"
+      },
+      "C(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "L4-H4",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "N=1NN=NC1C1=CC=C(C(=O)NC=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
+        "linker_name": "H₃L4",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C#CC#CC1=CC(=CC(=C1)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "LH₆(3)",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "P(=O)(O)(O)O": {
+        "linker_name": "L",
+        "price_eur_per_g": 0.01474706,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC=C(C=C1)[C]1CC(=CC(=C1)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "L4",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "N1=CC(=CC=C1)C(=O)NCCNC(=O)C=1C=NC=CC1": {
+        "linker_name": "3-dpye",
+        "price_eur_per_g": 191.25,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "H₃btb",
+        "price_eur_per_g": 6.8765,
+        "source": "Linker1"
+      },
+      "N1N=NN=C1C1=CC=C(C=C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "H3L₃",
+        "price_eur_per_g": 1606.5,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(OCC(COC2=CC=C(C(=O)O)C=C2)(COC2=CC=C(C=C2)C(=O)O)COC2=CC=C(C=C2)C(=O)O)C=C1": {
+        "linker_name": "H4TCM",
+        "price_eur_per_g": 140.25,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "BTEB (C₃₀H₁₅O₆)",
+        "price_eur_per_g": 134.81,
+        "source": "Linker1"
+      },
+      "C1(=CC=C(C=C1)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "PDEB",
+        "price_eur_per_g": 130.9,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O": {
+        "linker_name": "H₃BTN",
+        "price_eur_per_g": 141.60999999999999,
+        "source": "Linker1"
+      },
+      "C1=C(C=CC=2C3=CC=C(C=C3NC12)C(=O)O)C(=O)O": {
+        "linker_name": "2,7-H₂CDC",
+        "price_eur_per_g": 76.67,
+        "source": "Linker1"
+      },
+      "N1(C=NC=C1)C1=CC=C(C=C1)C=1N=CNC1": {
+        "linker_name": "HL",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "H3L3H2O",
+        "price_eur_per_g": 219.29999999999998,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
+        "linker_name": "(H2)",
+        "price_eur_per_g": 158.1,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=CC=1C=C(C(=O)O)C=C(C1)C=CC(=O)O": {
+        "linker_name": "H₃L₁",
+        "price_eur_per_g": 219.29999999999998,
+        "source": "Linker1"
+      },
+      "O=C(Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O)c1cc(cnc1)C(=O)Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O": {
+        "linker_name": "H₄PANAD",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC2=CC3=CC(=CC3=CC2=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H4bdfdpa",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC(=CC(=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "H6BTTI",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C(C1=CC=C(C=C1)C(=O)O)(C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "L1-H4",
+        "price_eur_per_g": 144.5,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H6-1",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "H4TCPP",
+        "price_eur_per_g": 82.45,
+        "source": "Linker1"
+      },
+      "C(#CC#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₃L₁",
+        "price_eur_per_g": 393.55,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C=1C=NC=C(C1)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "H₂L",
+        "price_eur_per_g": 30.429999999999996,
+        "source": "Linker1"
+      },
+      "N1(C=NC=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₂L",
+        "price_eur_per_g": 100.62,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC(=C1)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₆tL₁",
+        "price_eur_per_g": 260.09999999999997,
+        "source": "Linker1"
+      },
+      "N1=CC(=CC=C1)NC(CN1N=NN=C1)=O": {
+        "linker_name": "TAAP",
+        "price_eur_per_g": 4558.0,
+        "source": "Linker1"
+      },
+      "C1(=CC=C(C=C1)CN1N=CN=C1)CN1N=CN=C1": {
+        "linker_name": "BBTZ",
+        "price_eur_per_g": 15.164,
+        "source": "Linker1"
+      },
+      "C1(=CC=C(C=C1)C(=O)O)C1=CC(=CC(=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "H₃L",
+        "price_eur_per_g": 74.8,
+        "source": "Linker1"
+      },
+      "N1(N=NC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄TADIP",
+        "price_eur_per_g": 884.0,
+        "source": "Linker1"
+      },
+      "C1(=CC=C(C=C1)C(=O)O)C(=O)O": {
+        "linker_name": "H₂BDC",
+        "price_eur_per_g": 0.0215,
+        "source": "Linker1"
+      },
+      "O=S1(C2=C(C3=C1C=C(C=C3)C(=O)O)C=CC(=C2)C(=O)O)=O": {
+        "linker_name": "H₂L2",
+        "price_eur_per_g": 34.51,
+        "source": "Linker1"
+      },
+      "O1C(=CC=C1C(=O)O)C(=O)O": {
+        "linker_name": "H₂FDC",
+        "price_eur_per_g": 0.22865000000000002,
+        "source": "Linker1"
+      },
+      "C1=C(C=CC2=CC3=CC(=CC=C3C=C12)C=1C=C(C=C(C1)C(=O)O)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
+        "linker_name": "H₄ADDI",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "N=1SN=C2C1C(=CC=C2C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=2C=C(C=C(C2)C(=O)O)C(=O)O": {
+        "linker_name": "H₄L",
+        "price_eur_per_g": 205.54,
+        "source": "Linker1"
+      },
+      "COC1=C(C(=CC(=C1)C(=O)O)OC)C1=C(C=C(C=C1OC)C(=O)O)OC": {
+        "linker_name": "H₂L",
+        "price_eur_per_g": 30.429999999999996,
+        "source": "Linker1"
+      },
+      "O=C(C(=O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄BDPO",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄EBTC",
+        "price_eur_per_g": 103.19,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC=C(N(C2=CC=C(C=C2)C2=CC(=CC(=C2)C(=O)O)C(=O)O)C2=CC=C(C=C2)C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
+        "linker_name": "H₆LNPh",
+        "price_eur_per_g": 87.38,
+        "source": "Linker1"
+      },
+      "S1C(=CC=C1C(=O)O)C(=O)O": {
+        "linker_name": "H₂thb",
+        "price_eur_per_g": 0.11645000000000001,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "H₄L",
+        "price_eur_per_g": 80.75,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C1=CC=C(C=C1)N=NC1=CC=C(C(=O)O)C=C1": {
+        "linker_name": "H₂AzDC",
+        "price_eur_per_g": 10.166,
+        "source": "Linker1"
+      },
+      "O=C1C2=CC(=CC=C2C=2C=CC(=CC12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄OFDI",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=NC=C(C=N1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "H₄L₁",
+        "price_eur_per_g": 361.59,
+        "source": "Linker1"
+      },
+      "N1=C(C=CC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄NPA",
+        "price_eur_per_g": 61.879999999999995,
+        "source": "Linker1"
+      },
+      "C1(=CC=CC2=C(C=CC=C12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+        "linker_name": "H₄L",
+        "price_eur_per_g": 229.62,
+        "source": "Linker1"
+      },
+      "C1(=CC(=CC=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+        "linker_name": "3,4′-bpdc",
+        "price_eur_per_g": 38.589999999999996,
+        "source": "Linker1"
+      },
+      "C(=O)O": {
+        "linker_name": "H4L",
+        "price_eur_per_g": 0.0182,
+        "source": "Linker1"
+      },
+      "C(=O)(O)C=1C=C(COC=2C=C(C=C(C(=O)O)C2)C(=O)O)C=C(C1)C(=O)O": {
+        "linker_name": "H₄L",
+        "price_eur_per_g": 462.4,
+        "source": "Linker1"
+      },
+      "N(=O)(O)C1=C(C(=CC(=C1)C(=O)O)N(=O)O)C1=C(C=C(C=C1N(=O)O)C(=O)O)N(=O)O": {
+        "linker_name": "H₂dnpdc (asam 2,6-dinitropyridine-4,4'-dicarboxylic)",
+        "price_eur_per_g": null,
+        "source": "Linker1"
+      },
+      "CC1=C(C=C(C(=C1)C1=C(C=C(C(=C1)C)C1=C(C=C(C(=C1)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C)C)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+        "linker_name": "H₄LIV",
+        "price_eur_per_g": 0.0,
+        "source": "Linker1"
+      },
+      "N12CCN(CC1)CC2": {
+        "linker_name": "DABCO",
+        "price_eur_per_g": 0.07735,
+        "source": "Linker2"
+      },
+      "N1=CC=C(C=C1)NC(=O)C1=CC=C(C=C1)C1=CC=C(C=C1)C(=O)NC1=CC=NC=C1": {
+        "linker_name": "L",
+        "price_eur_per_g": 1.5222,
+        "source": "Linker2"
+      },
+      "N1=CC=C(C=C1)C1=NC(=NC(=N1)C1=CC=NC=C1)C1=CC=NC=C1": {
+        "linker_name": "tpt",
+        "price_eur_per_g": 8.517,
+        "source": "Linker2"
+      }
+    }
   }
 }

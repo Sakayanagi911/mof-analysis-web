@@ -24,10 +24,16 @@ export default function MOFScreening() {
   });
 
   const [showMetalList, setShowMetalList] = useState(false);
-  const [showLinkerList, setShowLinkerList] = useState(false);
+  const [showSmilesDropdown, setShowSmilesDropdown] = useState(false);
   const [showSolventList, setShowSolventList] = useState(false);
   const [showAdditiveList, setShowAdditiveList] = useState(false);
   const [showModulatorList, setShowModulatorList] = useState(false);
+  
+  // Search terms untuk setiap dropdown
+  const [solventSearch, setSolventSearch] = useState("");
+  const [additiveSearch, setAdditiveSearch] = useState("");
+  const [modulatorSearch, setModulatorSearch] = useState("");
+  const [metalSearch, setMetalSearch] = useState("");
   
   const [formData, setFormData] = useState({
     pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
@@ -39,30 +45,39 @@ export default function MOFScreening() {
     modulator_volume: "", 
     metal_name: "",     
     metal_mass: "", 
-    linker_name: "",    
+    smiles: "",         // INPUT UTAMA: SMILES (user input)
+    linker_name: "",    // AUTO-FILLED: Linker Name (dari SMILES lookup)
     linker_mass: "", 
-    smiles: "",         
     product_mass: "0",   
     reaction_time: "24", 
     temperature: "120"   
   });
+
+  const [smilesMapping, setSmilesMapping] = useState<any>({});
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/get-prices")
       .then(res => res.json())
       .then(data => { if (data && !data.error) setPriceDb(data); })
       .catch(err => console.error("Database offline"));
+    
+    // Load SMILES mapping
+    fetch("http://127.0.0.1:8000/get-smiles-mapping")
+      .then(res => res.json())
+      .then(data => { if (data && !data.error) setSmilesMapping(data.mapping || {}); })
+      .catch(err => console.error("SMILES mapping offline"));
   }, []);
 
+  // Auto-fill Linker Name dari SMILES
   useEffect(() => {
-    if (formData.linker_name && price_db.linkers && price_db.linkers[formData.linker_name]) {
-      const dbEntry = price_db.linkers[formData.linker_name];
+    if (formData.smiles && smilesMapping[formData.smiles]) {
+      const linkerData = smilesMapping[formData.smiles];
       setFormData(prev => ({
         ...prev,
-        smiles: dbEntry.smiles || dbEntry.SMILES1 || ""
+        linker_name: linkerData.linker_name || ""
       }));
     }
-  }, [formData.linker_name, price_db.linkers]);
+  }, [formData.smiles, smilesMapping]);
 
   const runLiveAnalysis = useCallback(async () => {
     setLoading(true);
@@ -110,7 +125,7 @@ export default function MOFScreening() {
   }, [formData, file]);
 
   useEffect(() => {
-    if (file && formData.metal_name && formData.linker_name) {
+    if (file && formData.metal_name && formData.smiles) {  // Changed: linker_name → smiles
       const timer = setTimeout(() => runLiveAnalysis(), 800);
       return () => clearTimeout(timer);
     }
@@ -215,10 +230,19 @@ export default function MOFScreening() {
                     <div className="relative flex items-center group">
                       <Input 
                         placeholder="Search" 
-                        value={formData.solvent_name} 
-                        onFocus={() => setShowSolventList(true)} 
+                        value={solventSearch} 
+                        onFocus={() => {
+                          setShowSolventList(true);
+                          setShowAdditiveList(false);
+                          setShowModulatorList(false);
+                          setShowMetalList(false);
+                          setShowSmilesDropdown(false);
+                        }} 
                         onBlur={() => setTimeout(() => setShowSolventList(false), 200)} 
-                        onChange={(e) => setFormData({...formData, solvent_name: e.target.value})} 
+                        onChange={(e) => {
+                          setSolventSearch(e.target.value);
+                          setFormData({...formData, solvent_name: e.target.value});
+                        }} 
                         className="pl-11 pr-14 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all text-[14px]" 
                       />
                       <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
@@ -226,8 +250,11 @@ export default function MOFScreening() {
                     </div>
                     {showSolventList && price_db.solvents && (
                       <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                        {Object.keys(price_db.solvents).filter(s => s.toLowerCase().includes(formData.solvent_name.toLowerCase())).map(s => (
-                          <div key={s} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => setFormData({...formData, solvent_name: s})}>{s}</div>
+                        {Object.keys(price_db.solvents).filter(s => s.toLowerCase().includes(solventSearch.toLowerCase())).map(s => (
+                          <div key={s} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => {
+                            setFormData({...formData, solvent_name: s});
+                            setSolventSearch(s);
+                          }}>{s}</div>
                         ))}
                       </div>
                     )}
@@ -244,10 +271,19 @@ export default function MOFScreening() {
                     <div className="relative flex items-center group">
                       <Input 
                         placeholder="Search" 
-                        value={formData.additive_name} 
-                        onFocus={() => setShowAdditiveList(true)} 
+                        value={additiveSearch} 
+                        onFocus={() => {
+                          setShowAdditiveList(true);
+                          setShowSolventList(false);
+                          setShowModulatorList(false);
+                          setShowMetalList(false);
+                          setShowSmilesDropdown(false);
+                        }} 
                         onBlur={() => setTimeout(() => setShowAdditiveList(false), 200)} 
-                        onChange={(e) => setFormData({...formData, additive_name: e.target.value})} 
+                        onChange={(e) => {
+                          setAdditiveSearch(e.target.value);
+                          setFormData({...formData, additive_name: e.target.value});
+                        }} 
                         className="pl-11 pr-14 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all text-[14px]" 
                       />
                       <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
@@ -255,8 +291,11 @@ export default function MOFScreening() {
                     </div>
                     {showAdditiveList && price_db.additives && (
                       <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                        {Object.keys(price_db.additives).filter(a => a.toLowerCase().includes(formData.additive_name.toLowerCase())).map(a => (
-                          <div key={a} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => setFormData({...formData, additive_name: a})}>{a}</div>
+                        {Object.keys(price_db.additives).filter(a => a.toLowerCase().includes(additiveSearch.toLowerCase())).map(a => (
+                          <div key={a} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => {
+                            setFormData({...formData, additive_name: a});
+                            setAdditiveSearch(a);
+                          }}>{a}</div>
                         ))}
                       </div>
                     )}
@@ -273,10 +312,19 @@ export default function MOFScreening() {
                     <div className="relative flex items-center group">
                       <Input 
                         placeholder="Search" 
-                        value={formData.modulator_name} 
-                        onFocus={() => setShowModulatorList(true)} 
+                        value={modulatorSearch} 
+                        onFocus={() => {
+                          setShowModulatorList(true);
+                          setShowSolventList(false);
+                          setShowAdditiveList(false);
+                          setShowMetalList(false);
+                          setShowSmilesDropdown(false);
+                        }} 
                         onBlur={() => setTimeout(() => setShowModulatorList(false), 200)} 
-                        onChange={(e) => setFormData({...formData, modulator_name: e.target.value})} 
+                        onChange={(e) => {
+                          setModulatorSearch(e.target.value);
+                          setFormData({...formData, modulator_name: e.target.value});
+                        }} 
                         className="pl-11 pr-14 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all text-[14px]" 
                       />
                       <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
@@ -284,8 +332,11 @@ export default function MOFScreening() {
                     </div>
                     {showModulatorList && price_db.modulators && (
                       <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                        {Object.keys(price_db.modulators).filter(m => m.toLowerCase().includes(formData.modulator_name.toLowerCase())).map(m => (
-                          <div key={m} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => setFormData({...formData, modulator_name: m})}>{m}</div>
+                        {Object.keys(price_db.modulators).filter(m => m.toLowerCase().includes(modulatorSearch.toLowerCase())).map(m => (
+                          <div key={m} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => {
+                            setFormData({...formData, modulator_name: m});
+                            setModulatorSearch(m);
+                          }}>{m}</div>
                         ))}
                       </div>
                     )}
@@ -302,10 +353,19 @@ export default function MOFScreening() {
                     <div className="relative flex items-center group">
                       <Input 
                         placeholder="Search" 
-                        value={formData.metal_name} 
-                        onFocus={() => setShowMetalList(true)} 
+                        value={metalSearch} 
+                        onFocus={() => {
+                          setShowMetalList(true);
+                          setShowSolventList(false);
+                          setShowAdditiveList(false);
+                          setShowModulatorList(false);
+                          setShowSmilesDropdown(false);
+                        }} 
                         onBlur={() => setTimeout(() => setShowMetalList(false), 200)} 
-                        onChange={(e) => setFormData({...formData, metal_name: e.target.value})} 
+                        onChange={(e) => {
+                          setMetalSearch(e.target.value);
+                          setFormData({...formData, metal_name: e.target.value});
+                        }} 
                         className="pl-11 pr-14 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all text-[14px]" 
                       />
                       <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
@@ -313,8 +373,11 @@ export default function MOFScreening() {
                     </div>
                     {showMetalList && price_db.metals && (
                       <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                        {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(formData.metal_name.toLowerCase())).map(m => (
-                          <div key={m} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => setFormData({...formData, metal_name: m})}>{m}</div>
+                        {Object.keys(price_db.metals).filter(m => m.toLowerCase().includes(metalSearch.toLowerCase())).map(m => (
+                          <div key={m} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => {
+                            setFormData({...formData, metal_name: m});
+                            setMetalSearch(m);
+                          }}>{m}</div>
                         ))}
                       </div>
                     )}
@@ -324,37 +387,96 @@ export default function MOFScreening() {
                   </div>
                 </div>
 
-                {/* 5. Linker & Auto SMILES */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                  <div className="sm:col-span-2 space-y-1.5 relative">
-                    <Label className="text-[11px] font-medium text-zinc-500 ml-1 tracking-wide">5. Linker Name</Label>
+                {/* 5. SMILES (Dropdown dengan Search) & Auto-filled Linker Name */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5 relative">
+                    <Label className="text-[11px] font-medium text-zinc-500 ml-1 tracking-wide">5. Linker SMILES</Label>
                     <div className="relative flex items-center group">
                       <Input 
-                        placeholder="Search" 
-                        value={formData.linker_name} 
-                        onFocus={() => setShowLinkerList(true)} 
-                        onBlur={() => setTimeout(() => setShowLinkerList(false), 200)} 
-                        onChange={(e) => setFormData({...formData, linker_name: e.target.value})} 
-                        className="pl-11 pr-14 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all text-[14px]" 
+                        placeholder="Search or select SMILES..." 
+                        value={formData.smiles} 
+                        onFocus={() => {
+                          setShowSmilesDropdown(true);
+                          setShowSolventList(false);
+                          setShowAdditiveList(false);
+                          setShowModulatorList(false);
+                          setShowMetalList(false);
+                        }}
+                        onBlur={() => setTimeout(() => setShowSmilesDropdown(false), 200)}
+                        onChange={(e) => setFormData({...formData, smiles: e.target.value})} 
+                        className="pl-11 pr-4 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-mono text-[12px] focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all" 
                       />
-                      <Database className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
-                      <div className="absolute right-4 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest z-10 pointer-events-none">Linker</div>
+                      <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
                     </div>
-                    {showLinkerList && price_db.linkers && (
-                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-48 overflow-y-auto">
-                        {Object.keys(price_db.linkers).filter(l => l.toLowerCase().includes(formData.linker_name.toLowerCase())).map(l => (
-                          <div key={l} className="px-5 py-3 text-sm hover:bg-blue-50/50 hover:text-blue-600 cursor-pointer border-b border-zinc-50 font-medium transition-colors" onMouseDown={() => setFormData({...formData, linker_name: l})}>{l}</div>
-                        ))}
+                    
+                    {/* Dropdown SMILES List */}
+                    {showSmilesDropdown && smilesMapping && Object.keys(smilesMapping).length > 0 && (
+                      <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-xl max-h-80 overflow-y-auto">
+                        {Object.entries(smilesMapping)
+                          .filter(([smiles, data]: [string, any]) => {
+                            const searchTerm = formData.smiles.toLowerCase();
+                            // Jika ada search term, filter. Jika tidak, tampilkan semua
+                            if (!searchTerm) return true;
+                            return smiles.toLowerCase().includes(searchTerm) || 
+                                   data.linker_name?.toLowerCase().includes(searchTerm);
+                          })
+                          // TIDAK ADA LIMIT - TAMPILKAN SEMUA
+                          .map(([smiles, data]: [string, any]) => (
+                            <div 
+                              key={smiles} 
+                              className="px-5 py-3 hover:bg-blue-50/50 cursor-pointer border-b border-zinc-50 transition-colors"
+                              onMouseDown={() => setFormData({...formData, smiles: smiles})}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-blue-600 mb-1">
+                                    {data.linker_name || "Unknown"}
+                                  </div>
+                                  <div className="text-[10px] font-mono text-zinc-500 truncate">
+                                    {smiles.length > 60 ? smiles.substring(0, 60) + "..." : smiles}
+                                  </div>
+                                </div>
+                                {data.price_eur_per_g !== null && data.price_eur_per_g !== undefined && (
+                                  <div className="text-[10px] font-bold text-green-600 whitespace-nowrap">
+                                    €{data.price_eur_per_g.toFixed(2)}/g
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        {Object.entries(smilesMapping).filter(([smiles, data]: [string, any]) => {
+                          const searchTerm = formData.smiles.toLowerCase();
+                          if (!searchTerm) return false; // Jika tidak ada search, tidak tampilkan "no results"
+                          return smiles.toLowerCase().includes(searchTerm) || 
+                                 data.linker_name?.toLowerCase().includes(searchTerm);
+                        }).length === 0 && formData.smiles && (
+                          <div className="px-5 py-4 text-sm text-zinc-400 text-center">
+                            No matching SMILES found
+                          </div>
+                        )}
+                        {!formData.smiles && (
+                          <div className="px-5 py-3 text-[10px] text-zinc-400 text-center border-t border-zinc-100 bg-zinc-50/50">
+                            Showing all {Object.keys(smilesMapping).length} SMILES entries
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                  <div className="sm:col-span-1">
-                    <InputGroup label="Mass" unit="mg" val={formData.linker_mass} k="linker_mass" s={setFormData} d={formData} placeholder="0" />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <Label className="text-[11px] font-medium text-zinc-400 ml-1 tracking-wide">Linker Name (Auto-filled)</Label>
+                      <Input 
+                        value={formData.linker_name} 
+                        readOnly 
+                        placeholder="Auto-filled from SMILES..." 
+                        className="h-10 rounded-[12px] border-none bg-zinc-100/50 text-zinc-500 font-medium text-[13px] shadow-inner cursor-not-allowed" 
+                      />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <InputGroup label="Mass" unit="mg" val={formData.linker_mass} k="linker_mass" s={setFormData} d={formData} placeholder="0" />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[11px] font-medium text-zinc-400 ml-1 tracking-wide">SMILES (Auto-filled)</Label>
-                  <Input value={formData.smiles} readOnly placeholder="Auto-filled from database..." className="h-10 rounded-[12px] border-none bg-zinc-100/50 text-zinc-500 font-mono text-[11px] shadow-inner" />
                 </div>
 
                 {/* 6. Product Mass */}

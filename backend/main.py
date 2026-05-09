@@ -40,3 +40,24 @@ async def get_prices():
         return {"error": "File not found", "metals": {}, "linkers": {}}
     except Exception as e:
         return {"error": str(e), "metals": {}, "linkers": {}}
+
+@app.get("/get-smiles-mapping")
+async def get_smiles_mapping():
+    """
+    Endpoint untuk mendapatkan SMILES to Linker Name mapping
+    Sekarang sudah digabung dalam price_database.json
+    """
+    file_path = os.path.join("data", "price_database.json")
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            smiles_data = data.get("smiles_mapping", {})
+            return {
+                "description": smiles_data.get("description", ""),
+                "total_entries": smiles_data.get("total_entries", 0),
+                "mapping": smiles_data.get("mapping", {})
+            }
+    except FileNotFoundError:
+        return {"error": "Database file not found", "mapping": {}}
+    except Exception as e:
+        return {"error": str(e), "mapping": {}}

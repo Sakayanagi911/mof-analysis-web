@@ -10,12 +10,22 @@ MAX_STORAGE_COST = 300.0    # USD/kg H2
 MAX_REACTION_TIME = 48.0    # jam
 MAX_TEMPERATURE = 180.0     # °C
 
+PRICE_DB_PATH = Path(__file__).parent.parent / "data" / "price_database.json"
+
 def load_price_database():
     """Load database harga dari JSON dengan encoding yang aman (UTF-8)."""
     with open(PRICE_DB_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def calculate_mof_cost(metal_name: str, linker_name: str,
+def get_smiles_mapping():
+    """
+    Get SMILES to Linker Name mapping dari price_database.json
+    Sekarang sudah digabung dalam satu file
+    """
+    db = load_price_database()
+    return db.get("smiles_mapping", {}).get("mapping", {})
+
+def calculate_mof_cost(metal_name: str, linker_smiles: str,
                         metal_mass_mg: float = 100.0,
                         linker_mass_mg: float = 50.0,
                         product_mass_mg: float = 50.0,
@@ -24,6 +34,9 @@ def calculate_mof_cost(metal_name: str, linker_name: str,
                         modulator_name: str = "-", modulator_volume_ml: float = 0.0) -> dict:
     """
     Hitung harga bahan MOF dengan formula EXACT dari model asli.
+    
+    INPUT UTAMA: SMILES (bukan linker name)
+    - linker_smiles akan di-lookup ke linker_name untuk mendapatkan price
     
     Formula EXACT dari notebook Cost Calculation:
     1. Raw cost = price_per_unit * volume/mass  
@@ -37,13 +50,45 @@ def calculate_mof_cost(metal_name: str, linker_name: str,
     - industrial_mass_mg = 1e7 (10 kg)
     """
     db = load_price_database()
+    smiles_mapping = get_smiles_mapping()
     eur_to_usd = db.get("eur_to_usd", 1.15)
     
     # Scale factors EXACT dari notebook
     ym = 0.56
     ym_linker = 0.67
     industrial_mass_mg = 1e7  # 10 kg = 1e7 mg
+    
+    # ============================================================================
+    # STEP 1: LOOKUP LINKER NAME AND PRICE FROM SMILES
+    # ============================================================================
+    linker_name = None
+    linker_price_eur_per_g = 10.0  # default fallback
+    
+    if linker_smiles and linker_smiles != "-":
+        # Normalize SMILES (remove whitespace)
+        smiles_normalized = linker_smiles.strip()
+        
+        # Lookup in mapping - SEMUA DATA LINKER ADA DI SINI
+        if smiles_normalized in smiles_mapping:
+            linker_data = smiles_mapping[smiles_normalized]
+            linker_name = linker_data.get("linker_name", "Unknown Linker")
+            
+            # Get price from SMILES mapping (SUMBER UTAMA)
+            if linker_data.get("price_eur_per_g") is not None:
+                linker_price_eur_per_g = linker_data["price_eur_per_g"]
+            else:
+                # Fallback jika tidak ada price
+                linker_price_eur_per_g = 10.0
+        else:
+            # SMILES not found in mapping
+            linker_name = "Unknown Linker"
+            linker_price_eur_per_g = 10.0
 
+    
+    # ============================================================================
+    # STEP 2: LOOKUP PRICES FROM DATABASE
+    # ============================================================================
+    
     def get_price(category: str, name: str, default: float) -> float:
         """Lookup harga dari database dengan normalisasi nama yang tepat."""
         if not name or name == "-":
@@ -99,18 +144,18 @@ def calculate_mof_cost(metal_name: str, linker_name: str,
     
     # 1. LOOKUP HARGA dari database (Technical Grade prices)
     metal_price_eur_per_g = get_price("metals", metal_name, 0.01)
-    linker_price_eur_per_g = get_price("linkers", linker_name, 10.0)
+    # linker_price_eur_per_g sudah di-set dari SMILES mapping di atas
     solvent_price_eur_per_ml = get_price("solvents", solvent_name, 0.0)
     additive_price_eur_per_ml = get_price("additives", additive_name, 0.0)
     modulator_price_eur_per_ml = get_price("modulators", modulator_name, 0.0)
-
+    
     # 2. HITUNG BIAYA BAHAN BAKU (Euro) - sesuai notebook
     metal_cost_eur = metal_price_eur_per_g * (metal_mass_mg / 1000.0)  # mg → g
     linker_cost_eur = linker_price_eur_per_g * (linker_mass_mg / 1000.0)  # mg → g
     solvent_cost_eur = solvent_price_eur_per_ml * solvent_volume_ml
     additive_cost_eur = additive_price_eur_per_ml * additive_volume_ml
     modulator_cost_eur = modulator_price_eur_per_ml * modulator_volume_ml
-
+    
     # 3. SCALE FACTORS - EXACT dari notebook
     scale_factor = (product_mass_mg / industrial_mass_mg) ** ym
     scale_factor_linker = (product_mass_mg / industrial_mass_mg) ** ym_linker
@@ -136,6 +181,7 @@ def calculate_mof_cost(metal_name: str, linker_name: str,
     return {
         "mof_cost_usd_per_kg": round(mof_cost_usd_per_kg, 4),
         "mof_cost_eur_per_kg": round(mof_cost_eur_per_kg, 4),
+        "linker_name": linker_name,  # Return linker name yang di-lookup dari SMILES
         # Debug info
         "raw_costs": {
             "metal_eur": round(metal_cost_eur, 6),
@@ -164,6 +210,39 @@ def calculate_mof_cost(metal_name: str, linker_name: str,
 # Sumber: PubChem, NIST, Sigma Aldrich @298.15K
 # Format: (density g/mL, Cp J/mol·K, Mr g/mol)
 # =====================================================================
+
+# Default concentration untuk modulator (aqueous solution)
+MODULATOR_DEFAULT_CONCENTRATION = {
+    "HNO3": 6.5,      # 6.5% dilute nitric acid (typical for MOF synthesis)
+    "hno3": 6.5,
+    "HCl": 0.054,     # 0.054% dilute hydrochloric acid (based on use case 4)
+    "hcl": 0.054,
+    "HBF4": 48.0,     # 48% tetrafluoroboric acid
+    "hbf4": 48.0,
+    "AcOH": 100.0,    # Glacial acetic acid (pure)
+    "acoh": 100.0,
+    "CH3COOH": 100.0, # Glacial acetic acid (pure)
+    "ch3cooh": 100.0,
+    "H3PMo12O40": 100.0,  # Solid
+    "h3pmo12o40": 100.0,
+    "NaOH": 50.0,     # 50% sodium hydroxide solution
+    "naoh": 50.0,
+    "Triethylamine": 100.0,  # Pure liquid
+    "triethylamine": 100.0,
+    "TEA": 100.0,     # Pure liquid
+    "tea": 100.0,
+    "EG": 100.0,      # Pure ethylene glycol
+    "eg": 100.0,
+    "Dioxane": 100.0, # Pure liquid
+    "dioxane": 100.0,
+    "C4H8O2": 100.0,  # Pure liquid
+    "c4h8o2": 100.0,
+    "H2O": 100.0,     # Pure water
+    "h2o": 100.0,
+    "water": 100.0,
+    "-": 100.0,
+}
+
 CHEM_PROP_DB = {
     # --- Solvent ---
     "dmf":           (0.9445, 148.16,  73.0938),
@@ -256,7 +335,7 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
                      solvent_name: str = "-", solvent_volume_ml: float = 0.0,
                      additive_name: str = "-", additive_volume_ml: float = 0.0,
                      modulator_name: str = "-", modulator_volume_ml: float = 0.0,
-                     modulator_concentration: float = 100.0,  # % concentration
+                     modulator_concentration: float = None,  # % concentration (None = use default)
                      metal_name: str = "-",
                      volumetric_wc: float = 40.0, gravimetric_wc: float = 5.5,
                      product_mass_mg: float = 50.0,
@@ -313,29 +392,60 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     rho_add, cp_add_mol_k, mr_add = get_chem_prop(additive_name)
     rho_mod, cp_mod_mol_k, mr_mod = get_chem_prop(modulator_name, volume_ml=modulator_volume_ml)
     _, cp_metal_mol_k, mr_metal = get_chem_prop(metal_name, is_metal=True)
+    
+    # ====== APPLY DEFAULT MODULATOR CONCENTRATION ======
+    # Jika modulator_concentration tidak di-specify (None atau 0), gunakan default
+    if modulator_concentration is None or modulator_concentration == 0:
+        # Cari default concentration berdasarkan nama modulator
+        modulator_key = _normalize_chem_name(modulator_name)
+        modulator_concentration = MODULATOR_DEFAULT_CONCENTRATION.get(modulator_key, 100.0)
 
     # ====== KALKULASI MOLES ======
-    # Solvent, Additive, Modulator: dari volume
-    m_solv_g = solvent_volume_ml * rho_solv
-    n_solv = m_solv_g / mr_solv  # mol
+    # HANYA HITUNG JIKA VOLUME/MASS > 0
     
-    m_add_g = additive_volume_ml * rho_add
-    n_add = m_add_g / mr_add  # mol
+    # Solvent: dari volume
+    if solvent_volume_ml > 0:
+        m_solv_g = solvent_volume_ml * rho_solv
+        n_solv = m_solv_g / mr_solv  # mol
+    else:
+        m_solv_g = 0.0
+        n_solv = 0.0
     
-    # Modulator: account for concentration (dilution factor)
-    m_mod_g = modulator_volume_ml * rho_mod
-    # Apply concentration factor - if modulator is diluted, effective moles are reduced
-    concentration_factor = modulator_concentration / 100.0  # convert % to fraction
-    n_mod = (m_mod_g / mr_mod) * concentration_factor  # mol (adjusted for concentration)
+    # Additive: dari volume
+    if additive_volume_ml > 0:
+        m_add_g = additive_volume_ml * rho_add
+        n_add = m_add_g / mr_add  # mol
+    else:
+        m_add_g = 0.0
+        n_add = 0.0
     
-    # Metal, Linker: dari mass
-    n_metal = (metal_mass_mg / 1000.0) / mr_metal  # mg → g → mol
-    n_linker = (linker_mass_mg / 1000.0) / linker_mw  # mg → g → mol
+    # Modulator: dari volume dengan concentration factor
+    if modulator_volume_ml > 0:
+        m_mod_g = modulator_volume_ml * rho_mod
+        # Apply concentration factor - if modulator is diluted, effective moles are reduced
+        concentration_factor = modulator_concentration / 100.0  # convert % to fraction
+        n_mod = (m_mod_g / mr_mod) * concentration_factor  # mol (adjusted for concentration)
+    else:
+        m_mod_g = 0.0
+        concentration_factor = 0.0
+        n_mod = 0.0
+    
+    # Metal: dari mass
+    if metal_mass_mg > 0:
+        n_metal = (metal_mass_mg / 1000.0) / mr_metal  # mg → g → mol
+    else:
+        n_metal = 0.0
+    
+    # Linker: dari mass
+    if linker_mass_mg > 0:
+        n_linker = (linker_mass_mg / 1000.0) / linker_mw  # mg → g → mol
+    else:
+        n_linker = 0.0
 
     # ====== KALKULASI ENERGI SENSIBLE (Joule) ======
     # Q = n × CP × ΔT
-    # Apply energy scale factor for solvent (empirical correction based on synthesis conditions)
-    e_solv = n_solv * cp_solv_mol_k * delta_t * energy_scale_factor
+    # MURNI MATEMATIS - TIDAK ADA SCALE FACTOR
+    e_solv = n_solv * cp_solv_mol_k * delta_t
     e_add = n_add * cp_add_mol_k * delta_t
     e_mod = n_mod * cp_mod_mol_k * delta_t
     e_metal = n_metal * cp_metal_mol_k * delta_t
@@ -347,42 +457,33 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     heat_eff = 0.75
     t_seconds = reaction_time_h * 3600.0
     
-    # --- V_Reactor calculation - REVISED APPROACH ---
-    # The original MOF-based calculation gives unrealistically small volumes for lab synthesis
-    # Working backwards from expected Qheat values suggests V_Reactor should be 0.3-0.6 L
-    # This is consistent with standard lab reactor volumes for MOF synthesis
-    
-    # Calculate theoretical V_Reactor from MOF properties (for reference)
-    if gravimetric_wc > 0:
-        density_mof_g_per_l = volumetric_wc / (gravimetric_wc / 100.0)  # g/L
+    # --- V_Reactor calculation - FORMULA ASLI dari old_model ---
+    # PENTING: Formula dari notebook adalah:
+    # Density_MOF (g/L) = volumetric_wc / (gravimetric_wc * 100)
+    # BUKAN volumetric_wc / (gravimetric_wc / 100)
+    if gravimetric_wc > 0 and product_mass_mg > 0:
+        density_mof_g_per_l = volumetric_wc / (gravimetric_wc * 100.0)  # g/L - FIXED!
+        g_mof = product_mass_mg / 1000.0  # mg → g
+        v_mof_l = g_mof / density_mof_g_per_l  # L
+        v_reactor_l = 1.2 * v_mof_l  # FORMULA ASLI
     else:
-        density_mof_g_per_l = 100.0  # fallback density
+        # Fallback jika tidak ada data
+        v_reactor_l = 0.1  # minimum 100 mL
+        density_mof_g_per_l = 100.0
+        g_mof = product_mass_mg / 1000.0 if product_mass_mg > 0 else 0.001
+        v_mof_l = g_mof / density_mof_g_per_l
     
-    g_mof = product_mass_mg / 1000.0  # mg → g
-    v_mof_l = g_mof / density_mof_g_per_l  # L
-    v_reactor_theoretical = 1.2 * v_mof_l  # Original formula
-    
-    # For lab-scale synthesis, use a more realistic reactor volume
-    # Based on analysis of expected values, V_Reactor should be proportional to liquid volume
-    # with a scaling factor that gives reasonable reactor sizes
+    # Calculate liquid volume for debugging
     v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     
-    # Empirical scaling factor derived from expected Qheat values
-    # Use Case 1: 2.05 mL liquid → need ~571 mL reactor for correct Qheat
-    # Use Case 2: 2.65 mL liquid → need ~301 mL reactor for correct Qheat
-    # Adjusted scaling factor to better match expected Qheat
-    reactor_scale_factor = 150.0  # Reduced from 200 to get closer to expected Qheat
-    v_reactor_l = v_liquid_l * reactor_scale_factor
-    
-    # Ensure reasonable bounds for lab-scale reactors
-    if v_reactor_l < 0.1:  # minimum 100 mL
-        v_reactor_l = 0.1
-    elif v_reactor_l > 2.0:  # maximum 2 L for typical lab setup
-        v_reactor_l = 2.0
-    
     # Formula EXACT dari notebook
-    qheat_j_per_l_reactor = e_sens_total / (heat_eff * v_reactor_l)
-    qheat_mj_1000l = qheat_j_per_l_reactor * 1000.0 / 1_000_000.0
+    # Qheat_MJ_1000L = (E_sens / (heat_eff * V_Reactor)) * 1000 / 1e6
+    if v_reactor_l > 0 and e_sens_total > 0:
+        qheat_j_per_l_reactor = e_sens_total / (heat_eff * v_reactor_l)
+        qheat_mj_1000l = qheat_j_per_l_reactor * 1000.0 / 1_000_000.0
+    else:
+        qheat_j_per_l_reactor = 0.0
+        qheat_mj_1000l = 0.0
     
     # --- Qloss (MJ) ---
     # old_model: Qloss = U*A × ΔT × t / (heat_eff × 1e6)
@@ -395,16 +496,20 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     # Density_Tot = m_total(g) / V_liquid(L)
     v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     m_liquid_g = m_solv_g + m_add_g + m_mod_g
-    m_solid_g = (metal_mass_mg + linker_mass_mg) / 1000.0
+    m_solid_g = ((metal_mass_mg if metal_mass_mg > 0 else 0.0) + 
+                 (linker_mass_mg if linker_mass_mg > 0 else 0.0)) / 1000.0
     m_total_g = m_liquid_g + m_solid_g
     
     if v_liquid_l > 0:
         density_total = m_total_g / v_liquid_l  # g/L
     else:
-        density_total = 1000.0  # default water density
+        density_total = 0.0  # Tidak ada liquid
     
     stirr_coeff = 0.0162
-    e_stirr_mj = (stirr_coeff * density_total * reaction_time_h * 3600) / 1_000_000.0
+    if density_total > 0 and reaction_time_h > 0:
+        e_stirr_mj = (stirr_coeff * density_total * reaction_time_h * 3600) / 1_000_000.0
+    else:
+        e_stirr_mj = 0.0
     
     e_total_mj = qheat_mj_1000l + q_loss_mj + e_stirr_mj
     
@@ -427,8 +532,6 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
             "density_mof_g_per_l": round(density_mof_g_per_l, 2),
             "g_mof": round(g_mof, 6),
             "v_mof_l": round(v_mof_l, 6),
-            "v_reactor_theoretical": round(v_reactor_theoretical, 6),
-            "reactor_scale_factor": reactor_scale_factor,
             "v_liquid_l": round(v_liquid_l, 6),
             "m_total_g": round(m_total_g, 4),
             "density_total": round(density_total, 2),
@@ -444,8 +547,7 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
             "mod_props": (round(rho_mod, 4), round(cp_mod_mol_k, 2), round(mr_mod, 4)),
             "metal_props": (round(cp_metal_mol_k, 2), round(mr_metal, 4)),
             "modulator_concentration": modulator_concentration,
-            "concentration_factor": round(concentration_factor, 4),
-            "energy_scale_factor": energy_scale_factor
+            "concentration_factor": round(concentration_factor, 4)
         }
     }
 
@@ -467,7 +569,7 @@ def calculate_storage_cost(mof_cost_usd_per_kg: float, gravimetric_wc: float) ->
     
     return round(storage_cost, 2)
 
-def run_economic_analysis(metal_name: str, linker_name: str,
+def run_economic_analysis(metal_name: str, linker_smiles: str,
                            reaction_time: float, temperature: float,
                            smiles: str, gravimetric_wc: float = 5.5,
                            volumetric_wc: float = 40.0,
@@ -477,10 +579,14 @@ def run_economic_analysis(metal_name: str, linker_name: str,
                            solvent_name: str = "-", solvent_volume_ml: float = 0.0,
                            additive_name: str = "-", additive_volume_ml: float = 0.0,
                            modulator_name: str = "-", modulator_volume_ml: float = 0.0,
-                           modulator_concentration: float = 100.0,
+                           modulator_concentration: float = None,
                            energy_scale_factor: float = 1.0) -> dict:
     """
     Analisis ekonomi MOF dengan perhitungan energi yang diperbaiki.
+    
+    INPUT UTAMA: 
+    - linker_smiles: SMILES string untuk lookup linker name dan price
+    - smiles: SMILES untuk perhitungan Cp (bisa sama dengan linker_smiles)
     
     Perbaikan utama pada perhitungan Qheat:
     - Memastikan parameter gravimetric_wc dan volumetric_wc yang tepat digunakan
@@ -505,7 +611,8 @@ def run_economic_analysis(metal_name: str, linker_name: str,
         modulator_volume_ml = 0.1  # Default 0.1 mL jika ada modulator name
     
     # Kalkulasi dinamis memasukkan parameter dari frontend
-    cost_result = calculate_mof_cost(metal_name, linker_name, 
+    # PERHATIAN: Sekarang menggunakan linker_smiles bukan linker_name
+    cost_result = calculate_mof_cost(metal_name, linker_smiles, 
                                      metal_mass_mg=metal_mass_mg,
                                      linker_mass_mg=linker_mass_mg,
                                      product_mass_mg=product_mass_mg,

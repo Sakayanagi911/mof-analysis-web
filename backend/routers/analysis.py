@@ -69,15 +69,10 @@ def get_modulator_concentration(modulator_name: str, volume_ml: float) -> float:
 
 def get_energy_scale_factor(solvent_vol: float, additive_vol: float, modulator_vol: float) -> float:
     """
-    Menentukan energy scale factor berdasarkan kondisi sintesis.
-    Berdasarkan analisis dari use cases.
+    TIDAK DIGUNAKAN LAGI - Perhitungan murni matematis tanpa scale factor.
+    Fungsi ini di-keep untuk backward compatibility tapi selalu return 1.0
     """
-    total_liquid = solvent_vol + additive_vol + modulator_vol
-    
-    # Jika ada additive (seperti EtOH), gunakan scale factor 0.5
-    # Ini berdasarkan pola dari Use Case 2
-    if additive_vol > 0:
-        return 0.5
+    return 1.0
     
     # Jika hanya solvent dan modulator, gunakan scale factor 1.0
     return 1.0
@@ -135,7 +130,7 @@ async def analyze_mof(
     wuv = calculate_wuv(density=f_density, GSA=f_gsa, VSA=f_vsa, VF=valid_vf, PV=f_pv, LCD=f_lcd, PLD=f_pld)
     
     econ_result = run_economic_analysis(
-        metal_name=metal_name, linker_name=linker_name, reaction_time=f_reaction_time,
+        metal_name=metal_name, linker_smiles=smiles, reaction_time=f_reaction_time,
         temperature=f_temperature, smiles=smiles, gravimetric_wc=wug,
         volumetric_wc=wuv,
         product_mass_mg=f_product_mass, metal_mass_mg=f_metal_mass, linker_mass_mg=f_linker_mass,
@@ -227,7 +222,7 @@ async def analyze_economic(request: EconomicRequest):
     try:
         result = run_economic_analysis(
             metal_name=request.metal_name,
-            linker_name=request.linker_name,
+            linker_smiles=request.smiles,  # Changed: use smiles as linker identifier
             reaction_time=request.reaction_time,
             temperature=request.temperature,
             smiles=request.smiles,
