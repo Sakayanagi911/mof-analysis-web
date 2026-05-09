@@ -131,8 +131,9 @@ async def analyze_mof(
     
     econ_result = run_economic_analysis(
         metal_name=metal_name, linker_smiles=smiles, reaction_time=f_reaction_time,
-        temperature=f_temperature, smiles=smiles, gravimetric_wc=wug,
-        volumetric_wc=wuv,
+        temperature=f_temperature, smiles=smiles, 
+        # REMOVED: gravimetric_wc=wug, volumetric_wc=wuv
+        # Sekarang akan auto-lookup dari database berdasarkan SMILES
         product_mass_mg=f_product_mass, metal_mass_mg=f_metal_mass, linker_mass_mg=f_linker_mass,
         solvent_name=solvent_name, solvent_volume_ml=f_solvent_vol,
         additive_name=additive_name, additive_volume_ml=f_additive_vol,
@@ -226,7 +227,8 @@ async def analyze_economic(request: EconomicRequest):
             reaction_time=request.reaction_time,
             temperature=request.temperature,
             smiles=request.smiles,
-            gravimetric_wc=request.gravimetric_wc,
+            # REMOVED: gravimetric_wc=request.gravimetric_wc,
+            # Sekarang akan auto-lookup dari database berdasarkan SMILES
             product_mass_mg=request.product_mass_mg,
             metal_mass_mg=request.metal_mass_mg,
             linker_mass_mg=request.linker_mass_mg,

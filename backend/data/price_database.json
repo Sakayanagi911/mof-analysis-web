@@ -739,5 +739,243 @@
         "source": "Linker2"
       }
     }
+  },
+  "uptake_data": {
+    "COC1=C(C=C(C(=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)OC)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 13.11058288799047,
+      "volumetric_wc_g_per_l": 43.38234841827894
+    },
+    "C(C)OC1=C(C2=CC=C(C=C2C(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=C(C=C(C2=CC(=CC=C12)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)OCC": {
+      "gravimetric_wc_percent": 12.87431270396972,
+      "volumetric_wc_g_per_l": 44.71588723721798
+    },
+    "C(=O)(O)C=1C=C2C=CC(=CC2=CC1)N(C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC=C(C=C1)N(C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C1=CC2=CC=C(C=C2C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 12.62908454935056,
+      "volumetric_wc_g_per_l": 44.99062125343894
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C1=CC(=CC(=C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 11.69856969747597,
+      "volumetric_wc_g_per_l": 45.06426965000827
+    },
+    "C1(=CC(=CC(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O": {
+      "gravimetric_wc_percent": 11.65375692030813,
+      "volumetric_wc_g_per_l": 44.89562992383903
+    },
+    "C(C)C1(C2=CC(=CC=C2C=2C1=C1C(=C3C=4C=CC(=CC4C(C23)(CC)CC)C2=CC=C(C(=O)O)C=C2)C(C2=CC(=CC=C21)C2=CC=C(C(=O)O)C=C2)(CC)CC)C2=CC=C(C(=O)O)C=C2)CC": {
+      "gravimetric_wc_percent": 11.62626536931227,
+      "volumetric_wc_g_per_l": 44.34384933186121
+    },
+    "C(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)(C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1)C1=CC=C(C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 10.80211452396683,
+      "volumetric_wc_g_per_l": 46.29332726391033
+    },
+    "N=1NN=NC1C1=CC=C(C(=O)NC=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 10.6830848589702,
+      "volumetric_wc_g_per_l": 44.76619113446135
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C#CC#CC1=CC(=CC(=C1)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O)C#CC#CC1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 9.916271480627143,
+      "volumetric_wc_g_per_l": 45.20066360018748
+    },
+    "P(=O)(O)(O)O": {
+      "gravimetric_wc_percent": 9.4914340662649,
+      "volumetric_wc_g_per_l": 47.70008816802653
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC=C(C=C1)[C]1CC(=CC(=C1)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C1=CC=C(C=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 9.696616103091625,
+      "volumetric_wc_g_per_l": 46.24097466997508
+    },
+    "N1=CC(=CC=C1)C(=O)NCCNC(=O)C=1C=NC=CC1": {
+      "gravimetric_wc_percent": 8.691348427320422,
+      "volumetric_wc_g_per_l": 49.55082424222415
+    },
+    "C1(=CC(=CC(=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 5.827390811905584,
+      "volumetric_wc_g_per_l": 44.6770854514935
+    },
+    "N1N=NN=C1C1=CC=C(C=C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 9.475823051680727,
+      "volumetric_wc_g_per_l": 45.83687829041394
+    },
+    "C(=O)(O)C1=CC=C(OCC(COC2=CC=C(C(=O)O)C=C2)(COC2=CC=C(C=C2)C(=O)O)COC2=CC=C(C=C2)C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 7.833395379797174,
+      "volumetric_wc_g_per_l": 50.27472742640251
+    },
+    "C1(=CC(=CC(=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 8.614427569925091,
+      "volumetric_wc_g_per_l": 45.71067008080361
+    },
+    "C1(=CC=C(C=C1)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 8.320969190298765,
+      "volumetric_wc_g_per_l": 47.54634576292231
+    },
+    "C1(=CC(=CC(=C1)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O": {
+      "gravimetric_wc_percent": 8.172351846266634,
+      "volumetric_wc_g_per_l": 44.61540403344649
+    },
+    "C1=C(C=CC=2C3=CC=C(C=C3NC12)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.573892225782998,
+      "volumetric_wc_g_per_l": 43.36858530885952
+    },
+    "N1(C=NC=C1)C1=CC=C(C=C1)C=1N=CNC1": {
+      "gravimetric_wc_percent": 6.802441702188384,
+      "volumetric_wc_g_per_l": 47.74101756031656
+    },
+    "C1(=CC(=CC(=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 7.926138945274017,
+      "volumetric_wc_g_per_l": 44.8331946010928
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 7.630764576296212,
+      "volumetric_wc_g_per_l": 47.31926152421928
+    },
+    "C(=O)(O)C=CC=1C=C(C(=O)O)C=C(C1)C=CC(=O)O": {
+      "gravimetric_wc_percent": 7.93630831828399,
+      "volumetric_wc_g_per_l": 46.54822088490805
+    },
+    "O=C(Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O)c1cc(cnc1)C(=O)Nc1cc2ccc(cc2cc1)C(=O)Nc1cc(cc(c1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 7.745536607123692,
+      "volumetric_wc_g_per_l": 44.76812478491902
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC2=CC3=CC(=CC3=CC2=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.30603168693674,
+      "volumetric_wc_g_per_l": 47.53710740640179
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)N1N=NC(=C1)C1=CC(=CC(=C1)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C=1N=NN(C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 7.4161115785974,
+      "volumetric_wc_g_per_l": 47.41211790947946
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C(C1=CC=C(C=C1)C(=O)O)(C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.251313779685912,
+      "volumetric_wc_g_per_l": 47.15320204507837
+    },
+    "C1(=CC(=CC(=C1)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O)N(C(N)=O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.209665621448194,
+      "volumetric_wc_g_per_l": 46.28634597145506
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 6.611986223715673,
+      "volumetric_wc_g_per_l": 47.83596092853458
+    },
+    "C(#CC#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.198985651238814,
+      "volumetric_wc_g_per_l": 46.79065514390102
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C=1C=NC=C(C1)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.275655632659123,
+      "volumetric_wc_g_per_l": 48.03514516261148
+    },
+    "N1(C=NC=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 7.094264740712545,
+      "volumetric_wc_g_per_l": 46.80576685019678
+    },
+    "C1(=CC(=CC(=C1)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 6.775700785599558,
+      "volumetric_wc_g_per_l": 46.22162585415945
+    },
+    "N1=CC(=CC=C1)NC(CN1N=NN=C1)=O": {
+      "gravimetric_wc_percent": 6.683478397473941,
+      "volumetric_wc_g_per_l": 46.13739812486775
+    },
+    "C1(=CC=C(C=C1)CN1N=CN=C1)CN1N=CN=C1": {
+      "gravimetric_wc_percent": 6.716191461523688,
+      "volumetric_wc_g_per_l": 45.64692689776886
+    },
+    "C1(=CC=C(C=C1)C(=O)O)C1=CC(=CC(=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 6.990782683018783,
+      "volumetric_wc_g_per_l": 45.37429941762437
+    },
+    "N1(N=NC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 6.140383894041448,
+      "volumetric_wc_g_per_l": 46.24987850388225
+    },
+    "N1=CC=C(C=C1)C1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 6.543250857934225,
+      "volumetric_wc_g_per_l": 45.15117784853001
+    },
+    "C1(=CC=C(C=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.509272471517235,
+      "volumetric_wc_g_per_l": 43.44209372310777
+    },
+    "O=S1(C2=C(C3=C1C=C(C=C3)C(=O)O)C=CC(=C2)C(=O)O)=O": {
+      "gravimetric_wc_percent": 6.85570267742317,
+      "volumetric_wc_g_per_l": 45.43148685422139
+    },
+    "O1C(=CC=C1C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.869549571603667,
+      "volumetric_wc_g_per_l": 46.61531864118831
+    },
+    "C1=C(C=CC2=CC3=CC(=CC=C3C=C12)C=1C=C(C=C(C1)C(=O)O)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 6.071517885316966,
+      "volumetric_wc_g_per_l": 47.12696634267385
+    },
+    "N=1SN=C2C1C(=CC=C2C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=2C=C(C=C(C2)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 6.041139509400775,
+      "volumetric_wc_g_per_l": 46.5897069412898
+    },
+    "COC1=C(C(=CC(=C1)C(=O)O)OC)C1=C(C=C(C=C1OC)C(=O)O)OC": {
+      "gravimetric_wc_percent": 6.201153362540385,
+      "volumetric_wc_g_per_l": 44.56581825219227
+    },
+    "O=C(C(=O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O)NC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 6.001982455381277,
+      "volumetric_wc_g_per_l": 46.22745843424443
+    },
+    "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.996913544410615,
+      "volumetric_wc_g_per_l": 46.18931423537261
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC=C(N(C2=CC=C(C=C2)C2=CC(=CC(=C2)C(=O)O)C(=O)O)C2=CC=C(C=C2)C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 6.003322908478,
+      "volumetric_wc_g_per_l": 45.99795939876766
+    },
+    "S1C(=CC=C1C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.963972428789543,
+      "volumetric_wc_g_per_l": 47.07991273790696
+    },
+    "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 5.944294664709506,
+      "volumetric_wc_g_per_l": 44.73870349023665
+    },
+    "C(=O)(O)C1=CC=C(C=C1)N=NC1=CC=C(C(=O)O)C=C1": {
+      "gravimetric_wc_percent": 6.050426193091778,
+      "volumetric_wc_g_per_l": 43.40501880741835
+    },
+    "O=C1C2=CC(=CC=C2C=2C=CC(=CC12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.7672723575303,
+      "volumetric_wc_g_per_l": 45.59734945820557
+    },
+    "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=NC=C(C=N1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.677832115531539,
+      "volumetric_wc_g_per_l": 46.06284416840138
+    },
+    "N1=C(C=CC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.727069911307651,
+      "volumetric_wc_g_per_l": 44.72575167185061
+    },
+    "C1(=CC=CC2=C(C=CC=C12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.705783255283786,
+      "volumetric_wc_g_per_l": 45.68961386531013
+    },
+    "C1(=CC(=CC=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.763748818593679,
+      "volumetric_wc_g_per_l": 44.91815785929955
+    },
+    "C(=O)O": {
+      "gravimetric_wc_percent": 5.700640969644803,
+      "volumetric_wc_g_per_l": 45.68958331172914
+    },
+    "C(=O)(O)C=1C=C(COC=2C=C(C=C(C(=O)O)C2)C(=O)O)C=C(C1)C(=O)O": {
+      "gravimetric_wc_percent": 5.529427705640795,
+      "volumetric_wc_g_per_l": 45.80924896892805
+    },
+    "N(=O)(O)C1=C(C(=CC(=C1)C(=O)O)N(=O)O)C1=C(C=C(C=C1N(=O)O)C(=O)O)N(=O)O": {
+      "gravimetric_wc_percent": 5.82972810064561,
+      "volumetric_wc_g_per_l": 45.3676337187573
+    },
+    "CC1=C(C=C(C(=C1)C1=C(C=C(C(=C1)C)C1=C(C=C(C(=C1)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C)C)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
+      "gravimetric_wc_percent": 5.552227741465775,
+      "volumetric_wc_g_per_l": 43.32988756320425
+    }
   }
 }

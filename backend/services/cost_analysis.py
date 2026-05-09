@@ -25,6 +25,13 @@ def get_smiles_mapping():
     db = load_price_database()
     return db.get("smiles_mapping", {}).get("mapping", {})
 
+def get_uptake_data():
+    """
+    Get SMILES to Uptake data mapping dari price_database.json
+    """
+    db = load_price_database()
+    return db.get("uptake_data", {})
+
 def calculate_mof_cost(metal_name: str, linker_smiles: str,
                         metal_mass_mg: float = 100.0,
                         linker_mass_mg: float = 50.0,
@@ -186,30 +193,30 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
     mof_cost_usd_per_kg = mof_cost_eur_per_kg * eur_to_usd
 
     return {
-        "mof_cost_usd_per_kg": round(mof_cost_usd_per_kg, 4),
-        "mof_cost_eur_per_kg": round(mof_cost_eur_per_kg, 4),
+        "mof_cost_usd_per_kg": mof_cost_usd_per_kg,  # No rounding in backend
+        "mof_cost_eur_per_kg": mof_cost_eur_per_kg,  # No rounding in backend
         "linker_name": linker_name,  # Return linker name yang di-lookup dari SMILES
         # Debug info
         "raw_costs": {
-            "metal_eur": round(metal_cost_eur, 6),
-            "linker_eur": round(linker_cost_eur, 6),
-            "solvent_eur": round(solvent_cost_eur, 6),
-            "additive_eur": round(additive_cost_eur, 6),
-            "modulator_eur": round(modulator_cost_eur, 6)
+            "metal_eur": metal_cost_eur,  # No rounding
+            "linker_eur": linker_cost_eur,  # No rounding
+            "solvent_eur": solvent_cost_eur,  # No rounding
+            "additive_eur": additive_cost_eur,  # No rounding
+            "modulator_eur": modulator_cost_eur  # No rounding
         },
         "scale_factors": {
-            "general": round(scale_factor, 8),
-            "linker": round(scale_factor_linker, 8)
+            "general": scale_factor,  # No rounding
+            "linker": scale_factor_linker  # No rounding
         },
         "scaled_costs": {
-            "metal_eur": round(metal_cost_scaled, 6),
-            "linker_eur": round(linker_cost_scaled, 6),
-            "solvent_eur": round(solvent_cost_scaled, 6),
-            "additive_eur": round(additive_cost_scaled, 6),
-            "modulator_eur": round(modulator_cost_scaled, 6)
+            "metal_eur": metal_cost_scaled,  # No rounding
+            "linker_eur": linker_cost_scaled,  # No rounding
+            "solvent_eur": solvent_cost_scaled,  # No rounding
+            "additive_eur": additive_cost_scaled,  # No rounding
+            "modulator_eur": modulator_cost_scaled  # No rounding
         },
-        "total_scaled_eur": round(total_scaled_cost_eur, 6),
-        "product_kg": round(product_kg, 8)
+        "total_scaled_eur": total_scaled_cost_eur,  # No rounding
+        "product_kg": product_kg  # No rounding
     }
 
 # =====================================================================
@@ -529,10 +536,10 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         "e_sensible_metal_j": round(e_metal, 2),
         "e_sensible_linker_j": round(e_linker, 2),
         "e_sensible_total_j": round(e_sens_total, 2),
-        "q_energy_mj": round(qheat_mj_1000l, 5),
-        "e_total_mj": round(e_total_mj, 5),
-        "q_loss_mj": round(q_loss_mj, 5),
-        "e_stirr_mj": round(e_stirr_mj, 5),
+        "q_energy_mj": qheat_mj_1000l,  # No rounding in backend
+        "e_total_mj": e_total_mj,       # No rounding in backend
+        "q_loss_mj": q_loss_mj,        # No rounding in backend
+        "e_stirr_mj": e_stirr_mj,      # No rounding in backend
         "v_reactor_l": round(v_reactor_l, 6),  # untuk debugging
         # Debug info tambahan
         "debug_info": {
@@ -574,12 +581,12 @@ def calculate_storage_cost(mof_cost_usd_per_kg: float, gravimetric_wc: float) ->
     if storage_cost > max_storage_cost:
         storage_cost = max_storage_cost
     
-    return round(storage_cost, 2)
+    return storage_cost  # No rounding in backend
 
 def run_economic_analysis(metal_name: str, linker_smiles: str,
                            reaction_time: float, temperature: float,
-                           smiles: str, gravimetric_wc: float = 5.5,
-                           volumetric_wc: float = 40.0,
+                           smiles: str, gravimetric_wc: float = None,  # Changed to None
+                           volumetric_wc: float = None,  # Changed to None
                            product_mass_mg: float = 50.0,
                            metal_mass_mg: float = 100.0,
                            linker_mass_mg: float = 50.0,
@@ -595,12 +602,38 @@ def run_economic_analysis(metal_name: str, linker_smiles: str,
     - linker_smiles: SMILES string untuk lookup linker name dan price
     - smiles: SMILES untuk perhitungan Cp (bisa sama dengan linker_smiles)
     
+    UPTAKE DATA:
+    - gravimetric_wc dan volumetric_wc sekarang diambil dari database berdasarkan SMILES
+    - Jika tidak ditemukan di database, gunakan default values
+    
     Perbaikan utama pada perhitungan Qheat:
     - Memastikan parameter gravimetric_wc dan volumetric_wc yang tepat digunakan
     - Perhitungan V_Reactor yang akurat sesuai model asli
     - Formula Qheat = Total_Sensible / (heat_eff * V_Reactor) yang konsisten
     - Handling parameter zero dari frontend dengan nilai default yang masuk akal
     """
+    
+    # ===== LOOKUP UPTAKE DATA FROM DATABASE =====
+    uptake_data = get_uptake_data()
+    
+    # Normalize SMILES for lookup
+    smiles_normalized = smiles.strip() if smiles else ""
+    
+    # Try to get uptake data from database
+    if smiles_normalized in uptake_data:
+        uptake_info = uptake_data[smiles_normalized]
+        if gravimetric_wc is None:
+            gravimetric_wc = uptake_info.get("gravimetric_wc_percent", 5.5)
+        if volumetric_wc is None:
+            volumetric_wc = uptake_info.get("volumetric_wc_g_per_l", 40.0)
+        print(f"✅ Found uptake data for SMILES: Grav={gravimetric_wc}%, Vol={volumetric_wc} g/L")
+    else:
+        # Use default values if not found in database
+        if gravimetric_wc is None:
+            gravimetric_wc = 5.5  # Default 5.5%
+        if volumetric_wc is None:
+            volumetric_wc = 40.0  # Default 40 g/L
+        print(f"⚠️ SMILES not found in uptake database, using defaults: Grav={gravimetric_wc}%, Vol={volumetric_wc} g/L")
     
     # ===== HANDLING PARAMETER ZERO DARI FRONTEND =====
     # Jika frontend mengirim parameter 0, gunakan nilai default yang masuk akal

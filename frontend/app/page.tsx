@@ -135,8 +135,8 @@ export default function MOFScreening() {
     // PERBAIKAN: Gunakan hasil dari backend, bukan perhitungan lokal
     if (results && results.mof_cost && results.storage_cost) {
       return {
-        mof_cost: results.mof_cost.toFixed(2),
-        storage_cost: results.storage_cost.toFixed(2)
+        mof_cost: results.mof_cost.toFixed(3),  // 3 decimal places
+        storage_cost: results.storage_cost.toFixed(3)  // 3 decimal places
       };
     }
 
@@ -168,8 +168,8 @@ export default function MOFScreening() {
     if (gravH2 > 0) storageCost = mofCost / (gravH2 / 100);
 
     return {
-      mof_cost: mofCost.toFixed(2),
-      storage_cost: storageCost.toFixed(2)
+      mof_cost: mofCost.toFixed(3),  // 3 decimal places
+      storage_cost: storageCost.toFixed(3)  // 3 decimal places
     };
   }, [formData, price_db, results]);
 
@@ -575,7 +575,7 @@ export default function MOFScreening() {
                             <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_modulator || "0.00"}</td>
                             <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_metal || "0.00"}</td>
                             <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_linker || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono font-bold text-indigo-600">{results.e_sensible_total || "0.00"}</td>
+                            <td className="px-4 py-4 font-mono font-bold text-indigo-600">{results.e_sensible_total ? Number(results.e_sensible_total).toFixed(2) : "0.00"}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -583,11 +583,11 @@ export default function MOFScreening() {
                   </div>
 
                   {/* Energy Metric Boxes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
-                    <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy || "0.00"} unit="MJ" />
-                    <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss || "0.00"} unit="MJ" />
-                    <EconMiniCard icon={<Activity className="w-4 h-4 text-blue-500" />} label="E Stirr" val={results.e_stirr || "0.00"} unit="MJ" />
-                    <EconMiniCard icon={<Zap className="w-4 h-4 text-emerald-500" />} label="E Tot" val={results.e_tot || "0.00"} unit="MJ" />
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
+                    <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy ? Number(results.q_energy).toFixed(5) : "0.00000"} unit="MJ" />
+                    <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss ? Number(results.q_loss).toFixed(5) : "0.00000"} unit="MJ" />
+                    <EconMiniCard icon={<Activity className="w-4 h-4 text-blue-500" />} label="E Stirr" val={results.e_stirr ? Number(results.e_stirr).toFixed(5) : "0.00000"} unit="MJ" />
+                    <EconMiniCard icon={<Zap className="w-4 h-4 text-emerald-500" />} label="E Tot" val={results.e_tot ? Number(results.e_tot).toFixed(5) : "0.00000"} unit="MJ" />
                   </div>
                 </div>
 
@@ -689,14 +689,19 @@ function ResultBox({ icon, label, val, unit, target, targetSign = "≤", ok }: a
 
 function EconMiniCard({ icon, label, val, unit }: any) {
   return (
-    <div className="bg-white/80 backdrop-blur-xl p-5 md:p-6 rounded-[20px] border border-zinc-200/60 text-center space-y-2 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md">
+    <div className="bg-white/80 backdrop-blur-xl p-4 md:p-5 rounded-[20px] border border-zinc-200/60 text-center space-y-3 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md">
       <div className="flex items-center justify-center gap-2">
         {icon}
-        <span className="text-[11px] font-semibold text-zinc-500 tracking-wide">{label}</span>
+        <span className="text-[10px] md:text-[11px] font-semibold text-zinc-500 tracking-wide">{label}</span>
       </div>
-      <p className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-800">
-        {val} <span className="ml-1 text-[12px] font-medium text-zinc-400">{unit}</span>
-      </p>
+      <div className="space-y-1">
+        <p className="text-lg md:text-xl font-bold tracking-tight text-zinc-800 font-mono">
+          {val}
+        </p>
+        <p className="text-[10px] md:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">
+          {unit}
+        </p>
+      </div>
     </div>
   );
 }
