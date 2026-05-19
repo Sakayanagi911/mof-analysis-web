@@ -243,3 +243,88 @@ async def test_temp_file_cleaned_up_on_parse_error(client, invalid_cif_content):
     assert not any("error_test" in f for f in new_files), (
         f"File temporary tidak dihapus setelah parse error: {new_files}"
     )
+
+
+def test_kabsch_rmsd_calculation():
+    """
+    Test that the Kabsch algorithm correctly calculates RMSD for rotated/translated geometries.
+    """
+    from services.structure_parser import calculate_rmsd
+
+    # Define a simple molecule (a triangle)
+    pos1 = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0]
+    ]
+
+    # Translate pos1
+    pos2 = [
+        [p[0] + 5.0, p[1] - 3.0, p[2] + 2.0] for p in pos1
+    ]
+    
+    # Translation only -> RMSD should be 0.0 because Kabsch aligns them
+    rmsd = calculate_rmsd(pos1, pos2)
+    assert rmsd == 0.0
+
+    # Rotate pos1 by 90 degrees around Z axis (x, y, z) -> (-y, x, z)
+    pos3 = [
+        [-p[1], p[0], p[2]] for p in pos1
+    ]
+    
+    # Rotation only -> RMSD should be 0.0 because Kabsch optimally rotates
+    rmsd_rot = calculate_rmsd(pos1, pos3)
+    assert rmsd_rot == 0.0
+
+    # Add some distortion (stretch one side)
+    pos4 = [
+        [0.0, 0.0, 0.0],
+        [1.1, 0.0, 0.0],  # stretched by 0.1
+        [0.0, 1.0, 0.0]
+    ]
+    rmsd_distorted = calculate_rmsd(pos1, pos4)
+    assert rmsd_distorted > 0.0
+
+
+@pytest.mark.asyncio
+async def test_structure_analysis_with_xtb_and_kabsch_rmsd(client, sample_cif_content):
+    """
+    Test the endpoint when xTB is available and successful.
+    Verifies that delta_e is calculated correctly and Kabsch RMSD processes the geometry.
+    """
+    with patch("routers.structure.XTB_AVAILABLE", True), \
+         patch("routers.structure.run_xtb_single_point") as mock_sp, \
+         patch("routers.structure.run_xtb_optimization") as mock_opt:
+        
+        mock_sp.return_value = {
+            "success": True,
+            "energy_kj_mol": -100.0
+        }
+        
+        def mock_opt_side_effect(xyz_content):
+            # Parse the length from xyz content to match the array size precisely
+            lines = xyz_content.strip().splitlines()
+            n_atoms = int(lines[0])
+            
+            # Create dummy distorted positions
+            dummy_pos = [[float(i) * 1.1, 0.0, 0.0] for i in range(n_atoms)]
+            return {
+                "success": True,
+                "energy_kj_mol": -150.0,
+                "optimized_positions": dummy_pos
+            }
+            
+        mock_opt.side_effect = mock_opt_side_effect
+        
+        files = {"file": ("test.cif", sample_cif_content, "application/octet-stream")}
+        response = await client.post("/api/structure", files=files)
+
+    assert response.status_code == 200
+    data = response.json()
+    
+    # delta_e = sp - opt = -100 - (-150) = 50.0
+    assert data["delta_e"] == pytest.approx(50.0)
+    
+    # RMSD should be calculated and > 0 because of the dummy distorted positions
+    assert data["rmsd"] > 0.0
+    assert data["xtb_available"] is True

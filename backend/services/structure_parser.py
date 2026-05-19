@@ -305,9 +305,8 @@ def separate_sbu_and_linker(atoms: list, positions: list) -> dict:
 
 def calculate_rmsd(positions_1: list, positions_2: list) -> float:
     """
-    Hitung RMSD antara dua set posisi atom.
-
-    RMSD = sqrt( (1/N) × Σ |r_i - r_i'|² )
+    Hitung RMSD antara dua set posisi atom menggunakan Kabsch algorithm
+    (optimal rotation alignment).
 
     Args:
         positions_1: Posisi atom set 1 [[x,y,z], ...]
@@ -316,6 +315,8 @@ def calculate_rmsd(positions_1: list, positions_2: list) -> float:
     Returns:
         float: RMSD dalam Ångström
     """
+    import numpy as np
+    
     if len(positions_1) != len(positions_2):
         raise ValueError("Jumlah atom tidak sama untuk RMSD calculation")
 
@@ -323,23 +324,34 @@ def calculate_rmsd(positions_1: list, positions_2: list) -> float:
     if n == 0:
         return 0.0
 
-    # Centroid alignment
-    cx1 = sum(p[0] for p in positions_1) / n
-    cy1 = sum(p[1] for p in positions_1) / n
-    cz1 = sum(p[2] for p in positions_1) / n
+    P = np.array(positions_1)
+    Q = np.array(positions_2)
 
-    cx2 = sum(p[0] for p in positions_2) / n
-    cy2 = sum(p[1] for p in positions_2) / n
-    cz2 = sum(p[2] for p in positions_2) / n
+    # Center the structures
+    P_centered = P - P.mean(axis=0)
+    Q_centered = Q - Q.mean(axis=0)
 
-    sum_sq = 0.0
-    for p1, p2 in zip(positions_1, positions_2):
-        dx = (p1[0] - cx1) - (p2[0] - cx2)
-        dy = (p1[1] - cy1) - (p2[1] - cy2)
-        dz = (p1[2] - cz1) - (p2[2] - cz2)
-        sum_sq += dx * dx + dy * dy + dz * dz
+    # Covariance matrix
+    C = np.dot(P_centered.T, Q_centered)
 
-    return round(math.sqrt(sum_sq / n), 4)
+    # SVD
+    U, S, Vt = np.linalg.svd(C)
+    
+    # Rotation matrix
+    R = np.dot(U, Vt)
+    
+    # Handle reflection
+    if np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = np.dot(U, Vt)
+
+    # Rotate P
+    P_rot = np.dot(P_centered, R)
+
+    # Calculate RMSD
+    rmsd = np.sqrt(np.mean(np.sum((P_rot - Q_centered)**2, axis=1)))
+    
+    return round(float(rmsd), 4)
 
 
 def calculate_stability_score(delta_e: float, rmsd: float) -> dict:
