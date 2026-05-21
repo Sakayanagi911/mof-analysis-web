@@ -415,3 +415,54 @@ def prepare_3d_structure_data(atoms: list, positions: list) -> dict:
         "atoms": atom_data,
         "n_atoms": len(atom_data)
     }
+
+
+def smiles_to_xyz(smiles: str) -> str:
+    """
+    Konversi SMILES string ke format XYZ untuk xTB calculation.
+    
+    Menggunakan RDKit untuk generate 3D coordinates dari SMILES.
+    
+    Args:
+        smiles: SMILES string
+        
+    Returns:
+        str: Konten file XYZ atau empty string jika gagal
+    """
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import AllChem
+        
+        # Parse SMILES
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return ""
+        
+        # Add hydrogens
+        mol = Chem.AddHs(mol)
+        
+        # Generate 3D coordinates
+        AllChem.EmbedMolecule(mol, randomSeed=42)
+        AllChem.MMFFOptimizeMolecule(mol)
+        
+        # Get conformer
+        conf = mol.GetConformer()
+        
+        # Build XYZ content
+        n_atoms = mol.GetNumAtoms()
+        lines = [str(n_atoms), f"Generated from SMILES: {smiles}"]
+        
+        for i in range(n_atoms):
+            atom = mol.GetAtomWithIdx(i)
+            pos = conf.GetAtomPosition(i)
+            symbol = atom.GetSymbol()
+            lines.append(f"{symbol}  {pos.x:.6f}  {pos.y:.6f}  {pos.z:.6f}")
+        
+        return "\n".join(lines) + "\n"
+        
+    except ImportError:
+        # RDKit not available
+        return ""
+    except Exception as e:
+        # Any other error
+        return ""

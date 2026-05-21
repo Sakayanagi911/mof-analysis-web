@@ -164,144 +164,85 @@
   },
   "solvents": {
     "DEA": {
-      "price_eur_per_ml": 0.0020756850445691646,
-      "cas": "91-66-7",
-      "code": "0"
+      "price_eur_per_ml": 0.0020756850445691646
     },
     "DMA": {
-      "price_eur_per_ml": 0.001961014276582143,
-      "cas": "127-19-5",
-      "code": "1"
+      "price_eur_per_ml": 0.001961014276582143
     },
     "DMAc": {
-      "price_eur_per_ml": 0.001961014276582143,
-      "cas": "127-19-5",
-      "code": "2"
+      "price_eur_per_ml": 0.001961014276582143
     },
     "DMF": {
-      "price_eur_per_ml": 0.0006536714255273811,
-      "cas": "68-12-2",
-      "code": "3"
+      "price_eur_per_ml": 0.0006536714255273811
     },
     "DEF": {
-      "price_eur_per_ml": 0.00039147777647560196,
-      "cas": "68-84-2",
-      "code": "4"
+      "price_eur_per_ml": 0.00039147777647560196
     },
     "NMP": {
-      "price_eur_per_ml": 0.0017342101001491582,
-      "cas": "872-50-4",
-      "code": "5"
+      "price_eur_per_ml": 0.0017342101001491582
     },
     "DMSO": {
-      "price_eur_per_ml": 0.00047425721819731515,
-      "cas": "67-68-5",
-      "code": "6"
+      "price_eur_per_ml": 0.00047425721819731515
     },
     "DMPU": {
-      "price_eur_per_ml": 0.214143832,
-      "cas": "2687-91-4",
-      "code": "7"
+      "price_eur_per_ml": 0.214143832
     },
     "HFP": {
-      "price_eur_per_ml": 0.0013762082186234816,
-      "cas": "920-66-1",
-      "code": "8"
+      "price_eur_per_ml": 0.0013762082186234816
     },
     "NaOH": {
-      "price_eur_per_ml": 0.0021104836991263586,
-      "cas": "1310-73-2",
-      "code": "9"
+      "price_eur_per_ml": 0.0021104836991263586
     },
     "H2O": {
-      "price_eur_per_ml": 0.00019044321329639887,
-      "cas": "7732-18-5",
-      "code": "10"
+      "price_eur_per_ml": 0.00019044321329639887
     },
     "MeOH": {
-      "price_eur_per_ml": 0.00037289580225868314,
-      "cas": "67-56-1",
-      "code": "11"
+      "price_eur_per_ml": 0.00037289580225868314
     },
     "EtOH": {
-      "price_eur_per_ml": 0.0005843426379714467,
-      "cas": "64-17-5",
-      "code": "12"
+      "price_eur_per_ml": 0.0005843426379714467
     },
     "Cellosolve": {
-      "price_eur_per_ml": 0.0008913701257191561,
-      "cas": "110-80-5",
-      "code": "13"
+      "price_eur_per_ml": 0.0008913701257191561
     },
     "MeCN": {
-      "price_eur_per_ml": 0.00033887833954826334,
-      "cas": "75-05-8",
-      "code": "14"
+      "price_eur_per_ml": 0.00033887833954826334
     },
     "HNO3": {
-      "price_eur_per_ml": 0.0016641806946516087,
-      "cas": "7697-37-2",
-      "code": "16"
+      "price_eur_per_ml": 0.0016641806946516087
     },
     "NH3": {
-      "price_eur_per_ml": 0.00014856168761985932,
-      "cas": "7664-41-7",
-      "code": "17"
+      "price_eur_per_ml": 0.00014856168761985932
     },
     "HBF4": {
-      "price_eur_per_ml": 0.0005942467504794373,
-      "cas": "16872-11-0",
-      "code": "18"
+      "price_eur_per_ml": 0.0005942467504794373
     },
     "HCl": {
-      "price_eur_per_ml": 0.00013003270637119114,
-      "cas": "7647-01-0",
-      "code": "19"
+      "price_eur_per_ml": 0.00013003270637119114
     },
     "H3PMo12O40": {
-      "price_eur_per_ml": 0.013969030790539102,
-      "cas": "12501-23-4",
-      "code": "20"
+      "price_eur_per_ml": 0.013969030790539102
     },
     "AcOH": {
-      "price_eur_per_ml": 0.000361815143191988,
-      "cas": "64-19-7",
-      "code": "21"
+      "price_eur_per_ml": 0.000361815143191988
     },
     "Triethylamine": {
-      "price_eur_per_ml": 0.0008764273392286384,
-      "cas": "121-44-8",
-      "code": "22"
+      "price_eur_per_ml": 0.0008764273392286384
     },
     "EG": {
-      "price_eur_per_ml": 0.0024300939860430427,
-      "cas": "107-21-1",
-      "code": "23"
+      "price_eur_per_ml": 0.0024300939860430427
     },
     "CH3ONa": {
-      "price_eur_per_ml": 0.0006691338205838482,
-      "cas": "124-41-4",
-      "code": "24"
+      "price_eur_per_ml": 0.0006691338205838482
     },
     "Dioxane": {
-      "price_eur_per_ml": 0.0004458017851054762,
-      "cas": "123-91-1",
-      "code": "25"
+      "price_eur_per_ml": 0.0004458017851054762
     },
     "1,4-dioxane": {
-      "price_eur_per_ml": 0.0004458017851054762,
-      "cas": "123-91-1",
-      "code": "26"
+      "price_eur_per_ml": 0.0004458017851054762
     },
     "CH2Cl2": {
-      "price_eur_per_ml": 0.00045701150117195816,
-      "cas": "75-09-2",
-      "code": "27"
-    },
-    "-": {
-      "price_eur_per_ml": 0.0,
-      "cas": "-",
-      "code": "0"
+      "price_eur_per_ml": 0.00045701150117195816
     }
   },
   "additives": {
@@ -385,123 +326,89 @@
     },
     "CH2Cl2": {
       "price_eur_per_ml": 0.00045701150117195816
-    },
-    "-": {
-      "price_eur_per_ml": 0.0
     }
   },
   "modulators": {
     "DEA": {
-      "price_eur_per_ml": 0.0020756850445691646,
-      "cas": "91-66-7"
+      "price_eur_per_ml": 0.0020756850445691646
     },
     "DMA": {
-      "price_eur_per_ml": 0.001961014276582143,
-      "cas": "127-19-5"
+      "price_eur_per_ml": 0.001961014276582143
     },
     "DMAc": {
-      "price_eur_per_ml": 0.001961014276582143,
-      "cas": "127-19-5"
+      "price_eur_per_ml": 0.001961014276582143
     },
     "DMF": {
-      "price_eur_per_ml": 0.0006536714255273811,
-      "cas": "68-12-2"
+      "price_eur_per_ml": 0.0006536714255273811
     },
     "DEF": {
-      "price_eur_per_ml": 0.00039147777647560196,
-      "cas": "68-84-2"
+      "price_eur_per_ml": 0.00039147777647560196
     },
     "NMP": {
-      "price_eur_per_ml": 0.0017342101001491582,
-      "cas": "872-50-4"
+      "price_eur_per_ml": 0.0017342101001491582
     },
     "DMSO": {
-      "price_eur_per_ml": 0.00047425721819731515,
-      "cas": "67-68-5"
+      "price_eur_per_ml": 0.00047425721819731515
     },
     "DMPU": {
-      "price_eur_per_ml": 0.214143832,
-      "cas": "2687-91-4"
+      "price_eur_per_ml": 0.214143832
     },
     "HFP": {
-      "price_eur_per_ml": 0.0013762082186234816,
-      "cas": "920-66-1"
+      "price_eur_per_ml": 0.0013762082186234816
     },
     "NaOH": {
-      "price_eur_per_ml": 0.0021104836991263586,
-      "cas": "1310-73-2"
+      "price_eur_per_ml": 0.0021104836991263586
     },
     "H2O": {
-      "price_eur_per_ml": 0.00019044321329639887,
-      "cas": "7732-18-5"
+      "price_eur_per_ml": 0.00019044321329639887
     },
     "MeOH": {
-      "price_eur_per_ml": 0.00037289580225868314,
-      "cas": "67-56-1"
+      "price_eur_per_ml": 0.00037289580225868314
     },
     "EtOH": {
-      "price_eur_per_ml": 0.0005843426379714467,
-      "cas": "64-17-5"
+      "price_eur_per_ml": 0.0005843426379714467
     },
     "Cellosolve": {
-      "price_eur_per_ml": 0.0008913701257191561,
-      "cas": "110-80-5"
+      "price_eur_per_ml": 0.0008913701257191561
     },
     "MeCN": {
-      "price_eur_per_ml": 0.00033887833954826334,
-      "cas": "75-05-8"
+      "price_eur_per_ml": 0.00033887833954826334
     },
     "HNO3": {
-      "price_eur_per_ml": 0.0016641806946516087,
-      "cas": "7697-37-2"
+      "price_eur_per_ml": 0.0016641806946516087
     },
     "NH3": {
-      "price_eur_per_ml": 0.00014856168761985932,
-      "cas": "7664-41-7"
+      "price_eur_per_ml": 0.00014856168761985932
     },
     "HBF4": {
-      "price_eur_per_ml": 0.0005942467504794373,
-      "cas": "16872-11-0"
+      "price_eur_per_ml": 0.0005942467504794373
     },
     "HCl": {
-      "price_eur_per_ml": 0.00013003270637119114,
-      "cas": "7647-01-0"
+      "price_eur_per_ml": 0.00013003270637119114
     },
     "H3PMo12O40": {
-      "price_eur_per_ml": 0.013969030790539102,
-      "cas": "12501-23-4"
+      "price_eur_per_ml": 0.013969030790539102
     },
     "AcOH": {
-      "price_eur_per_ml": 0.000361815143191988,
-      "cas": "64-19-7"
+      "price_eur_per_ml": 0.000361815143191988
     },
     "Triethylamine": {
-      "price_eur_per_ml": 0.0008764273392286384,
-      "cas": "121-44-8"
+      "price_eur_per_ml": 0.0008764273392286384
     },
     "EG": {
-      "price_eur_per_ml": 0.0024300939860430427,
-      "cas": "107-21-1"
+      "price_eur_per_ml": 0.0024300939860430427
     },
     "CH3ONa": {
-      "price_eur_per_ml": 0.0006691338205838482,
-      "cas": "124-41-4"
+      "price_eur_per_ml": 0.0006691338205838482
     },
     "Dioxane": {
-      "price_eur_per_ml": 0.0004458017851054762,
-      "cas": "123-91-1"
+      "price_eur_per_ml": 0.0004458017851054762
     },
     "1,4-dioxane": {
-      "price_eur_per_ml": 0.0004458017851054762,
-      "cas": "123-91-1"
+      "price_eur_per_ml": 0.0004458017851054762
     },
     "CH2Cl2": {
-      "price_eur_per_ml": 0.00045701150117195816,
-      "cas": "75-09-2"
-    },
-    "-": {
-      "price_eur_per_ml": 0.0,
-      "cas": "-"
+      "price_eur_per_ml": 0.00045701150117195816
     }
   },
   "smiles_mapping": {
@@ -976,6 +883,113 @@
     "CC1=C(C=C(C(=C1)C1=C(C=C(C(=C1)C)C1=C(C=C(C(=C1)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O)C)C)C)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
       "gravimetric_wc_percent": 5.552227741465775,
       "volumetric_wc_g_per_l": 43.32988756320425
+    }
+  },
+  "top5_mofs": {
+    "NAWXER": {
+      "mof_name": "NAWXER",
+      "temperature_c": 85.0,
+      "reaction_time_h": 24.0,
+      "product_mass_mg": 3.785,
+      "metal_name": "Zn(NO₃)₂·6H₂O",
+      "metal_mass_mg": 10.0,
+      "linker_mass_mg": 4.0,
+      "solvent_name": "DMF",
+      "solvent_volume_ml": 1.0,
+      "additive_name": "EtOH",
+      "additive_volume_ml": 0.5,
+      "modulator_name": "HNO3",
+      "modulator_volume_ml": 0.026432373653686825,
+      "modulator_concentration": 0.1198267605633803,
+      "smiles": "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1",
+      "gravimetric_wc_percent": 6.611986223715673,
+      "volumetric_wc_g_per_l": 47.83596092853458,
+      "linker_name": "H4TCPP",
+      "yield_fraction": 0.5
+    },
+    "FATQID": {
+      "mof_name": "FATQID",
+      "temperature_c": 85.0,
+      "reaction_time_h": 24.0,
+      "product_mass_mg": 9.12,
+      "metal_name": "CuSO₄·5H₂O",
+      "metal_mass_mg": 8.0,
+      "linker_mass_mg": 5.0,
+      "solvent_name": "DMF",
+      "solvent_volume_ml": 2.0,
+      "additive_name": "0",
+      "additive_volume_ml": 0.0,
+      "modulator_name": "HNO3 ",
+      "modulator_volume_ml": 0.0032632560066280032,
+      "modulator_concentration": 0.04438028169014085,
+      "smiles": "C(=O)(O)C1=CC=C(C=C1)C=1C=NC=C(C1)C1=CC=C(C=C1)C(=O)O",
+      "gravimetric_wc_percent": 7.275655632659123,
+      "volumetric_wc_g_per_l": 48.03514516261148,
+      "linker_name": "H₂L",
+      "yield_fraction": 0.62
+    },
+    "YUGLES": {
+      "mof_name": "YUGLES",
+      "temperature_c": 65.0,
+      "reaction_time_h": 24.0,
+      "product_mass_mg": 6.3,
+      "metal_name": "Cu(NO₃)₂·3H₂O",
+      "metal_mass_mg": 15.0,
+      "linker_mass_mg": 5.0,
+      "solvent_name": "DMF",
+      "solvent_volume_ml": 0.2,
+      "additive_name": "DMSO",
+      "additive_volume_ml": 0.2,
+      "modulator_name": "HNO3",
+      "modulator_volume_ml": 0.003915907207953604,
+      "modulator_concentration": 0.04438028169014085,
+      "smiles": "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O",
+      "gravimetric_wc_percent": 5.996913544410615,
+      "volumetric_wc_g_per_l": 46.18931423537261,
+      "linker_name": "H₄EBTC",
+      "yield_fraction": 0.552
+    },
+    "VOLPET": {
+      "mof_name": "VOLPET",
+      "temperature_c": 120.0,
+      "reaction_time_h": 48.0,
+      "product_mass_mg": 52.3,
+      "metal_name": "Zn(NO₃)₂·6H₂O",
+      "metal_mass_mg": 119.0,
+      "linker_mass_mg": 52.0,
+      "solvent_name": "DMF",
+      "solvent_volume_ml": 4.0,
+      "additive_name": "MeCN",
+      "additive_volume_ml": 1.0,
+      "modulator_name": "0",
+      "modulator_volume_ml": 0.0,
+      "modulator_concentration": null,
+      "smiles": "S1C(=CC=C1C(=O)O)C(=O)O",
+      "gravimetric_wc_percent": 5.963972428789543,
+      "volumetric_wc_g_per_l": 47.07991273790696,
+      "linker_name": "H₂thb",
+      "yield_fraction": 0.72
+    },
+    "YAVWUQ": {
+      "mof_name": "YAVWUQ",
+      "temperature_c": 70.0,
+      "reaction_time_h": 96.0,
+      "product_mass_mg": 17.125,
+      "metal_name": "Cu(NO₃)₂·2.5H₂O",
+      "metal_mass_mg": 15.0,
+      "linker_mass_mg": 5.0,
+      "solvent_name": "DMF",
+      "solvent_volume_ml": 1.5,
+      "additive_name": "0",
+      "additive_volume_ml": 0.0,
+      "modulator_name": "HCl ",
+      "modulator_volume_ml": 0.010299435028248588,
+      "modulator_concentration": 0.18538983050847457,
+      "smiles": "C(=O)O",
+      "gravimetric_wc_percent": 5.700640969644803,
+      "volumetric_wc_g_per_l": 45.68958331172914,
+      "linker_name": "H4L",
+      "yield_fraction": 0.5
     }
   }
 }

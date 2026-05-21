@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Upload, Activity, Database, Loader2, 
   CheckCircle2, XCircle, FlaskConical, Layers, 
@@ -13,8 +13,6 @@ import { Badge } from "@/components/ui/badge";
 
 export default function MOFScreening() {
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any>(null);
   const [price_db, setPriceDb] = useState<any>({ 
     metals: {}, 
     solvents: {}, 
@@ -78,100 +76,306 @@ export default function MOFScreening() {
     }
   }, [formData.smiles, smilesMapping]);
 
-  const runLiveAnalysis = useCallback(async () => {
-    setLoading(true);
+  // Separate calculation functions for different sections
+  const calculateHydrogenMetrics = useCallback(() => {
+    const f_pv = parseFloat(formData.pv) || 1.2;
+    const f_gsa = parseFloat(formData.gsa) || 3000;
+    const f_vsa = parseFloat(formData.vsa) || 1500;
+    const f_lcd = parseFloat(formData.lcd) || 12.1;
+    const f_pld = parseFloat(formData.pld) || 8.0;
+    const f_density = parseFloat(formData.density) || 0.8;
+    const f_vf = parseFloat(formData.vf) || 0.5;
+    const valid_vf = f_vf > 1.0 ? f_vf / 100.0 : f_vf;
+
+    // Calculate WUG using the correct polynomial equation (4-1)
+    const p = f_density;
+    const GSA = f_gsa;
+    const VSA = f_vsa;
+    const VF = valid_vf;
+    const PV = f_pv;
+    const LCD = f_lcd;
+    const PLD = f_pld;
+
+    const wug = (
+      -4.47194 + (1.77349 * p) + (0.000511149 * GSA) + (0.00163429 * VSA) + 
+      (3.92696 * VF) + (5.59522 * PV) - (0.0764434 * LCD) + (0.262302 * PLD) - 
+      (0.163317 * (p**2)) - (0.00133171 * p * GSA) + (7.69048e-5 * p * VSA) - 
+      (2.66592 * p * VF) + (2.45092 * p * PV) + (0.089082 * p * LCD) - 
+      (0.0975448 * p * PLD) - (4.1166e-8 * (GSA**2)) - (1.15768e-7 * GSA * VSA) + 
+      (0.00280453 * GSA * VF) - (2.35326e-5 * GSA * PV) + (8.39123e-6 * GSA * LCD) - 
+      (3.89128e-6 * GSA * PLD) + (2.21456e-7 * (VSA**2)) - (0.00231186 * VSA * VF) - 
+      (0.00180075 * VSA * PV) + (4.34998e-6 * VSA * LCD) + (1.65433e-5 * VSA * PLD) + 
+      (4.52648 * (VF**2)) - (3.82519 * VF * PV) - (0.0639716 * VF * LCD) - 
+      (0.283064 * VF * PLD) - (0.0213098 * (PV**2)) + (0.000824477 * PV * LCD) + 
+      (0.00253194 * PV * PLD) + (0.000521033 * (LCD**2)) + (0.000700743 * LCD * PLD) - 
+      (0.000244913 * (PLD**2))
+    );
+
+    // Calculate WUV using the correct polynomial equation (4-2)
+    const wuv = (
+      -49.6238 + (17.4843 * p) - (0.000310481 * GSA) + (0.0214365 * VSA) + 
+      (32.4082 * VF) + (14.1933 * PV) + (0.0660557 * LCD) + (1.66494 * PLD) - 
+      (1.79789 * (p**2)) - (0.00754047 * p * GSA) - (0.0012505 * p * VSA) - 
+      (22.99 * p * VF) + (69.0864 * p * PV) + (0.861169 * p * LCD) - 
+      (0.523851 * p * PLD) + (1.51676e-7 * (GSA**2)) + (3.18358e-7 * GSA * VSA) + 
+      (0.0145422 * GSA * VF) - (5.75705e-5 * GSA * PV) + (0.000157672 * GSA * LCD) - 
+      (2.93554e-5 * GSA * PLD) + (7.11672e-7 * (VSA**2)) - (0.0162344 * VSA * VF) - 
+      (0.0208807 * VSA * PV) + (3.334e-5 * VSA * LCD) + (0.000196064 * VSA * PLD) + 
+      (44.1803 * (VF**2)) - (14.2407 * VF * PV) - (1.95209 * VF * LCD) - 
+      (2.23509 * VF * PLD) - (0.0384937 * (PV**2)) - (0.00185746 * PV * LCD) + 
+      (0.0410538 * PV * PLD) + (0.00735029 * (LCD**2)) + (0.00119741 * LCD * PLD) + 
+      (0.00386859 * (PLD**2))
+    );
+
+    return {
+      gravimetric_h2: Math.max(0, wug),
+      volumetric_h2: Math.max(0, wuv),
+      doe_feasible: wug >= 5.5 && wuv >= 40.0
+    };
+  }, [formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.density, formData.vf]);
+
+  const calculateCostAndEnergy = useCallback(async () => {
+    // Only calculate if synthesis conditions are filled
+    if (!formData.metal_name || !formData.smiles) {
+      return {
+        mof_cost: 0,
+        storage_cost: 0,
+        q_energy: 0,
+        q_loss: 0,
+        e_stirr: 0,
+        e_tot: 0,
+        econ_feasible: false
+      };
+    }
+
     const data = new FormData();
-    if (file) data.append('file', file);
+    
+    // Add synthesis condition fields
+    const synthesisFields = {
+      'metal_name': formData.metal_name,
+      'metal_mass': formData.metal_mass || "0",
+      'smiles': formData.smiles,
+      'linker_mass': formData.linker_mass || "0",
+      'solvent_name': formData.solvent_name || "-",
+      'solvent_volume': formData.solvent_volume || "0",
+      'additive_name': formData.additive_name || "-",
+      'additive_volume': formData.additive_volume || "0",
+      'modulator_name': formData.modulator_name || "-",
+      'modulator_volume': formData.modulator_volume || "0",
+      'product_mass': formData.product_mass || "0",
+      'reaction_time': formData.reaction_time || "24",
+      'temperature': formData.temperature || "120",
+      // Add geometric factors for calculation
+      'pv': formData.pv, 'gsa': formData.gsa, 'vsa': formData.vsa,
+      'lcd': formData.lcd, 'pld': formData.pld, 'vf': formData.vf, 'density': formData.density
+    };
 
-    // FITUR BARU: Daftar parameter yang WAJIB berupa angka di backend
-    const numericFields = [
-      "pv", "gsa", "vsa", "lcd", "pld", "vf", "density",
-      "solvent_volume", "additive_volume", "modulator_volume",
-      "metal_mass", "linker_mass", "product_mass",
-      "reaction_time", "temperature"
-    ];
-
-    // Menyaring string kosong sebelum dikirim ke FastAPI
-    Object.entries(formData).forEach(([key, val]) => {
-      if (numericFields.includes(key) && (val === "" || val === null || val === undefined)) {
-          data.append(key, "0"); // Paksa jadi "0" agar backend tidak crash
-      } else {
-          data.append(key, String(val));
-      }
+    Object.entries(synthesisFields).forEach(([key, value]) => {
+      data.append(key, String(value));
     });
 
     try {
       const res = await fetch("http://127.0.0.1:8000/analyze", { method: "POST", body: data });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
-      // Jika backend mengalami error (misal rumus salah atau data tidak valid)
-      if (!res.ok) {
-          const errText = await res.text();
-          console.error(`Backend Error (${res.status}):`, errText);
-          throw new Error(`Server membalas dengan status ${res.status}`);
-      }
-
       const result = await res.json();
       if (result.status === "success") {
-          setResults(result.results);
-      } else {
-          console.error("Analisis API gagal dari backend:", result);
+        return {
+          mof_cost: result.results.mof_cost || 0,
+          storage_cost: result.results.storage_cost || 0,
+          q_energy: result.results.q_energy || 0,
+          q_loss: result.results.q_loss || 0,
+          e_stirr: result.results.e_stirr || 0,
+          e_tot: result.results.e_tot || 0,
+          econ_feasible: result.results.econ_feasible || false,
+          // Energy details for table
+          cp_linker: result.results.cp_linker || 0,
+          linker_mw: result.results.linker_mw || 0,
+          e_sensible_solvent: result.results.e_sensible_solvent || 0,
+          e_sensible_additive: result.results.e_sensible_additive || 0,
+          e_sensible_modulator: result.results.e_sensible_modulator || 0,
+          e_sensible_metal: result.results.e_sensible_metal || 0,
+          e_sensible_linker: result.results.e_sensible_linker || 0,
+          e_sensible_total: result.results.e_sensible_total || 0
+        };
       }
     } catch (err) {
-      console.error("Analysis failed:", err);
-    } finally {
-      setTimeout(() => setLoading(false), 800);
+      console.error("Cost/Energy calculation failed:", err);
     }
-  }, [formData, file]);
 
-  useEffect(() => {
-    if (file && formData.metal_name && formData.smiles) {  // Changed: linker_name → smiles
-      const timer = setTimeout(() => runLiveAnalysis(), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, file, runLiveAnalysis]);
+    return {
+      mof_cost: 0, storage_cost: 0, q_energy: 0, q_loss: 0, e_stirr: 0, e_tot: 0, econ_feasible: false,
+      cp_linker: 0, linker_mw: 0, e_sensible_solvent: 0, e_sensible_additive: 0, 
+      e_sensible_modulator: 0, e_sensible_metal: 0, e_sensible_linker: 0, e_sensible_total: 0
+    };
+  }, [
+    formData.metal_name, formData.smiles, formData.metal_mass, formData.linker_mass,
+    formData.solvent_name, formData.solvent_volume, formData.additive_name, formData.additive_volume,
+    formData.modulator_name, formData.modulator_volume, formData.product_mass,
+    formData.reaction_time, formData.temperature,
+    formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.vf, formData.density
+  ]);
 
-  // Kalkulasi Live Cost Berdasarkan Database & Input
-  const dynamicCosts = useMemo(() => {
-    // PERBAIKAN: Gunakan hasil dari backend, bukan perhitungan lokal
-    if (results && results.mof_cost && results.storage_cost) {
+  const calculateStructureAnalysis = useCallback(async () => {
+    if (!file || !file.name.endsWith('.cif')) {
       return {
-        mof_cost: results.mof_cost.toFixed(3),  // 3 decimal places
-        storage_cost: results.storage_cost.toFixed(3)  // 3 decimal places
+        conformational_energy_kcal: 0.0,
+        rmsd_final_angstrom: 0.0,
+        me_delta_length_angstrom: 0.0,
+        me_delta_angle_deg: 0.0,
+        structure_status: "No CIF file uploaded",
+        structure_feasible: null,
+        xtb_available: true
       };
     }
 
-    // Fallback ke perhitungan lokal hanya jika backend belum ada hasil
-    const getPrice = (cat: string, name: string) => {
-      if (!name || name === "-") return 0;
-      return price_db[cat]?.[name]?.price_eur_per_ml ?? price_db[cat]?.[name]?.price_eur_per_g ?? 0;
-    };
+    const data = new FormData();
+    data.append('file', file);
+    
+    // Add minimal required fields for structure analysis
+    data.append('metal_name', formData.metal_name || "Cu");
+    data.append('smiles', formData.smiles || "O=C(O)c1ccc(cc1)C(=O)O");
+    data.append('pv', formData.pv); data.append('gsa', formData.gsa); data.append('vsa', formData.vsa);
+    data.append('lcd', formData.lcd); data.append('pld', formData.pld); data.append('vf', formData.vf); 
+    data.append('density', formData.density);
+    
+    // Add default values for other required fields
+    ['metal_mass', 'linker_mass', 'product_mass', 'reaction_time', 'temperature'].forEach(field => {
+      data.append(field, "0");
+    });
+    ['solvent_name', 'additive_name', 'modulator_name'].forEach(field => {
+      data.append(field, "-");
+    });
+    ['solvent_volume', 'additive_volume', 'modulator_volume'].forEach(field => {
+      data.append(field, "0");
+    });
 
-    const sCost = Number(formData.solvent_volume || 0) * getPrice('solvents', formData.solvent_name);
-    const aCost = Number(formData.additive_volume || 0) * getPrice('additives', formData.additive_name);
-    const mCost = Number(formData.modulator_volume || 0) * getPrice('modulators', formData.modulator_name);
-    const metCost = Number(formData.metal_mass || 0) * getPrice('metals', formData.metal_name);
-    // Linker cost dari SMILES mapping (bukan dari linkers section yang sudah dihapus)
-    const linkerData = smilesMapping[formData.smiles];
-    const linCost = linkerData ? (Number(formData.linker_mass || 0) / 1000) * linkerData.price_eur_per_g : 0;
-
-    const totalCostEur = sCost + aCost + mCost + metCost + linCost;
-    const eurToUsd = price_db.eur_to_usd || 1.08;
-    const totalCostUsd = totalCostEur * eurToUsd;
-
-    const productMassKg = Number(formData.product_mass || 0) / 1000000; // Product mass dalam mg ke kg
-
-    let mofCost = 0;
-    if (productMassKg > 0) mofCost = totalCostUsd / productMassKg;
-
-    let storageCost = 0;
-    const gravH2 = results?.gravimetric_h2 || 0;
-    if (gravH2 > 0) storageCost = mofCost / (gravH2 / 100);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/analyze", { method: "POST", body: data });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      const result = await res.json();
+      if (result.status === "success") {
+        return {
+          conformational_energy_kcal: result.results.conformational_energy_kcal || 0.0,
+          rmsd_final_angstrom: result.results.rmsd_final_angstrom || 0.0,
+          me_delta_length_angstrom: result.results.me_delta_length_angstrom || 0.0,
+          me_delta_angle_deg: result.results.me_delta_angle_deg || 0.0,
+          structure_status: result.results.structure_status || "Analysis completed",
+          structure_feasible: result.results.structure_feasible,
+          xtb_available: result.results.xtb_available || true
+        };
+      }
+    } catch (err) {
+      console.error("Structure analysis failed:", err);
+    }
 
     return {
-      mof_cost: mofCost.toFixed(3),  // 3 decimal places
-      storage_cost: storageCost.toFixed(3)  // 3 decimal places
+      conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
+      me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
+      structure_status: "Analysis failed", structure_feasible: false, xtb_available: true
     };
-  }, [formData, price_db, results]);
+  }, [file, formData.metal_name, formData.smiles, formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.vf, formData.density]);
+
+  // State for different calculation results
+  const [hydrogenMetrics, setHydrogenMetrics] = useState({
+    gravimetric_h2: 0, volumetric_h2: 0, doe_feasible: false
+  });
+  
+  const [costEnergyResults, setCostEnergyResults] = useState({
+    mof_cost: 0, storage_cost: 0, q_energy: 0, q_loss: 0, e_stirr: 0, e_tot: 0, econ_feasible: false,
+    cp_linker: 0, linker_mw: 0, e_sensible_solvent: 0, e_sensible_additive: 0, 
+    e_sensible_modulator: 0, e_sensible_metal: 0, e_sensible_linker: 0, e_sensible_total: 0
+  });
+  
+  const [structureResults, setStructureResults] = useState({
+    conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
+    me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
+    structure_status: "No CIF file uploaded", structure_feasible: null, xtb_available: true
+  });
+
+  const [loadingStates, setLoadingStates] = useState({
+    hydrogen: false, costEnergy: false, structure: false
+  });
+
+  // Real-time calculation effects for different sections
+  
+  // 1. Hydrogen Metrics - instant calculation (no API call needed)
+  useEffect(() => {
+    const metrics = calculateHydrogenMetrics();
+    setHydrogenMetrics(metrics);
+  }, [calculateHydrogenMetrics]);
+
+  // 2. Cost & Energy - API call with debounce for synthesis conditions
+  useEffect(() => {
+    if (formData.metal_name && formData.smiles) {
+      setLoadingStates(prev => ({ ...prev, costEnergy: true }));
+      const timer = setTimeout(async () => {
+        const results = await calculateCostAndEnergy();
+        setCostEnergyResults(results);
+        setLoadingStates(prev => ({ ...prev, costEnergy: false }));
+      }, 500); // 500ms debounce for cost/energy
+      return () => clearTimeout(timer);
+    } else {
+      // Reset when required fields are empty
+      setCostEnergyResults({
+        mof_cost: 0, storage_cost: 0, q_energy: 0, q_loss: 0, e_stirr: 0, e_tot: 0, econ_feasible: false,
+        cp_linker: 0, linker_mw: 0, e_sensible_solvent: 0, e_sensible_additive: 0, 
+        e_sensible_modulator: 0, e_sensible_metal: 0, e_sensible_linker: 0, e_sensible_total: 0
+      });
+    }
+  }, [calculateCostAndEnergy]);
+
+  // 3. Structure Analysis - API call when file changes
+  useEffect(() => {
+    if (file && file.name.endsWith('.cif')) {
+      setLoadingStates(prev => ({ ...prev, structure: true }));
+      const timer = setTimeout(async () => {
+        const results = await calculateStructureAnalysis();
+        setStructureResults(results);
+        setLoadingStates(prev => ({ ...prev, structure: false }));
+      }, 300); // 300ms debounce for structure
+      return () => clearTimeout(timer);
+    } else {
+      // Reset when no file
+      setStructureResults({
+        conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
+        me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
+        structure_status: "No CIF file uploaded", structure_feasible: null, xtb_available: true
+      });
+    }
+  }, [calculateStructureAnalysis]);
+
+  // Kalkulasi Live Cost Berdasarkan Database & Input
+  const dynamicCosts = useMemo(() => {
+    return {
+      mof_cost: costEnergyResults.mof_cost.toFixed(3),
+      storage_cost: costEnergyResults.storage_cost.toFixed(3)
+    };
+  }, [costEnergyResults.mof_cost, costEnergyResults.storage_cost]);
+
+  // Overall feasibility calculation
+  const overallFeasibility = useMemo(() => {
+    const MAX_MOF_COST = 30.0;
+    const MAX_STORAGE_COST = 300.0;
+    const MAX_REACTION_TIME = 48.0;
+    const MAX_TEMPERATURE = 180.0;
+
+    const timeOk = parseFloat(formData.reaction_time) <= MAX_REACTION_TIME;
+    const tempOk = parseFloat(formData.temperature) <= MAX_TEMPERATURE;
+    const costOk = costEnergyResults.mof_cost <= MAX_MOF_COST && costEnergyResults.storage_cost <= MAX_STORAGE_COST;
+    const structureOk = structureResults.structure_feasible !== false;
+
+    return {
+      is_overall_feasible: hydrogenMetrics.doe_feasible && costOk && timeOk && tempOk && structureOk,
+      doe_feasible: hydrogenMetrics.doe_feasible,
+      econ_feasible: costOk,
+      time_ok: timeOk,
+      temp_ok: tempOk,
+      structure_feasible: structureResults.structure_feasible
+    };
+  }, [hydrogenMetrics.doe_feasible, costEnergyResults.mof_cost, costEnergyResults.storage_cost, 
+      formData.reaction_time, formData.temperature, structureResults.structure_feasible]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
@@ -495,130 +699,235 @@ export default function MOFScreening() {
         {/* RESULTS SECTION */}
         <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
           <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden">
-            {loading && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
+            {(loadingStates.costEnergy || loadingStates.structure) && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
             <header className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-12">
               <div className="space-y-2">
                 <h3 className="text-[10px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
-                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${results ? (results.is_overall_feasible ? 'text-indigo-600' : 'text-red-500') : 'text-zinc-200'}`}>
-                  {loading ? "Analyzing..." : results ? (results.is_overall_feasible ? "Feasible" : "Denied") : "Pending"}
+                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${overallFeasibility.is_overall_feasible ? 'text-indigo-600' : 'text-red-500'}`}>
+                  {loadingStates.costEnergy || loadingStates.structure ? "Analyzing..." : overallFeasibility.is_overall_feasible ? "Feasible" : "Denied"}
                 </h1>
               </div>
-              {results && (
+              {structureResults.structure_status && (
                 <div className="flex flex-col items-start sm:items-end gap-3">
-                    <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest shadow-lg">{results.stability_status}</Badge>
+                    <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest shadow-lg">
+                      {loadingStates.structure ? "Analyzing Structure..." : structureResults.structure_status}
+                    </Badge>
                 </div>
               )}
             </header>
 
-            {results ? (
-              <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              
+              {/* Bagian 1: Metrik Hidrogen - Real-time dari Geometric Factors */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 text-zinc-400">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Hydrogen Metrics</h4>
+                  <div className="h-px bg-zinc-100 flex-1" />
+                  <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
+                    hydrogenMetrics.doe_feasible 
+                      ? 'text-green-600 bg-green-50' 
+                      : 'text-red-600 bg-red-50'
+                  }`}>
+                    {hydrogenMetrics.doe_feasible ? 'FEASIBLE' : 'NOT FEASIBLE'}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  <ResultBox label="Working Uptake Gravimetric" val={hydrogenMetrics.gravimetric_h2.toFixed(3)} unit="wt%" target="5.5" targetSign="≥" ok={hydrogenMetrics.gravimetric_h2 >= 5.5} />
+                  <ResultBox label="Working Uptake Volumetric" val={hydrogenMetrics.volumetric_h2.toFixed(3)} unit="g/L" target="40" targetSign="≥" ok={hydrogenMetrics.volumetric_h2 >= 40} />
+                </div>
+              </div>
+
+              {/* Bagian 2: Ekonomi & Harga - Real-time dari Synthesis Conditions */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 text-zinc-400">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Economic Analysis</h4>
+                  <div className="h-px bg-zinc-100 flex-1" />
+                  {loadingStates.costEnergy ? (
+                    <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">CALCULATING</div>
+                  ) : (
+                    <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
+                      (Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30 && 
+                       Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300)
+                        ? 'text-green-600 bg-green-50' 
+                        : 'text-red-600 bg-red-50'
+                    }`}>
+                      {(Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30 && 
+                        Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300)
+                        ? 'FEASIBLE' : 'NOT FEASIBLE'}
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="MOF Production Cost" val={dynamicCosts.mof_cost} unit="USD/kg" target="30" ok={Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30} />
+                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="Hydrogen Storage Cost" val={dynamicCosts.storage_cost} unit="USD/kg H2" target="300" ok={Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300} />
+                </div>
+              </div>
+
+              {/* Bagian 3: Energy Synthesis - Real-time dari Synthesis Conditions */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 text-zinc-400">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Synthesis</h4>
+                  <div className="h-px bg-zinc-100 flex-1" />
+                  {loadingStates.costEnergy && (
+                    <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">CALCULATING</div>
+                  )}
+                </div>
                 
-                {/* Bagian 1: Metrik Hidrogen */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Hydrogen Metrics</h4>
-                    <div className="h-px bg-zinc-100 flex-1" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <ResultBox label="Working Uptake Gravimetric" val={results.gravimetric_h2} unit="wt%" target="5.5" targetSign="≥" ok={results.gravimetric_h2 >= 5.5} />
-                    <ResultBox label="Working Uptake Volumetric" val={results.volumetric_h2} unit="g/L" target="40" targetSign="≥" ok={results.volumetric_h2 >= 40} />
-                  </div>
-                </div>
-
-                {/* Bagian 2: Ekonomi & Harga */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Economic Analysis</h4>
-                    <div className="h-px bg-zinc-100 flex-1" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="MOF Production Cost" val={dynamicCosts.mof_cost} unit="USD/kg" target="30" ok={Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30} />
-                    <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="Hydrogen Storage Cost" val={dynamicCosts.storage_cost} unit="USD/kg H2" target="300" ok={Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300} />
-                  </div>
-                </div>
-
-                {/* Bagian 3: Energy Synthesis (Table Layout & Metrics Boxes) */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Energy Synthesis</h4>
-                    <div className="h-px bg-zinc-100 flex-1" />
-                  </div>
-                  
-                  {/* Table Energi Sensible */}
-                  <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm whitespace-nowrap">
-                        <thead className="bg-zinc-50/50 border-b border-zinc-200 text-zinc-500">
-                          <tr>
-                            <th scope="col" className="px-6 py-4 font-bold text-xs uppercase tracking-wider border-r border-zinc-200" rowSpan={2}>
-                              Cp linker 1<br/><span className="text-[10px] font-medium text-zinc-400 normal-case">(J/mol.K)</span>
-                            </th>
-                            <th scope="col" className="px-6 py-3 font-bold text-xs uppercase tracking-wider text-center" colSpan={6}>
-                              Energi Sensible (J)
-                            </th>
-                          </tr>
-                          <tr className="bg-zinc-50 text-[11px] border-t border-zinc-200">
-                            <th scope="col" className="px-4 py-2 font-semibold">Solvent</th>
-                            <th scope="col" className="px-4 py-2 font-semibold">Additive</th>
-                            <th scope="col" className="px-4 py-2 font-semibold">Modulator</th>
-                            <th scope="col" className="px-4 py-2 font-semibold">Metal</th>
-                            <th scope="col" className="px-4 py-2 font-semibold">Linker</th>
-                            <th scope="col" className="px-4 py-2 font-semibold text-indigo-600">Total Sensible</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-100 bg-white">
-                          <tr className="hover:bg-zinc-50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-zinc-600 border-r border-zinc-100">{results.cp_linker || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_solvent || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_additive || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_modulator || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_metal || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono text-zinc-800">{results.e_sensible_linker || "0.00"}</td>
-                            <td className="px-4 py-4 font-mono font-bold text-indigo-600">{results.e_sensible_total ? Number(results.e_sensible_total).toFixed(2) : "0.00"}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Energy Metric Boxes */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
-                    <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={results.q_energy ? Number(results.q_energy).toFixed(5) : "0.00000"} unit="MJ" />
-                    <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={results.q_loss ? Number(results.q_loss).toFixed(5) : "0.00000"} unit="MJ" />
-                    <EconMiniCard icon={<Activity className="w-4 h-4 text-blue-500" />} label="E Stirr" val={results.e_stirr ? Number(results.e_stirr).toFixed(5) : "0.00000"} unit="MJ" />
-                    <EconMiniCard icon={<Zap className="w-4 h-4 text-emerald-500" />} label="E Tot" val={results.e_tot ? Number(results.e_tot).toFixed(5) : "0.00000"} unit="MJ" />
+                {/* Table Energi Sensible */}
+                <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-zinc-50/50 border-b border-zinc-200 text-zinc-500">
+                        <tr>
+                          <th scope="col" className="px-6 py-4 font-bold text-xs uppercase tracking-wider border-r border-zinc-200" rowSpan={2}>
+                            Cp linker 1<br/><span className="text-[10px] font-medium text-zinc-400 normal-case">(J/mol.K)</span>
+                          </th>
+                          <th scope="col" className="px-6 py-3 font-bold text-xs uppercase tracking-wider text-center" colSpan={6}>
+                            Energi Sensible (J)
+                          </th>
+                        </tr>
+                        <tr className="bg-zinc-50 text-[11px] border-t border-zinc-200">
+                          <th scope="col" className="px-4 py-2 font-semibold">Solvent</th>
+                          <th scope="col" className="px-4 py-2 font-semibold">Additive</th>
+                          <th scope="col" className="px-4 py-2 font-semibold">Modulator</th>
+                          <th scope="col" className="px-4 py-2 font-semibold">Metal</th>
+                          <th scope="col" className="px-4 py-2 font-semibold">Linker</th>
+                          <th scope="col" className="px-4 py-2 font-semibold text-indigo-600">Total Sensible</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 bg-white">
+                        <tr className="hover:bg-zinc-50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-zinc-600 border-r border-zinc-100">{costEnergyResults.cp_linker.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono text-zinc-800">{costEnergyResults.e_sensible_solvent.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono text-zinc-800">{costEnergyResults.e_sensible_additive.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono text-zinc-800">{costEnergyResults.e_sensible_modulator.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono text-zinc-800">{costEnergyResults.e_sensible_metal.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono text-zinc-800">{costEnergyResults.e_sensible_linker.toFixed(2)}</td>
+                          <td className="px-4 py-4 font-mono font-bold text-indigo-600">{costEnergyResults.e_sensible_total.toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                {/* Bagian 4: Struktur */}
-                <div className="space-y-6 pt-6 border-t border-zinc-100">
-                  <div className="flex items-center gap-4 text-zinc-400">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure Analysis</h4>
-                    <div className="h-px bg-zinc-100 flex-1" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <div className="flex justify-between items-center bg-indigo-50/50 p-4 md:p-6 rounded-2xl border border-indigo-100/50 transition-all hover:scale-[1.02] shadow-sm">
-                      <span className="text-xl md:text-2xl font-black text-indigo-600 tracking-tighter">ΔE</span>
-                      <span className="font-mono font-bold text-lg md:text-2xl text-indigo-950">
-                        {results.delta_e} <span className="text-sm font-medium text-zinc-400 normal-case">kJ/mol</span>
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center bg-zinc-50 p-4 md:p-6 rounded-2xl border border-zinc-100 transition-all hover:scale-[1.02] shadow-sm">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">RMSD</span>
-                      <span className="font-mono font-bold text-lg md:text-2xl text-zinc-800">
-                        {results.rmsd} <span className="text-sm font-medium text-zinc-400 normal-case">Å</span>
-                      </span>
-                    </div>
-                  </div>
+                {/* Energy Metric Boxes */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
+                  <EconMiniCard icon={<Zap className="w-4 h-4 text-amber-500" />} label="Q Heat" val={costEnergyResults.q_energy.toFixed(5)} unit="MJ" />
+                  <EconMiniCard icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} label="Q Loss" val={costEnergyResults.q_loss.toFixed(5)} unit="MJ" />
+                  <EconMiniCard icon={<Activity className="w-4 h-4 text-blue-500" />} label="E Stirr" val={costEnergyResults.e_stirr.toFixed(5)} unit="MJ" />
+                  <EconMiniCard icon={<Zap className="w-4 h-4 text-emerald-500" />} label="E Tot" val={costEnergyResults.e_tot.toFixed(5)} unit="MJ" />
                 </div>
-
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                <Loader2 className={`w-12 h-12 md:w-16 md:h-16 relative ${loading ? 'animate-spin text-indigo-600' : 'text-zinc-100 opacity-20'}`} />
+              {/* Bagian 4: Structure Analysis (xTB) - dari CIF File */}
+              <div className="space-y-6 pt-6 border-t border-zinc-100">
+                <div className="flex items-center gap-4 text-zinc-400">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest">Structure Analysis (xTB)</h4>
+                  <div className="h-px bg-zinc-100 flex-1" />
+                  {loadingStates.structure ? (
+                    <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">ANALYZING</div>
+                  ) : (
+                    <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
+                      (structureResults.conformational_energy_kcal >= 0 && structureResults.conformational_energy_kcal <= 20 &&
+                       structureResults.rmsd_final_angstrom >= 0 && structureResults.rmsd_final_angstrom <= 1.0 &&
+                       structureResults.me_delta_length_angstrom >= 0 && structureResults.me_delta_length_angstrom <= 0.05 &&
+                       structureResults.me_delta_angle_deg >= 0 && structureResults.me_delta_angle_deg <= 10)
+                        ? 'text-green-600 bg-green-50' 
+                        : 'text-red-600 bg-red-50'
+                    }`}>
+                      {(structureResults.conformational_energy_kcal >= 0 && structureResults.conformational_energy_kcal <= 20 &&
+                        structureResults.rmsd_final_angstrom >= 0 && structureResults.rmsd_final_angstrom <= 1.0 &&
+                        structureResults.me_delta_length_angstrom >= 0 && structureResults.me_delta_length_angstrom <= 0.05 &&
+                        structureResults.me_delta_angle_deg >= 0 && structureResults.me_delta_angle_deg <= 10)
+                        ? 'FEASIBLE' : 'NOT FEASIBLE'}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Status Badge */}
+                {structureResults.structure_status && (
+                  <div className="flex justify-center">
+                    <Badge className={`px-4 py-2 text-xs font-medium rounded-full ${
+                      structureResults.structure_feasible === true ? 'bg-green-100 text-green-700 border-green-200' :
+                      structureResults.structure_feasible === false ? 'bg-red-100 text-red-700 border-red-200' :
+                      'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      {loadingStates.structure ? "Analyzing structure..." : structureResults.structure_status}
+                    </Badge>
+                  </div>
+                )}
+                
+                {/* 4 Output xTB */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  {/* 1. Energi konformasi linker (kcal/mol) */}
+                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 md:p-6 rounded-2xl border border-purple-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Conformational Energy</span>
+                      <Zap className="w-4 h-4 text-purple-500" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl md:text-3xl font-bold text-purple-900 font-mono">
+                        {structureResults.conformational_energy_kcal.toFixed(1)}
+                      </span>
+                      <span className="text-sm font-medium text-purple-600">kcal/mol</span>
+                    </div>
+                  </div>
+
+                  {/* 2. RMSD Final (Å) */}
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-6 rounded-2xl border border-blue-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">RMSD Final</span>
+                      <Activity className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl md:text-3xl font-bold text-blue-900 font-mono">
+                        {structureResults.rmsd_final_angstrom.toFixed(4)}
+                      </span>
+                      <span className="text-sm font-medium text-blue-600">Å</span>
+                    </div>
+                  </div>
+
+                  {/* 3. ME delta length (Å) */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-6 rounded-2xl border border-green-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-green-600 uppercase tracking-wider">ME Δ Length</span>
+                      <Box className="w-4 h-4 text-green-500" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl md:text-3xl font-bold text-green-900 font-mono">
+                        {structureResults.me_delta_length_angstrom.toFixed(6)}
+                      </span>
+                      <span className="text-sm font-medium text-green-600">Å</span>
+                    </div>
+                  </div>
+
+                  {/* 4. ME delta angle (deg) */}
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 md:p-6 rounded-2xl border border-orange-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">ME Δ Angle</span>
+                      <Thermometer className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl md:text-3xl font-bold text-orange-900 font-mono">
+                        {structureResults.me_delta_angle_deg.toFixed(4)}
+                      </span>
+                      <span className="text-sm font-medium text-orange-600">deg</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* xTB Availability Status */}
+                <div className="text-center">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    structureResults.xtb_available ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${structureResults.xtb_available ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                    xTB {structureResults.xtb_available ? 'Available' : 'Not Available'}
+                  </div>
+                </div>
               </div>
-            )}
+
+            </div>
           </div>
         </section>
       </main>
