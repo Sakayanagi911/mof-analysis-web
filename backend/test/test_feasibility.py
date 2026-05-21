@@ -26,7 +26,8 @@ async def test_feasibility_logic_check(client):
     """
     # High values likely to be feasible
     high_uptake_payload = {
-        "p": 100.0,
+        "density": 0.8,
+        "pressure_bar": 100.0,
         "gsa": 5000.0,
         "vsa": 2500.0,
         "vf": 0.9,
@@ -47,7 +48,8 @@ async def test_feasibility_low_uptake(client):
     Test scenario with very low parameters which should result in is_feasible=False.
     """
     low_uptake_payload = {
-        "p": 1.0,
+        "density": 0.2,
+        "pressure_bar": 1.0,
         "gsa": 10.0,
         "vsa": 10.0,
         "vf": 0.1,
@@ -64,11 +66,11 @@ async def test_feasibility_low_uptake(client):
 @pytest.mark.asyncio
 async def test_feasibility_missing_field(client):
     """
-    Test /api/feasibility with missing required field (e.g., 'p').
+    Test /api/feasibility with missing required field (e.g., 'density').
     Expect 422 Unprocessable Entity.
     """
     payload = {
-        # 'p' is missing
+        # 'density' is missing
         "gsa": 3500.0,
         "vsa": 1800.0,
         "vf": 0.75,
@@ -86,7 +88,7 @@ async def test_feasibility_invalid_type(client):
     Expect 422 Unprocessable Entity.
     """
     payload = {
-        "p": "invalid_string",
+        "density": "invalid_string",
         "gsa": 3500.0,
         "vsa": 1800.0,
         "vf": 0.75,

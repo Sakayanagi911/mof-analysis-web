@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import json, os
 import uvicorn
@@ -8,10 +8,13 @@ from routers import analysis, visualization, structure
 
 app = FastAPI(title="MOF Analysis API")
 
+cors_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+allow_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,9 +40,9 @@ async def get_prices():
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        return {"error": "File not found", "metals": {}, "solvents": {}}
-    except Exception as e:
-        return {"error": str(e), "metals": {}, "solvents": {}}
+        raise HTTPException(status_code=404, detail="Price database tidak ditemukan")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal memuat price database")
 
 @app.get("/get-smiles-mapping")
 async def get_smiles_mapping():
@@ -58,6 +61,6 @@ async def get_smiles_mapping():
                 "mapping": smiles_data.get("mapping", {})
             }
     except FileNotFoundError:
-        return {"error": "Database file not found", "mapping": {}}
-    except Exception as e:
-        return {"error": str(e), "mapping": {}}
+        raise HTTPException(status_code=404, detail="Price database tidak ditemukan")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal memuat smiles mapping")

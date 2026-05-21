@@ -1,14 +1,10 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from rdkit import Chem
-from rdkit.Chem import Descriptors  
 
 from models.schemas import FeasibilityRequest, FeasibilityResponse
 from models.schemas import EconomicRequest, EconomicResponse
 from services.whitebox_model import predict_working_capacity, calculate_wug, calculate_wuv
-from services.cost_analysis import run_economic_analysis
+from services.cost_analysis import run_economic_analysis, validate_smiles_or_raise
 
-# 1. Impor fungsi bawaan Anda agar hitungannya 100% konsisten dengan Notebook
-from services.joback import calculate_cp_joback
 from services.xtb_runner import (
     XTB_AVAILABLE, run_xtb_single_point,
     run_xtb_optimization, calculate_delta_e,
@@ -84,9 +80,15 @@ def get_energy_scale_factor(solvent_vol: float, additive_vol: float, modulator_v
     Fungsi ini di-keep untuk backward compatibility tapi selalu return 1.0
     """
     return 1.0
-    
-    # Jika hanya solvent dan modulator, gunakan scale factor 1.0
-    return 1.0
+
+
+def _parse_form_float(name: str, raw_value: str) -> float:
+    if raw_value is None or str(raw_value).strip() == "":
+        raise HTTPException(status_code=422, detail=f"Field '{name}' wajib diisi")
+    try:
+        return float(raw_value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail=f"Field '{name}' harus angka yang valid")
 
 
 @router.post("/analyze")
@@ -100,9 +102,9 @@ async def analyze_mof(
     vf: str = Form("0.5"),
     density: str = Form("0.8"), 
     metal_name: str = Form("-"),
-    metal_mass: str = Form("0"),      
+    metal_mass: str = Form("100"),
     linker_name: str = Form("-"), 
-    linker_mass: str = Form("0"),     
+    linker_mass: str = Form("50"),
     smiles: str = Form("-"),
     solvent_name: str = Form("-"),
     solvent_volume: str = Form("0"),  
@@ -110,48 +112,54 @@ async def analyze_mof(
     additive_volume: str = Form("0"), 
     modulator_name: str = Form("-"),  
     modulator_volume: str = Form("0"),
-    product_mass: str = Form("0"),  
+    product_mass: str = Form("50"),
     reaction_time: str = Form("24"), 
     temperature: str = Form("120")
 ):
-    # Parser aman 
-    def parse_f(val: str, default: float = 0.0) -> float:
-        try:
-            return float(val) if val and str(val).strip() != "" else default
-        except (ValueError, TypeError):
-            return default
+    # 1. Parsing Form Data (strict)
+    f_pv = _parse_form_float("pv", pv)
+    f_gsa = _parse_form_float("gsa", gsa)
+    f_vsa = _parse_form_float("vsa", vsa)
+    f_lcd = _parse_form_float("lcd", lcd)
+    f_pld = _parse_form_float("pld", pld)
+    f_density = _parse_form_float("density", density)
+    raw_vf = _parse_form_float("vf", vf)
+    valid_vf = raw_vf / 100.0 if raw_vf > 1.0 else raw_vf
 
-    # 1. Parsing Form Data
-    f_pv, f_gsa, f_vsa = parse_f(pv, 1.2), parse_f(gsa, 3000.0), parse_f(vsa, 1500.0)
-    f_lcd, f_pld, f_density = parse_f(lcd, 12.1), parse_f(pld, 8.0), parse_f(density, 0.8)
-    valid_vf = parse_f(vf, 0.5) / 100.0 if parse_f(vf, 0.5) > 1.0 else parse_f(vf, 0.5)
-    
-    f_metal_mass = parse_f(metal_mass, 0.0)
-    f_linker_mass = parse_f(linker_mass, 0.0)
-    f_solvent_vol = parse_f(solvent_volume, 0.0)
-    f_additive_vol = parse_f(additive_volume, 0.0)
-    f_modulator_vol = parse_f(modulator_volume, 0.0)
-    
-    f_product_mass = parse_f(product_mass, 0.0)
-    f_reaction_time = parse_f(reaction_time, 24.0)
-    f_temperature = parse_f(temperature, 120.0)
+    f_metal_mass = _parse_form_float("metal_mass", metal_mass)
+    f_linker_mass = _parse_form_float("linker_mass", linker_mass)
+    f_solvent_vol = _parse_form_float("solvent_volume", solvent_volume)
+    f_additive_vol = _parse_form_float("additive_volume", additive_volume)
+    f_modulator_vol = _parse_form_float("modulator_volume", modulator_volume)
+
+    f_product_mass = _parse_form_float("product_mass", product_mass)
+    f_reaction_time = _parse_form_float("reaction_time", reaction_time)
+    f_temperature = _parse_form_float("temperature", temperature)
+
+    if smiles and smiles.strip() != "-":
+        try:
+            validate_smiles_or_raise(smiles)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
 
     # 2. Hitung Kapasitas & Ekonomi
     wug = calculate_wug(density=f_density, GSA=f_gsa, VSA=f_vsa, VF=valid_vf, PV=f_pv, LCD=f_lcd, PLD=f_pld)
     wuv = calculate_wuv(density=f_density, GSA=f_gsa, VSA=f_vsa, VF=valid_vf, PV=f_pv, LCD=f_lcd, PLD=f_pld)
     
-    econ_result = run_economic_analysis(
-        metal_name=metal_name, linker_smiles=smiles, reaction_time=f_reaction_time,
-        temperature=f_temperature, smiles=smiles, 
-        # REMOVED: gravimetric_wc=wug, volumetric_wc=wuv
-        # Sekarang akan auto-lookup dari database berdasarkan SMILES
-        product_mass_mg=f_product_mass, metal_mass_mg=f_metal_mass, linker_mass_mg=f_linker_mass,
-        solvent_name=solvent_name, solvent_volume_ml=f_solvent_vol,
-        additive_name=additive_name, additive_volume_ml=f_additive_vol,
-        modulator_name=modulator_name, modulator_volume_ml=f_modulator_vol,
-        modulator_concentration=get_modulator_concentration(modulator_name, f_modulator_vol),
-        energy_scale_factor=get_energy_scale_factor(f_solvent_vol, f_additive_vol, f_modulator_vol)
-    )
+    try:
+        econ_result = run_economic_analysis(
+            metal_name=metal_name, linker_smiles=smiles, linker_name=linker_name, reaction_time=f_reaction_time,
+            temperature=f_temperature, smiles=smiles,
+            gravimetric_wc=wug, volumetric_wc=wuv,
+            product_mass_mg=f_product_mass, metal_mass_mg=f_metal_mass, linker_mass_mg=f_linker_mass,
+            solvent_name=solvent_name, solvent_volume_ml=f_solvent_vol,
+            additive_name=additive_name, additive_volume_ml=f_additive_vol,
+            modulator_name=modulator_name, modulator_volume_ml=f_modulator_vol,
+            modulator_concentration=get_modulator_concentration(modulator_name, f_modulator_vol),
+            energy_scale_factor=get_energy_scale_factor(f_solvent_vol, f_additive_vol, f_modulator_vol)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
     # ==========================================
     # 3. AMBIL HASIL ENERGI DARI ECONOMIC ANALYSIS
@@ -270,7 +278,7 @@ async def analyze_mof(
 async def analyze_feasibility(request: FeasibilityRequest):
     try:
         result = predict_working_capacity(
-            density=request.p, gsa=request.gsa, vsa=request.vsa,
+            density=request.density, gsa=request.gsa, vsa=request.vsa,
             vf=request.vf, pv=request.pv,
             lcd=request.lcd, pld=request.pld
         )
@@ -281,14 +289,8 @@ async def analyze_feasibility(request: FeasibilityRequest):
             is_feasible=result["is_feasible"],
             thresholds={"gravimetric": 5.5, "volumetric": 40.0}
         )
-    except Exception as e:
-        return FeasibilityResponse(
-            status=f"error: {str(e)}",
-            gravimetric_wc=0.0,
-            volumetric_wc=0.0,
-            is_feasible=False,
-            thresholds={"gravimetric": 5.5, "volumetric": 40.0}
-        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal menjalankan analisis feasibility")
 
 @router.post("/api/economic", response_model=EconomicResponse)
 async def analyze_economic(request: EconomicRequest):
@@ -296,11 +298,12 @@ async def analyze_economic(request: EconomicRequest):
         result = run_economic_analysis(
             metal_name=request.metal_name,
             linker_smiles=request.smiles,  # Changed: use smiles as linker identifier
+            linker_name=getattr(request, "linker_name", None),
             reaction_time=request.reaction_time,
             temperature=request.temperature,
             smiles=request.smiles,
-            # REMOVED: gravimetric_wc=request.gravimetric_wc,
-            # Sekarang akan auto-lookup dari database berdasarkan SMILES
+            gravimetric_wc=request.gravimetric_wc,
+            volumetric_wc=request.volumetric_wc,
             product_mass_mg=request.product_mass_mg,
             metal_mass_mg=request.metal_mass_mg,
             linker_mass_mg=request.linker_mass_mg,
@@ -321,5 +324,7 @@ async def analyze_economic(request: EconomicRequest):
             )
         )
         return EconomicResponse(status="success", **result)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     except Exception:
         raise HTTPException(status_code=500, detail="Gagal menjalankan analisis ekonomi")

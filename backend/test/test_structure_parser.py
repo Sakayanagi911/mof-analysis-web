@@ -322,18 +322,12 @@ def test_parse_cif_file_cell_params(sample_cif_content):
 
 def test_parse_cif_file_invalid_content_manual_parser():
     """
-    Completely invalid CIF content processed by the manual parser should
-    NOT raise an exception — the parser is lenient and returns an empty
-    structure (n_atoms == 0).  This is intentional and tested explicitly.
-    Callers (routers) are responsible for validating n_atoms > 0.
+    Completely invalid CIF content should be rejected by parser validation.
     """
     garbage = b"this is not a valid cif file"
     with patch("services.structure_parser.ASE_AVAILABLE", False):
-        result = parse_cif_file(garbage, "bad.cif")
-
-    # Manual parser does not crash; it yields an empty atom list
-    assert result["n_atoms"] == 0
-    assert result["atoms"] == []
+        with pytest.raises(ValueError):
+            parse_cif_file(garbage, "bad.cif")
 
 
 def test_parse_cif_file_ase_raises_value_error(sample_cif_content):

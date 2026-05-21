@@ -54,7 +54,8 @@ def sample_feasibility_payload():
     Standard valid payload for /api/feasibility.
     """
     return {
-        "p": 5.0,
+        "density": 0.8,
+        "pressure_bar": 5.0,
         "gsa": 3500.0,
         "vsa": 1800.0,
         "vf": 0.75,
@@ -70,11 +71,11 @@ def sample_economic_payload():
     """
     return {
         "metal_name": "Cu(NO3)2",
-        "linker_name": "H3BTC",
         "reaction_time": 24.0,
         "temperature": 120.0,
         "smiles": "C(=O)(O)c1cc(cc(c1)C(=O)O)C(=O)O",
-        "gravimetric_wc": 8.5
+        "gravimetric_wc": 8.5,
+        "volumetric_wc": 50.0
     }
 
 @pytest.fixture
@@ -91,7 +92,11 @@ def sample_analyze_form_data():
         "vf": 0.75,
         "density": 0.8,
         "metal_name": "Cu(NO3)2",
+        "metal_mass": 100.0,
         "linker_name": "H3BTC",
+        "linker_mass": 50.0,
+        "smiles": "C(=O)(O)c1cc(cc(c1)C(=O)O)C(=O)O",
+        "product_mass": 50.0,
         "reaction_time": 24.0,
         "temperature": 120.0
     }

@@ -60,13 +60,11 @@ async def test_analyze_missing_field(client, sample_analyze_form_data):
 async def test_analyze_invalid_type(client, sample_analyze_form_data):
     """
     Test /analyze with an invalid data type for a numeric field.
-    The endpoint's parse_f() helper catches ValueError and returns
-    the default value, so the request still succeeds with 200.
+    Invalid numeric form field harus ditolak.
     """
     payload = sample_analyze_form_data.copy()
     payload["pv"] = "not_a_number"
 
     response = await client.post("/analyze", data=payload)
-    # parse_f returns default on ValueError → 200
-    assert response.status_code == 200
-    assert response.json()["status"] == "success"
+    assert response.status_code == 422
+

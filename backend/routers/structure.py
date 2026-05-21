@@ -49,6 +49,7 @@ async def analyze_structure(file: UploadFile = File(...)):
         delta_e = 0.0
         rmsd = 0.0
         stability_failure = False
+        stability_error = None
 
         if XTB_AVAILABLE and separated["linker_count"] > 0:
             # Konversi linker positions ke XYZ
@@ -63,11 +64,13 @@ async def analyze_structure(file: UploadFile = File(...)):
             sp_result = run_xtb_single_point(relaxed_xyz)
             if not sp_result["success"]:
                 stability_failure = True
+                stability_error = sp_result.get("error", "xTB single-point gagal")
 
             # Optimization (free geometry)
             opt_result = run_xtb_optimization(relaxed_xyz)
             if not opt_result["success"]:
                 stability_failure = True
+                stability_error = opt_result.get("error", "xTB optimization gagal")
 
             if not stability_failure:
                 # Selisih energi konformasi (kJ/mol)
@@ -106,6 +109,8 @@ async def analyze_structure(file: UploadFile = File(...)):
             "stability_score": stability["stability_score"],
             "stability_status": stability["stability_status"],
             "is_feasible": stability["is_feasible"],
+            "stability_calculated": not stability_failure,
+            "stability_error": stability_error,
             "structure_3d": structure_3d,
             "cell_params": parsed["cell_params"],
             "xtb_available": XTB_AVAILABLE
@@ -113,9 +118,8 @@ async def analyze_structure(file: UploadFile = File(...)):
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500,
-                          detail=f"Internal error: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal memproses analisis struktur")
 
 
 @router.post("/api/linker/stability")
@@ -191,8 +195,8 @@ async def analyze_linker_stability_endpoint(file: UploadFile = File(...)):
         raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal menganalisis stabilitas linker")
 
 
 @router.post("/api/structure/3d-view")
@@ -222,5 +226,7 @@ async def get_3d_view(file: UploadFile = File(...)):
             "formula": parsed["formula"],
             "cell_params": parsed["cell_params"]
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal memproses file CIF")

@@ -50,7 +50,6 @@ async def test_economic_unknown_metal_linker(client, sample_economic_payload):
     """
     payload = sample_economic_payload.copy()
     payload["metal_name"] = "UnknownMetal"
-    payload["linker_name"] = "UnknownLinker"
 
     response = await client.post("/api/economic", json=payload)
     assert response.status_code == 200
@@ -62,33 +61,24 @@ async def test_economic_unknown_metal_linker(client, sample_economic_payload):
 async def test_economic_invalid_smiles(client, sample_economic_payload):
     """
     Test with an invalid SMILES string.
-    The service should handle rdkit failures gracefully and use fallback Cp values.
+    Invalid SMILES harus ditolak dengan 422.
     """
     payload = sample_economic_payload.copy()
     payload["smiles"] = "NOT_A_SMILES"
 
     response = await client.post("/api/economic", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    assert "q_energy_mj" in data
+    assert response.status_code == 422
 
 @pytest.mark.asyncio
 async def test_economic_zero_gravimetric_wc(client, sample_economic_payload):
     """
-    Test scenario where gravimetric_wc is 0.
-    Storage cost calculation might result in infinity (inf).
+    gravimetric_wc = 0 harus ditolak oleh validasi schema.
     """
     payload = sample_economic_payload.copy()
     payload["gravimetric_wc"] = 0.0
 
     response = await client.post("/api/economic", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    # JSON cannot represent float('inf') — FastAPI serializes it as null
-    assert data["status"] == "success"
-    assert isinstance(data["storage_cost_usd_per_kg_h2"], (int, float))
-
+    assert response.status_code == 422
 @pytest.mark.asyncio
 async def test_economic_missing_fields(client):
     """
@@ -101,3 +91,4 @@ async def test_economic_missing_fields(client):
     }
     response = await client.post("/api/economic", json=payload)
     assert response.status_code == 422
+

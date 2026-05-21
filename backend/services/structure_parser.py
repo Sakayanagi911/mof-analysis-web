@@ -44,6 +44,8 @@ def parse_cif_file(file_content: bytes, filename: str) -> dict:
 
         if parsed["n_atoms"] <= 0 or len(parsed["positions"]) <= 0:
             raise ValueError("File CIF tidak valid atau tidak mengandung data atom")
+        if parsed["n_atoms"] != len(parsed["positions"]):
+            raise ValueError("Data atom dan koordinat CIF tidak konsisten")
         return parsed
     finally:
         # Selalu hapus file temporary setelah selesai diproses
@@ -181,27 +183,26 @@ def _parse_manual(file_content: bytes, file_path: Path) -> dict:
                     symbol = parts[symbol_col]
                     # Clean symbol: remove digits, keep only letters
                     clean_symbol = ''.join(c for c in symbol if c.isalpha())
-                    if clean_symbol:
-                        atoms.append(clean_symbol)
+                    if clean_symbol and x_col >= 0 and y_col >= 0 and z_col >= 0:
+                        try:
+                            x = _extract_cif_number_from_str(parts[x_col])
+                            y = _extract_cif_number_from_str(parts[y_col])
+                            z = _extract_cif_number_from_str(parts[z_col])
 
-                        # Extract coordinates
-                        if x_col >= 0 and y_col >= 0 and z_col >= 0:
-                            try:
-                                x = _extract_cif_number_from_str(parts[x_col])
-                                y = _extract_cif_number_from_str(parts[y_col])
-                                z = _extract_cif_number_from_str(parts[z_col])
+                            # Check if fractional coordinates
+                            if any("_atom_site_fract" in lbl for lbl in atom_site_labels):
+                                # Convert fractional to Cartesian
+                                x_cart, y_cart, z_cart = _frac_to_cart(
+                                    x, y, z, cell_params
+                                )
+                                parsed_pos = [x_cart, y_cart, z_cart]
+                            else:
+                                parsed_pos = [x, y, z]
 
-                                # Check if fractional coordinates
-                                if any("_atom_site_fract" in lbl for lbl in atom_site_labels):
-                                    # Convert fractional to Cartesian
-                                    x_cart, y_cart, z_cart = _frac_to_cart(
-                                        x, y, z, cell_params
-                                    )
-                                    positions.append([x_cart, y_cart, z_cart])
-                                else:
-                                    positions.append([x, y, z])
-                            except (ValueError, IndexError):
-                                pass
+                            atoms.append(clean_symbol)
+                            positions.append(parsed_pos)
+                        except (ValueError, IndexError):
+                            pass
 
         i += 1
 

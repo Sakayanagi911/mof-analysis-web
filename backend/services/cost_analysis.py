@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from rdkit import Chem
 from services.joback import calculate_cp_joback
 
 PRICE_DB_PATH = Path(__file__).parent.parent / "data" / "price_database.json"
@@ -32,7 +33,21 @@ def get_uptake_data():
     db = load_price_database()
     return db.get("uptake_data", {})
 
-def calculate_mof_cost(metal_name: str, linker_smiles: str,
+
+def validate_smiles_or_raise(smiles: str) -> str:
+    """Validate SMILES and return normalized text."""
+    if smiles is None:
+        raise ValueError("SMILES wajib diisi")
+    normalized = smiles.strip()
+    if not normalized or normalized == "-":
+        raise ValueError("SMILES wajib diisi")
+    mol = Chem.MolFromSmiles(normalized)
+    if mol is None:
+        raise ValueError("SMILES tidak valid")
+    return normalized
+
+def calculate_mof_cost(metal_name: str, linker_smiles: str = None,
+                        linker_name: str = None,
                         metal_mass_mg: float = 100.0,
                         linker_mass_mg: float = 50.0,
                         product_mass_mg: float = 50.0,
@@ -68,7 +83,7 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
     # ============================================================================
     # STEP 1: LOOKUP LINKER NAME AND PRICE FROM SMILES
     # ============================================================================
-    linker_name = None
+    resolved_linker_name = linker_name
     linker_price_eur_per_g = 10.0  # default fallback
     
     if linker_smiles and linker_smiles != "-":
@@ -78,7 +93,7 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
         # Lookup in mapping - SEMUA DATA LINKER ADA DI SINI
         if smiles_normalized in smiles_mapping:
             linker_data = smiles_mapping[smiles_normalized]
-            linker_name = linker_data.get("linker_name", "Unknown Linker")
+            resolved_linker_name = linker_data.get("linker_name", "Unknown Linker")
             
             # Get price from SMILES mapping (SUMBER UTAMA)
             if linker_data.get("price_eur_per_g") is not None:
@@ -88,8 +103,17 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
                 linker_price_eur_per_g = 10.0
         else:
             # SMILES not found in mapping
-            linker_name = "Unknown Linker"
+            resolved_linker_name = resolved_linker_name or "Unknown Linker"
             linker_price_eur_per_g = 10.0
+    elif resolved_linker_name and resolved_linker_name != "-":
+        # Backward compatibility for tests/clients that still pass linker name.
+        linker_name_norm = resolved_linker_name.strip().lower()
+        for _, linker_data in smiles_mapping.items():
+            name_in_db = str(linker_data.get("linker_name", "")).strip().lower()
+            if name_in_db == linker_name_norm:
+                resolved_linker_name = linker_data.get("linker_name", resolved_linker_name)
+                linker_price_eur_per_g = linker_data.get("price_eur_per_g", 10.0) or 10.0
+                break
 
     
     # ============================================================================
@@ -195,7 +219,7 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
     return {
         "mof_cost_usd_per_kg": mof_cost_usd_per_kg,  # No rounding in backend
         "mof_cost_eur_per_kg": mof_cost_eur_per_kg,  # No rounding in backend
-        "linker_name": linker_name,  # Return linker name yang di-lookup dari SMILES
+        "linker_name": resolved_linker_name,  # Return linker name yang di-lookup dari SMILES
         # Debug info
         "raw_costs": {
             "metal_eur": metal_cost_eur,  # No rounding
@@ -583,10 +607,12 @@ def calculate_storage_cost(mof_cost_usd_per_kg: float, gravimetric_wc: float) ->
     
     return storage_cost  # No rounding in backend
 
-def run_economic_analysis(metal_name: str, linker_smiles: str,
-                           reaction_time: float, temperature: float,
-                           smiles: str, gravimetric_wc: float = None,  # Changed to None
-                           volumetric_wc: float = None,  # Changed to None
+def run_economic_analysis(metal_name: str, linker_smiles: str = None,
+                           reaction_time: float = 24.0, temperature: float = 120.0,
+                           smiles: str = "",
+                           linker_name: str = None,
+                           gravimetric_wc: float = None,
+                           volumetric_wc: float = None,
                            product_mass_mg: float = 50.0,
                            metal_mass_mg: float = 100.0,
                            linker_mass_mg: float = 50.0,
@@ -595,98 +621,75 @@ def run_economic_analysis(metal_name: str, linker_smiles: str,
                            modulator_name: str = "-", modulator_volume_ml: float = 0.0,
                            modulator_concentration: float = None,
                            energy_scale_factor: float = 1.0) -> dict:
-    """
-    Analisis ekonomi MOF dengan perhitungan energi yang diperbaiki.
-    
-    INPUT UTAMA: 
-    - linker_smiles: SMILES string untuk lookup linker name dan price
-    - smiles: SMILES untuk perhitungan Cp (bisa sama dengan linker_smiles)
-    
-    UPTAKE DATA:
-    - gravimetric_wc dan volumetric_wc sekarang diambil dari database berdasarkan SMILES
-    - Jika tidak ditemukan di database, gunakan default values
-    
-    Perbaikan utama pada perhitungan Qheat:
-    - Memastikan parameter gravimetric_wc dan volumetric_wc yang tepat digunakan
-    - Perhitungan V_Reactor yang akurat sesuai model asli
-    - Formula Qheat = Total_Sensible / (heat_eff * V_Reactor) yang konsisten
-    - Handling parameter zero dari frontend dengan nilai default yang masuk akal
-    """
-    
-    # ===== LOOKUP UPTAKE DATA FROM DATABASE =====
+    """Run economic analysis with strict validation and explicit chemistry errors."""
+    smiles_normalized = validate_smiles_or_raise(smiles)
+
+    if reaction_time <= 0:
+        raise ValueError("reaction_time harus lebih besar dari 0")
+    if temperature <= 0:
+        raise ValueError("temperature harus lebih besar dari 0")
+    if product_mass_mg <= 0:
+        raise ValueError("product_mass_mg harus lebih besar dari 0")
+    if metal_mass_mg <= 0:
+        raise ValueError("metal_mass_mg harus lebih besar dari 0")
+    if linker_mass_mg <= 0:
+        raise ValueError("linker_mass_mg harus lebih besar dari 0")
+    if solvent_volume_ml < 0 or additive_volume_ml < 0 or modulator_volume_ml < 0:
+        raise ValueError("volume tidak boleh negatif")
+
     uptake_data = get_uptake_data()
-    
-    # Normalize SMILES for lookup
-    smiles_normalized = smiles.strip() if smiles else ""
-    
-    # Try to get uptake data from database
     if smiles_normalized in uptake_data:
         uptake_info = uptake_data[smiles_normalized]
         if gravimetric_wc is None:
             gravimetric_wc = uptake_info.get("gravimetric_wc_percent", 5.5)
         if volumetric_wc is None:
             volumetric_wc = uptake_info.get("volumetric_wc_g_per_l", 40.0)
-        print(f"✅ Found uptake data for SMILES: Grav={gravimetric_wc}%, Vol={volumetric_wc} g/L")
     else:
-        # Use default values if not found in database
-        if gravimetric_wc is None:
-            gravimetric_wc = 5.5  # Default 5.5%
-        if volumetric_wc is None:
-            volumetric_wc = 40.0  # Default 40 g/L
-        print(f"⚠️ SMILES not found in uptake database, using defaults: Grav={gravimetric_wc}%, Vol={volumetric_wc} g/L")
-    
-    # ===== HANDLING PARAMETER ZERO DARI FRONTEND =====
-    # Jika frontend mengirim parameter 0, gunakan nilai default yang masuk akal
-    if product_mass_mg <= 0:
-        product_mass_mg = 50.0  # Default 50 mg
-    if metal_mass_mg <= 0:
-        metal_mass_mg = 100.0   # Default 100 mg
-    if linker_mass_mg <= 0:
-        linker_mass_mg = 50.0   # Default 50 mg
-    if solvent_volume_ml <= 0 and (solvent_name and solvent_name != "-"):
-        solvent_volume_ml = 1.0  # Default 1 mL jika ada solvent name
-    if additive_volume_ml <= 0 and (additive_name and additive_name != "-"):
-        additive_volume_ml = 0.5  # Default 0.5 mL jika ada additive name
-    if modulator_volume_ml <= 0 and (modulator_name and modulator_name != "-"):
-        modulator_volume_ml = 0.1  # Default 0.1 mL jika ada modulator name
-    
-    # Kalkulasi dinamis memasukkan parameter dari frontend
-    # PERHATIAN: Sekarang menggunakan linker_smiles bukan linker_name
-    cost_result = calculate_mof_cost(metal_name, linker_smiles, 
-                                     metal_mass_mg=metal_mass_mg,
-                                     linker_mass_mg=linker_mass_mg,
-                                     product_mass_mg=product_mass_mg,
-                                     solvent_name=solvent_name,
-                                     solvent_volume_ml=solvent_volume_ml,
-                                     additive_name=additive_name,
-                                     additive_volume_ml=additive_volume_ml,
-                                     modulator_name=modulator_name,
-                                     modulator_volume_ml=modulator_volume_ml)
-    
+        if gravimetric_wc is None or volumetric_wc is None:
+            raise ValueError("SMILES tidak ditemukan di uptake database. Berikan gravimetric_wc dan volumetric_wc.")
+
+    cost_result = calculate_mof_cost(
+        metal_name,
+        linker_smiles,
+        linker_name=linker_name,
+        metal_mass_mg=metal_mass_mg,
+        linker_mass_mg=linker_mass_mg,
+        product_mass_mg=product_mass_mg,
+        solvent_name=solvent_name,
+        solvent_volume_ml=solvent_volume_ml,
+        additive_name=additive_name,
+        additive_volume_ml=additive_volume_ml,
+        modulator_name=modulator_name,
+        modulator_volume_ml=modulator_volume_ml,
+    )
+
     mof_cost = cost_result["mof_cost_usd_per_kg"]
     storage_cost = calculate_storage_cost(mof_cost, gravimetric_wc)
-    energy_result = calculate_energy(smiles, temperature, reaction_time,
-                                    linker_mass_mg=linker_mass_mg,
-                                    metal_mass_mg=metal_mass_mg,
-                                    solvent_name=solvent_name,
-                                    solvent_volume_ml=solvent_volume_ml,
-                                    additive_name=additive_name,
-                                    additive_volume_ml=additive_volume_ml,
-                                    modulator_name=modulator_name,
-                                    modulator_volume_ml=modulator_volume_ml,
-                                    modulator_concentration=modulator_concentration,
-                                    metal_name=metal_name,
-                                    volumetric_wc=volumetric_wc,
-                                    gravimetric_wc=gravimetric_wc,
-                                    product_mass_mg=product_mass_mg,
-                                    energy_scale_factor=energy_scale_factor)
+    energy_result = calculate_energy(
+        smiles_normalized,
+        temperature,
+        reaction_time,
+        linker_mass_mg=linker_mass_mg,
+        metal_mass_mg=metal_mass_mg,
+        solvent_name=solvent_name,
+        solvent_volume_ml=solvent_volume_ml,
+        additive_name=additive_name,
+        additive_volume_ml=additive_volume_ml,
+        modulator_name=modulator_name,
+        modulator_volume_ml=modulator_volume_ml,
+        modulator_concentration=modulator_concentration,
+        metal_name=metal_name,
+        volumetric_wc=volumetric_wc,
+        gravimetric_wc=gravimetric_wc,
+        product_mass_mg=product_mass_mg,
+        energy_scale_factor=energy_scale_factor,
+    )
 
-    # Cek feasibility
     is_feasible = (
-        mof_cost <= MAX_MOF_COST and
-        storage_cost <= MAX_STORAGE_COST and
-        reaction_time <= MAX_REACTION_TIME and
-        temperature <= MAX_TEMPERATURE
+        mof_cost <= MAX_MOF_COST
+        and storage_cost <= MAX_STORAGE_COST
+        and reaction_time <= MAX_REACTION_TIME
+        and temperature <= MAX_TEMPERATURE
     )
 
     return {
@@ -702,6 +705,6 @@ def run_economic_analysis(metal_name: str, linker_smiles: str,
             "mof_cost_ok": mof_cost <= MAX_MOF_COST,
             "storage_cost_ok": storage_cost <= MAX_STORAGE_COST,
             "time_ok": reaction_time <= MAX_REACTION_TIME,
-            "temperature_ok": temperature <= MAX_TEMPERATURE
-        }
+            "temperature_ok": temperature <= MAX_TEMPERATURE,
+        },
     }
