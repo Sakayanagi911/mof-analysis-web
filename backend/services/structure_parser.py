@@ -38,9 +38,13 @@ def parse_cif_file(file_content: bytes, filename: str) -> dict:
             f.write(file_content)
 
         if ASE_AVAILABLE:
-            return _parse_with_ase(temp_path)
+            parsed = _parse_with_ase(temp_path)
         else:
-            return _parse_manual(file_content, temp_path)
+            parsed = _parse_manual(file_content, temp_path)
+
+        if parsed["n_atoms"] <= 0 or len(parsed["positions"]) <= 0:
+            raise ValueError("File CIF tidak valid atau tidak mengandung data atom")
+        return parsed
     finally:
         # Selalu hapus file temporary setelah selesai diproses
         if temp_path.exists():
@@ -216,6 +220,7 @@ def _parse_manual(file_content: bytes, file_path: Path) -> dict:
         "formula": formula,
         "file_path": str(file_path)
     }
+
 
 
 def _extract_cif_number(line: str) -> float:
@@ -414,4 +419,197 @@ def prepare_3d_structure_data(atoms: list, positions: list) -> dict:
     return {
         "atoms": atom_data,
         "n_atoms": len(atom_data)
+    }
+
+
+def relax_hydrogens_uff(xyz_content: str) -> str:
+    """
+    Menerima xyz_content, mendeteksi ikatan dengan RDKit,
+    melakukan relaksasi UFF pada atom H dengan heavy atoms fixed,
+    dan mengembalikan xyz_content baru hasil relaksasi.
+    Jika terjadi kesalahan (misal RDKit tidak bisa menebak valensi),
+    fungsi ini akan mengembalikan xyz_content asli sebagai fallback.
+    """
+    import tempfile
+    import os
+    from rdkit import Chem
+    from rdkit.Chem import rdDetermineBonds, AllChem
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_xyz = os.path.join(tmpdir, "temp.xyz")
+            with open(temp_xyz, "w") as f:
+                f.write(xyz_content)
+            
+            raw_mol = Chem.MolFromXYZFile(temp_xyz)
+            if raw_mol is None:
+                return xyz_content
+            
+            mol = Chem.Mol(raw_mol)
+            rdDetermineBonds.DetermineBonds(mol, charge=0)
+            
+            ff = AllChem.UFFGetMoleculeForceField(mol)
+            if ff:
+                for i, atom in enumerate(mol.GetAtoms()):
+                    if atom.GetSymbol() != "H":
+                        ff.AddFixedPoint(i)
+                ff.Minimize(maxIts=500)
+            
+            return Chem.MolToXYZBlock(mol)
+    except Exception as e:
+        print(f"[Warning] RDKit UFF hydrogen relaxation failed, using raw coordinates: {e}")
+        return xyz_content
+
+
+def parse_xyz_content(xyz_content: str):
+    """Parse simbol dan koordinat dari string blok XYZ."""
+    lines = xyz_content.strip().splitlines()
+    if len(lines) < 3:
+        return [], []
+    symbols = []
+    positions = []
+    for line in lines[2:]:
+        parts = line.split()
+        if len(parts) >= 4:
+            symbols.append(parts[0])
+            positions.append([float(parts[1]), float(parts[2]), float(parts[3])])
+    return symbols, positions
+
+
+def kabsch_rmsd_internal(P, Q):
+    """Algoritma Kabsch untuk perataan optimal dan RMSD."""
+    import numpy as np
+    P_centered = P - P.mean(axis=0)
+    Q_centered = Q - Q.mean(axis=0)
+    C = np.dot(P_centered.T, Q_centered)
+    V, S, Wt = np.linalg.svd(C)
+    d = np.sign(np.linalg.det(np.dot(Wt.T, V.T)))
+    D = np.diag([1, 1, d])
+    U = np.dot(Wt.T, np.dot(D, V.T))
+    P_rot = np.dot(P_centered, U)
+    rmsd = np.sqrt(np.mean(np.sum((P_rot - Q_centered)**2, axis=1)))
+    return rmsd, P_rot, Q_centered
+
+
+def detect_bonds_internal(symbols, coords, scale=1.5):
+    """Mendeteksi ikatan berdasarkan jari-jari kovalen."""
+    import numpy as np
+    from itertools import combinations
+    cov_radii = {
+        'H': 0.31, 'C': 0.76, 'N': 0.71, 'O': 0.66, 'F': 0.57,
+        'P': 1.07, 'S': 1.05, 'Cl': 1.02, 'Br': 1.20, 'I': 1.39
+    }
+    bonds = []
+    N = len(symbols)
+    for i, j in combinations(range(N), 2):
+        if symbols[i] not in cov_radii or symbols[j] not in cov_radii:
+            continue
+        cutoff = scale * (cov_radii[symbols[i]] + cov_radii[symbols[j]])
+        dist = np.linalg.norm(coords[i] - coords[j])
+        if dist <= cutoff:
+            bonds.append((i, j))
+    return bonds
+
+
+def bond_lengths_internal(coords, bonds):
+    """Menghitung panjang ikatan untuk daftar ikatan."""
+    import numpy as np
+    return np.array([np.linalg.norm(coords[i] - coords[j]) for i, j in bonds])
+
+
+def bond_angles_internal(coords, bonds):
+    """Menghitung sudut ikatan untuk semua triplet."""
+    import numpy as np
+    angles = []
+    triplets = []
+    neighbor_dict = {}
+    for i, j in bonds:
+        neighbor_dict.setdefault(i, []).append(j)
+        neighbor_dict.setdefault(j, []).append(i)
+    for center, neighbors in neighbor_dict.items():
+        for i in range(len(neighbors)):
+            for j in range(i + 1, len(neighbors)):
+                a, b = neighbors[i], neighbors[j]
+                v1 = coords[a] - coords[center]
+                v2 = coords[b] - coords[center]
+                cos_theta = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+                cos_theta = np.clip(cos_theta, -1.0, 1.0)
+                theta = np.arccos(cos_theta) * 180 / np.pi
+                angles.append(theta)
+                triplets.append((a, center, b))
+    return np.array(angles), triplets
+
+
+def analyze_linker_stability(embedded_xyz_content: str, optimized_xyz_content: str) -> dict:
+    """
+    Analisis stabilitas linker MOF dengan membandingkan koordinat embedded
+    dan optimized.
+    """
+    import numpy as np
+    
+    sym_emb, coord_emb = parse_xyz_content(embedded_xyz_content)
+    sym_free, coord_free = parse_xyz_content(optimized_xyz_content)
+    
+    if len(sym_emb) != len(sym_free):
+        raise ValueError("Jumlah atom tidak konsisten antar struktur")
+        
+    coords_emb_arr = np.array(coord_emb)
+    coords_free_arr = np.array(coord_free)
+    
+    # RMSD All
+    rmsd_all, coord_free_aligned, coord_emb_centered = kabsch_rmsd_internal(coords_free_arr, coords_emb_arr)
+    
+    # RMSD Heavy
+    heavy_idx = [i for i, sym in enumerate(sym_free) if sym != "H"]
+    if len(heavy_idx) > 0:
+        rmsd_heavy, _, _ = kabsch_rmsd_internal(coords_free_arr[heavy_idx], coords_emb_arr[heavy_idx])
+    else:
+        rmsd_heavy = rmsd_all
+        
+    # Deteksi ikatan & hitung deviasi
+    bonds = detect_bonds_internal(sym_free, coords_free_arr, scale=1.5)
+    
+    lengths_free = bond_lengths_internal(coords_free_arr, bonds)
+    lengths_emb = bond_lengths_internal(coords_emb_arr, bonds)
+    delta_lengths = lengths_emb - lengths_free
+    me_delta_length = float(np.mean(delta_lengths)) if len(delta_lengths) > 0 else 0.0
+    
+    angles_free, triplets = bond_angles_internal(coords_free_arr, bonds)
+    angles_emb, _ = bond_angles_internal(coords_emb_arr, bonds)
+    delta_angles = angles_emb - angles_free
+    me_delta_angle = float(np.mean(delta_angles)) if len(delta_angles) > 0 else 0.0
+    
+    # Centering untuk visualisasi 3D
+    coords_free_centered = coord_free_aligned - coord_free_aligned.mean(axis=0)
+    coords_emb_centered_zero = coord_emb_centered - coord_emb_centered.mean(axis=0)
+    
+    delta_r = np.linalg.norm(coords_emb_centered_zero - coords_free_centered, axis=1)
+    
+    delta_min = float(delta_r.min()) if len(delta_r) > 0 else 0.0
+    delta_max = float(delta_r.max()) if len(delta_r) > 0 else 0.0
+    
+    # Map ke warna gradien Viridis (Biru -> Teal -> Kuning)
+    displacements = []
+    for i, (sym, dr) in enumerate(zip(sym_free, delta_r)):
+        val_norm = (dr - delta_min) / (delta_max - delta_min) if delta_max > delta_min else 0.0
+        r = int(68 + val_norm * (253 - 68))
+        g = int(1 + val_norm * (231 - 1))
+        b = int(84 + val_norm * (37 - 84))
+        
+        displacements.append({
+            "index": i,
+            "element": sym,
+            "delta_r": round(float(dr), 4),
+            "color": f"rgb({r},{g},{b})"
+        })
+        
+    return {
+        "rmsd_all": round(float(rmsd_all), 4),
+        "rmsd_heavy": round(float(rmsd_heavy), 4),
+        "me_delta_length": round(me_delta_length, 6),
+        "me_delta_angle": round(me_delta_angle, 4),
+        "atoms_displacement": displacements,
+        "coords_embedded": coords_emb_centered_zero.tolist(),
+        "coords_optimized": coords_free_centered.tolist(),
+        "bonds": bonds
     }

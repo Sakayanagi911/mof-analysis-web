@@ -132,9 +132,11 @@ def test_calculate_rmsd_symmetric():
 def test_calculate_rmsd_nonzero_for_distorted():
     """
     RMSD must be > 0 for two genuinely different (non-shifted) geometries.
+    Menggunakan 4 titik non-planar untuk menghindari degenerasi SVD
+    pada Kabsch algorithm yang terjadi dengan 3 titik coplanar.
     """
-    pos1 = [[0, 0, 0], [1, 0, 0], [0, 1, 0]]
-    pos2 = [[0, 0, 0], [1, 0, 0], [0, 0, 1]]  # last atom moved to different axis
+    pos1 = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0.5, 0.5, 1.0]]
+    pos2 = [[0, 0, 0], [1, 0, 0], [0, 0, 1], [0.5, 1.0, 0.5]]  # genuinely different
     assert calculate_rmsd(pos1, pos2) > 0.0
 
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from rdkit import Chem
 from rdkit.Chem import Descriptors  
 
@@ -9,8 +9,19 @@ from services.cost_analysis import run_economic_analysis
 
 # 1. Impor fungsi bawaan Anda agar hitungannya 100% konsisten dengan Notebook
 from services.joback import calculate_cp_joback
+from services.xtb_runner import (
+    XTB_AVAILABLE, run_xtb_single_point,
+    run_xtb_optimization, calculate_delta_e,
+    atoms_positions_to_xyz
+)
+from services.structure_parser import (
+    parse_cif_file, separate_sbu_and_linker,
+    relax_hydrogens_uff, analyze_linker_stability,
+    calculate_stability_score
+)
 
 router = APIRouter()
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 def get_chem_prop(name: str, is_metal=False):
     """
@@ -152,6 +163,67 @@ async def analyze_mof(
     # (cost_analysis.py sudah punya MANUAL_CP_MAP dan perhitungan yang 100% konsisten)
     energy_details = econ_result.get("energy_details", {})
 
+    # 4. Hitung stabilitas struktur nyata via xTB (jika file diunggah dan xTB tersedia)
+    delta_e = None
+    rmsd = None
+    stability_status = "Belum dihitung (xTB tidak tersedia)"
+    stability_feasible = None
+
+    if file is not None and file.filename.strip() != "":
+        if file.filename.endswith(".cif"):
+            try:
+                # Membaca konten file
+                content = await file.read()
+                if len(content) > MAX_UPLOAD_BYTES:
+                    raise HTTPException(status_code=413, detail="Ukuran file melebihi batas 5 MB")
+                parsed = parse_cif_file(content, file.filename)
+                separated = separate_sbu_and_linker(
+                    parsed["atoms"], parsed["positions"]
+                )
+                
+                if XTB_AVAILABLE and separated["linker_count"] > 0:
+                    linker_xyz = atoms_positions_to_xyz(
+                        separated["linker_atoms"], separated["linker_positions"]
+                    )
+                    
+                    # Relaksasi atom H (heavy atoms di-fix)
+                    relaxed_xyz = relax_hydrogens_uff(linker_xyz)
+                    
+                    # Single point energy
+                    sp_result = run_xtb_single_point(relaxed_xyz)
+                    
+                    # Optimization
+                    opt_result = run_xtb_optimization(relaxed_xyz)
+                    
+                    if not sp_result["success"] or not opt_result["success"]:
+                        stability_status = "Gagal menghitung stabilitas"
+                        stability_feasible = False
+                    else:
+                        # Selisih energi konformasi (kJ/mol)
+                        delta_e_val = calculate_delta_e(
+                            sp_result["energy_kj_mol"],
+                            opt_result["energy_kj_mol"]
+                        )
+                        
+                        # RMSD Kabsch terselaraskan
+                        analysis = analyze_linker_stability(relaxed_xyz, opt_result["optimized_xyz"])
+                        rmsd_val = analysis["rmsd_all"]
+                        
+                        stability = calculate_stability_score(delta_e_val, rmsd_val)
+                        
+                        delta_e = round(delta_e_val, 3)
+                        rmsd = round(rmsd_val, 4)
+                        stability_status = stability["stability_status"]
+                        stability_feasible = stability["is_feasible"]
+                elif not XTB_AVAILABLE:
+                    stability_status = "Belum dihitung (xTB tidak tersedia)"
+                else:
+                    stability_status = "Tidak ada linker terdeteksi"
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(status_code=500, detail="Gagal menghitung stabilitas struktur")
+
     return {
         "status": "success",
         "results": {
@@ -184,13 +256,13 @@ async def analyze_mof(
             "time_ok": f_reaction_time <= 48,
             "temperature": f_temperature,
             "temp_ok": f_temperature <= 180,
-            # Stability (estimasi — xTB tidak tersedia di server)
-            "delta_e": None,
-            "rmsd": None,
-            "stability_status": "Belum dihitung (xTB tidak tersedia)",
-            "stability_feasible": None,
+            # Stability (dihitung dinamis menggunakan xTB jika tersedia)
+            "delta_e": delta_e,
+            "rmsd": rmsd,
+            "stability_status": stability_status,
+            "stability_feasible": stability_feasible,
             "econ_feasible": econ_result["is_feasible"],
-            "is_overall_feasible": (wug >= 5.5 and wuv >= 40.0 and econ_result["is_feasible"])
+            "is_overall_feasible": (wug >= 5.5 and wuv >= 40.0 and econ_result["is_feasible"] and (stability_feasible if stability_feasible is not None else True))
         }
     }
 
@@ -249,13 +321,5 @@ async def analyze_economic(request: EconomicRequest):
             )
         )
         return EconomicResponse(status="success", **result)
-    except Exception as e:
-        return EconomicResponse(
-            status=f"error: {str(e)}",
-            mof_cost_usd_per_kg=0.0,
-            storage_cost_usd_per_kg_h2=0.0,
-            q_energy_kj=0.0,
-            q_loss_kj=0.0,
-            is_feasible=False,
-            feasibility_details={}
-        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Gagal menjalankan analisis ekonomi")

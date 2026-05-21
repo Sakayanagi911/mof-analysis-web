@@ -83,8 +83,10 @@ class EconomicResponse(BaseModel):
     status: str
     mof_cost_usd_per_kg: float
     storage_cost_usd_per_kg_h2: float
-    q_energy_kj: float
-    q_loss_kj: float
+    q_energy_mj: float
+    q_loss_mj: float
+    e_stirr_mj: float
+    e_total_mj: float
     is_feasible: bool
     feasibility_details: dict
 

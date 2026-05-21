@@ -41,7 +41,7 @@ elif system_os == "Linux":
 # Jika binari lokal tidak ada, cek fallback global di PATH
 if not XTB_AVAILABLE:
     try:
-        result = subprocess.run(["xtb", "--version"], capture_output=True, text=True, timeout=10)
+        result = subprocess.run(["xtb", "--version"], capture_output=True, timeout=10)
         XTB_AVAILABLE = (result.returncode == 0)
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         XTB_AVAILABLE = False
@@ -92,12 +92,28 @@ def run_xtb_single_point(xyz_content: str) -> dict:
                 env["XTBPATH"] = XTB_ENV_PATH
             result = subprocess.run(
                 [XTB_CMD, "input.xyz", "--gfn2"],
-                capture_output=True, text=True,
+                capture_output=True,
                 cwd=tmpdir, env=env, timeout=300
             )
+            stdout = result.stdout.decode("utf-8", errors="replace")
 
             # Parse energi dari output xTB
-            energy = parse_xtb_energy(result.stdout)
+            if result.returncode != 0:
+                return {
+                    "energy_hartree": 0.0,
+                    "energy_kj_mol": 0.0,
+                    "success": False,
+                    "error": "xTB single-point failed with nonzero exit code",
+                }
+
+            energy = parse_xtb_energy(stdout)
+            if energy is None:
+                return {
+                    "energy_hartree": 0.0,
+                    "energy_kj_mol": 0.0,
+                    "success": False,
+                    "error": "xTB single-point output does not contain TOTAL ENERGY",
+                }
 
             return {
                 "energy_hartree": energy,
@@ -137,11 +153,31 @@ def run_xtb_optimization(xyz_content: str) -> dict:
                 env["XTBPATH"] = XTB_ENV_PATH
             result = subprocess.run(
                 [XTB_CMD, "input.xyz", "--opt", "--gfn2"],
-                capture_output=True, text=True,
+                capture_output=True,
                 cwd=tmpdir, env=env, timeout=600
             )
+            stdout = result.stdout.decode("utf-8", errors="replace")
 
-            energy = parse_xtb_energy(result.stdout)
+            if result.returncode != 0:
+                return {
+                    "energy_hartree": 0.0,
+                    "energy_kj_mol": 0.0,
+                    "optimized_xyz": "",
+                    "optimized_positions": [],
+                    "success": False,
+                    "error": "xTB optimization failed with nonzero exit code",
+                }
+
+            energy = parse_xtb_energy(stdout)
+            if energy is None:
+                return {
+                    "energy_hartree": 0.0,
+                    "energy_kj_mol": 0.0,
+                    "optimized_xyz": "",
+                    "optimized_positions": [],
+                    "success": False,
+                    "error": "xTB optimization output does not contain TOTAL ENERGY",
+                }
 
             # Baca geometri yang sudah dioptimasi
             opt_xyz_path = os.path.join(tmpdir, "xtbopt.xyz")
@@ -151,6 +187,15 @@ def run_xtb_optimization(xyz_content: str) -> dict:
                 with open(opt_xyz_path, "r") as f:
                     opt_xyz = f.read()
                 opt_positions = parse_xyz_positions(opt_xyz)
+            if not opt_xyz or not opt_positions:
+                return {
+                    "energy_hartree": 0.0,
+                    "energy_kj_mol": 0.0,
+                    "optimized_xyz": "",
+                    "optimized_positions": [],
+                    "success": False,
+                    "error": "xTB optimization did not produce a valid xtbopt.xyz",
+                }
 
             return {
                 "energy_hartree": energy,
@@ -169,7 +214,7 @@ def run_xtb_optimization(xyz_content: str) -> dict:
                     "success": False, "error": str(e)}
 
 
-def parse_xtb_energy(output: str) -> float:
+def parse_xtb_energy(output: str):
     """
     Parse total energy dari output xTB.
     Cari baris: "TOTAL ENERGY" → extract nilai dalam Hartree.
@@ -179,7 +224,7 @@ def parse_xtb_energy(output: str) -> float:
             match = re.search(r"(-?\d+\.\d+)", line)
             if match:
                 return float(match.group(1))
-    return 0.0
+    return None
 
 
 def parse_xyz_positions(xyz_content: str) -> list:
