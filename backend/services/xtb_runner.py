@@ -12,13 +12,39 @@ import re
 import os
 from pathlib import Path
 
-# Cek apakah xTB tersedia
+import platform
+
+# Tentukan path relatif ke binari lokal di dalam repositori
+BASE_DIR = Path(__file__).parent.parent.resolve()
+LOCAL_XTB_DIR = BASE_DIR / "bin" / "xtb"
+
+system_os = platform.system()
+XTB_CMD = "xtb"
+XTB_ENV_PATH = None
 XTB_AVAILABLE = False
-try:
-    result = subprocess.run(["xtb", "--version"], capture_output=True, text=True, timeout=10)
-    XTB_AVAILABLE = result.returncode == 0
-except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-    XTB_AVAILABLE = False
+
+if system_os == "Windows":
+    local_binary = LOCAL_XTB_DIR / "windows" / "bin" / "xtb.exe"
+    local_share = LOCAL_XTB_DIR / "windows" / "share" / "xtb"
+    if local_binary.exists():
+        XTB_CMD = str(local_binary)
+        XTB_ENV_PATH = str(local_share)
+        XTB_AVAILABLE = True
+elif system_os == "Linux":
+    local_binary = LOCAL_XTB_DIR / "linux" / "bin" / "xtb"
+    local_share = LOCAL_XTB_DIR / "linux" / "share" / "xtb"
+    if local_binary.exists():
+        XTB_CMD = str(local_binary)
+        XTB_ENV_PATH = str(local_share)
+        XTB_AVAILABLE = True
+
+# Jika binari lokal tidak ada, cek fallback global di PATH
+if not XTB_AVAILABLE:
+    try:
+        result = subprocess.run(["xtb", "--version"], capture_output=True, text=True, timeout=10)
+        XTB_AVAILABLE = (result.returncode == 0)
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        XTB_AVAILABLE = False
 
 
 def atoms_positions_to_xyz(atoms: list, positions: list) -> str:
@@ -61,10 +87,13 @@ def run_xtb_single_point(xyz_content: str) -> dict:
             f.write(xyz_content)
 
         try:
+            env = os.environ.copy()
+            if XTB_ENV_PATH:
+                env["XTBPATH"] = XTB_ENV_PATH
             result = subprocess.run(
-                ["xtb", "input.xyz", "--gfn2"],
+                [XTB_CMD, "input.xyz", "--gfn2"],
                 capture_output=True, text=True,
-                cwd=tmpdir, timeout=300
+                cwd=tmpdir, env=env, timeout=300
             )
 
             # Parse energi dari output xTB
@@ -103,10 +132,13 @@ def run_xtb_optimization(xyz_content: str) -> dict:
             f.write(xyz_content)
 
         try:
+            env = os.environ.copy()
+            if XTB_ENV_PATH:
+                env["XTBPATH"] = XTB_ENV_PATH
             result = subprocess.run(
-                ["xtb", "input.xyz", "--opt", "--gfn2"],
+                [XTB_CMD, "input.xyz", "--opt", "--gfn2"],
                 capture_output=True, text=True,
-                cwd=tmpdir, timeout=600
+                cwd=tmpdir, env=env, timeout=600
             )
 
             energy = parse_xtb_energy(result.stdout)
