@@ -61,3 +61,20 @@ async def get_smiles_mapping():
         return {"error": "Database file not found", "mapping": {}}
     except Exception as e:
         return {"error": str(e), "mapping": {}}
+
+@app.get("/get-modulator-concentration")
+async def get_modulator_concentration():
+    """
+    Endpoint untuk mendapatkan SMILES to Modulator Concentration mapping
+    Hanya untuk Top 5 MOFs, komponen lain selalu 100%
+    """
+    from services.cost_analysis import get_modulator_concentration_data
+    try:
+        concentration_data = get_modulator_concentration_data()
+        return {
+            "status": "success",
+            "mapping": concentration_data,
+            "description": "Modulator concentration mapping for Top 5 MOFs"
+        }
+    except Exception as e:
+        return {"error": str(e), "mapping": {}}

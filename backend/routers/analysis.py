@@ -6,7 +6,7 @@ from rdkit.Chem import Descriptors
 from models.schemas import FeasibilityRequest, FeasibilityResponse
 from models.schemas import EconomicRequest, EconomicResponse
 from services.whitebox_model import predict_working_capacity, calculate_wug, calculate_wuv
-from services.cost_analysis import run_economic_analysis
+from services.cost_analysis import run_economic_analysis, get_modulator_concentration_data
 
 # 1. Impor fungsi bawaan Anda agar hitungannya 100% konsisten dengan Notebook
 from services.joback import calculate_cp_joback
@@ -37,45 +37,11 @@ def get_chem_prop(name: str, is_metal=False):
     return 1.0, (110.0 if is_metal else 75.0), 100.0
 
 
-def get_modulator_concentration(modulator_name: str, volume_ml: float) -> float:
-    """
-    Menentukan konsentrasi modulator berdasarkan nama dan volume.
-    Berdasarkan analisis dari use cases yang benar.
-    """
-    if not modulator_name or modulator_name == "-" or volume_ml <= 0:
-        return 100.0  # Default pure concentration
-    
-    modulator_lower = modulator_name.lower().replace(" ", "")
-    
-    if "hno3" in modulator_lower:
-        # Konsentrasi HNO3 berdasarkan volume untuk mendapatkan energi yang benar
-        # Dari analisis: 0.05 mL → 6.51%, 0.15 mL → 17.63%
-        # Formula empiris berdasarkan volume
-        if volume_ml <= 0.05:
-            return 6.51  # Untuk volume kecil
-        elif volume_ml <= 0.10:
-            return 12.0  # Untuk volume sedang
-        elif volume_ml <= 0.15:
-            return 17.63  # Untuk volume 0.15 mL
-        else:
-            return 20.0  # Untuk volume lebih besar
-    
-    elif "hcl" in modulator_lower:
-        # Konsentrasi HCl (estimasi berdasarkan pola yang sama)
-        return 10.0
-    
-    # Default untuk modulator lain
-    return 100.0
-
-
 def get_energy_scale_factor(solvent_vol: float, additive_vol: float, modulator_vol: float) -> float:
     """
     TIDAK DIGUNAKAN LAGI - Perhitungan murni matematis tanpa scale factor.
     Fungsi ini di-keep untuk backward compatibility tapi selalu return 1.0
     """
-    return 1.0
-    
-    # Jika hanya solvent dan modulator, gunakan scale factor 1.0
     return 1.0
 
 
@@ -100,6 +66,7 @@ async def analyze_mof(
     additive_volume: str = Form("0"), 
     modulator_name: str = Form("-"),  
     modulator_volume: str = Form("0"),
+    modulator_concentration: str = Form("100.0"),  # NEW: User input concentration (default 100%)
     product_mass: str = Form("0"),  
     reaction_time: str = Form("24"), 
     temperature: str = Form("120")
@@ -121,6 +88,7 @@ async def analyze_mof(
     f_solvent_vol = parse_f(solvent_volume, 0.0)
     f_additive_vol = parse_f(additive_volume, 0.0)
     f_modulator_vol = parse_f(modulator_volume, 0.0)
+    f_modulator_concentration = parse_f(modulator_concentration, 100.0)  # NEW: Parse concentration
     
     f_product_mass = parse_f(product_mass, 0.0)
     f_reaction_time = parse_f(reaction_time, 24.0)
@@ -181,7 +149,7 @@ async def analyze_mof(
         additive_volume_ml=f_additive_vol,
         modulator_name=modulator_name,
         modulator_volume_ml=f_modulator_vol,
-        modulator_concentration=get_modulator_concentration(modulator_name, f_modulator_vol),
+        modulator_concentration=f_modulator_concentration,  # Use user input concentration
         metal_name=metal_name,
         volumetric_wc=cost_calc_volumetric,
         gravimetric_wc=cost_calc_gravimetric,
@@ -391,10 +359,7 @@ async def analyze_economic(request: EconomicRequest):
             additive_volume_ml=request.additive_volume_ml,
             modulator_name=request.modulator_name,
             modulator_volume_ml=request.modulator_volume_ml,
-            modulator_concentration=get_modulator_concentration(
-                request.modulator_name, 
-                request.modulator_volume_ml
-            ),
+            modulator_concentration=getattr(request, 'modulator_concentration', 100.0),  # Use user input or default 100%
             energy_scale_factor=get_energy_scale_factor(
                 request.solvent_volume_ml,
                 request.additive_volume_ml,

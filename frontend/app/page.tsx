@@ -26,31 +26,36 @@ export default function MOFScreening() {
   const [showAdditiveList, setShowAdditiveList] = useState(false);
   const [showModulatorList, setShowModulatorList] = useState(false);
   
-  // Search terms untuk setiap dropdown
-  const [solventSearch, setSolventSearch] = useState("");
+  // Search terms untuk setiap dropdown - default FATQID values
+  const [solventSearch, setSolventSearch] = useState("DMF");
   const [additiveSearch, setAdditiveSearch] = useState("");
-  const [modulatorSearch, setModulatorSearch] = useState("");
-  const [metalSearch, setMetalSearch] = useState("");
+  const [modulatorSearch, setModulatorSearch] = useState("HNO3");
+  const [metalSearch, setMetalSearch] = useState("CuSO₄·5H₂O");
   
   const [formData, setFormData] = useState({
-    pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.1", pld: "8", vf: "0.5", density: "0.8",
-    solvent_name: "",   
-    solvent_volume: "", 
+    // Geometric Factors - default values (LCD = 12.0)
+    pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.0", pld: "8", vf: "0.5", density: "0.8",
+    
+    // FATQID (Use Case 1) - Default values (kecuali SMILES tetap kosong)
+    solvent_name: "DMF",   
+    solvent_volume: "2", 
     additive_name: "",  
     additive_volume: "", 
-    modulator_name: "", 
-    modulator_volume: "", 
-    metal_name: "",     
-    metal_mass: "", 
-    smiles: "",         // INPUT UTAMA: SMILES (user input)
-    linker_name: "",    // AUTO-FILLED: Linker Name (dari SMILES lookup)
-    linker_mass: "", 
-    product_mass: "0",   
+    modulator_name: "HNO3", 
+    modulator_volume: "0.05", 
+    modulator_concentration: "4.44",  // FATQID concentration
+    metal_name: "CuSO₄·5H₂O",     
+    metal_mass: "8", 
+    smiles: "",         // Tetap kosong seperti sebelumnya
+    linker_name: "",    // Auto-filled dari SMILES lookup
+    linker_mass: "5", 
+    product_mass: "9.12",   // FATQID product mass
     reaction_time: "24", 
-    temperature: "120"   
+    temperature: "85"   // FATQID temperature
   });
 
   const [smilesMapping, setSmilesMapping] = useState<any>({});
+  // REMOVED: concentrationMapping - tidak ada auto-fill
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/get-prices")
@@ -63,15 +68,19 @@ export default function MOFScreening() {
       .then(res => res.json())
       .then(data => { if (data && !data.error) setSmilesMapping(data.mapping || {}); })
       .catch(err => console.error("SMILES mapping offline"));
+    
+    // REMOVED: Load concentration mapping - user input manual
   }, []);
 
-  // Auto-fill Linker Name dari SMILES
+  // Auto-fill Linker Name dari SMILES (tanpa auto-fill concentration)
   useEffect(() => {
     if (formData.smiles && smilesMapping[formData.smiles]) {
       const linkerData = smilesMapping[formData.smiles];
+      
       setFormData(prev => ({
         ...prev,
         linker_name: linkerData.linker_name || ""
+        // REMOVED: auto-fill concentration - user input manual
       }));
     }
   }, [formData.smiles, smilesMapping]);
@@ -162,6 +171,7 @@ export default function MOFScreening() {
       'additive_volume': formData.additive_volume || "0",
       'modulator_name': formData.modulator_name || "-",
       'modulator_volume': formData.modulator_volume || "0",
+      'modulator_concentration': formData.modulator_concentration || "100.0",  // NEW: Send concentration
       'product_mass': formData.product_mass || "0",
       'reaction_time': formData.reaction_time || "24",
       'temperature': formData.temperature || "120",
@@ -211,7 +221,7 @@ export default function MOFScreening() {
   }, [
     formData.metal_name, formData.smiles, formData.metal_mass, formData.linker_mass,
     formData.solvent_name, formData.solvent_volume, formData.additive_name, formData.additive_volume,
-    formData.modulator_name, formData.modulator_volume, formData.product_mass,
+    formData.modulator_name, formData.modulator_volume, formData.modulator_concentration, formData.product_mass,  // Added concentration
     formData.reaction_time, formData.temperature,
     formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.vf, formData.density
   ]);
@@ -511,8 +521,9 @@ export default function MOFScreening() {
                 </div>
 
                 {/* 3. Modulator */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                  <div className="sm:col-span-2 space-y-1.5 relative">
+                <div className="space-y-4">
+                  {/* Modulator Name - full width */}
+                  <div className="space-y-1.5 relative">
                     <Label className="text-[11px] font-medium text-zinc-500 ml-1 tracking-wide">3. Modulator Name</Label>
                     <div className="relative flex items-center group">
                       <Input 
@@ -546,8 +557,11 @@ export default function MOFScreening() {
                       </div>
                     )}
                   </div>
-                  <div className="sm:col-span-1">
+                  
+                  {/* Volume and Concentration side by side */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <InputGroup label="Volume" unit="mL" val={formData.modulator_volume} k="modulator_volume" s={setFormData} d={formData} placeholder="0" />
+                    <InputGroup label="Concentration" unit="%" val={formData.modulator_concentration} k="modulator_concentration" s={setFormData} d={formData} placeholder="100.0" />
                   </div>
                 </div>
 

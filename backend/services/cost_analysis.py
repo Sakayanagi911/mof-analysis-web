@@ -32,6 +32,14 @@ def get_uptake_data():
     db = load_price_database()
     return db.get("uptake_data", {})
 
+def get_modulator_concentration_data():
+    """
+    REMOVED: Auto-fill concentration mapping
+    User akan input concentration secara manual sesuai kebutuhan
+    Tidak ada pemaksaan nilai berdasarkan SMILES
+    """
+    return {}
+
 def calculate_mof_cost(metal_name: str, linker_smiles: str,
                         metal_mass_mg: float = 100.0,
                         linker_mass_mg: float = 50.0,
@@ -225,38 +233,6 @@ def calculate_mof_cost(metal_name: str, linker_smiles: str,
 # Format: (density g/mL, Cp J/mol·K, Mr g/mol)
 # =====================================================================
 
-# Default concentration untuk modulator (aqueous solution)
-MODULATOR_DEFAULT_CONCENTRATION = {
-    "HNO3": 6.5,      # 6.5% dilute nitric acid (typical for MOF synthesis)
-    "hno3": 6.5,
-    "HCl": 0.054,     # 0.054% dilute hydrochloric acid (based on use case 4)
-    "hcl": 0.054,
-    "HBF4": 48.0,     # 48% tetrafluoroboric acid
-    "hbf4": 48.0,
-    "AcOH": 100.0,    # Glacial acetic acid (pure)
-    "acoh": 100.0,
-    "CH3COOH": 100.0, # Glacial acetic acid (pure)
-    "ch3cooh": 100.0,
-    "H3PMo12O40": 100.0,  # Solid
-    "h3pmo12o40": 100.0,
-    "NaOH": 50.0,     # 50% sodium hydroxide solution
-    "naoh": 50.0,
-    "Triethylamine": 100.0,  # Pure liquid
-    "triethylamine": 100.0,
-    "TEA": 100.0,     # Pure liquid
-    "tea": 100.0,
-    "EG": 100.0,      # Pure ethylene glycol
-    "eg": 100.0,
-    "Dioxane": 100.0, # Pure liquid
-    "dioxane": 100.0,
-    "C4H8O2": 100.0,  # Pure liquid
-    "c4h8o2": 100.0,
-    "H2O": 100.0,     # Pure water
-    "h2o": 100.0,
-    "water": 100.0,
-    "-": 100.0,
-}
-
 CHEM_PROP_DB = {
     # --- Solvent ---
     "dmf":           (0.9445, 148.16,  73.0938),
@@ -349,7 +325,7 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
                      solvent_name: str = "-", solvent_volume_ml: float = 0.0,
                      additive_name: str = "-", additive_volume_ml: float = 0.0,
                      modulator_name: str = "-", modulator_volume_ml: float = 0.0,
-                     modulator_concentration: float = None,  # % concentration (None = use default)
+                     modulator_concentration: float = 100.0,  # % concentration (default 100% pure)
                      metal_name: str = "-",
                      volumetric_wc: float = 40.0, gravimetric_wc: float = 5.5,
                      product_mass_mg: float = 50.0,
@@ -363,6 +339,10 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     - Density_MOF = volumetric_wc / (gravimetric_wc * 100)
     - Qheat_J_per_L_reactor = Total_Sensible / (0.75 * V_Reactor)
     - Qheat_MJ_1000L = Qheat_J_per_L_reactor * 1000 / 1e6
+    
+    Parameters:
+        modulator_concentration: % concentration (default 100% = pure)
+                               User dapat input nilai spesifik sesuai Excel
     """
     from rdkit import Chem
     from rdkit.Chem import Descriptors
@@ -404,15 +384,17 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     # get_chem_prop sekarang return (rho, cp_mol_k, mr)
     rho_solv, cp_solv_mol_k, mr_solv = get_chem_prop(solvent_name)
     rho_add, cp_add_mol_k, mr_add = get_chem_prop(additive_name)
-    rho_mod, cp_mod_mol_k, mr_mod = get_chem_prop(modulator_name, volume_ml=modulator_volume_ml)
+    rho_mod, cp_mod_mol_k, mr_mod = get_chem_prop(modulator_name)  # FIXED: Remove volume_ml parameter
     _, cp_metal_mol_k, mr_metal = get_chem_prop(metal_name, is_metal=True)
     
-    # ====== APPLY DEFAULT MODULATOR CONCENTRATION ======
-    # Jika modulator_concentration tidak di-specify (None atau 0), gunakan default
-    if modulator_concentration is None or modulator_concentration == 0:
-        # Cari default concentration berdasarkan nama modulator
-        modulator_key = _normalize_chem_name(modulator_name)
-        modulator_concentration = MODULATOR_DEFAULT_CONCENTRATION.get(modulator_key, 100.0)
+    # ====== CONCENTRATION DARI USER INPUT ======
+    # Modulator: gunakan input user (default 100% jika tidak diisi)
+    # Komponen lain: selalu 100% (pure)
+    if modulator_concentration is None or modulator_concentration <= 0:
+        modulator_concentration = 100.0  # Default 100% pure
+    
+    # Pastikan concentration dalam range 0-100%
+    modulator_concentration = max(0.0, min(100.0, modulator_concentration))
 
     # ====== KALKULASI MOLES ======
     # HANYA HITUNG JIKA VOLUME/MASS > 0
@@ -593,7 +575,7 @@ def run_economic_analysis(metal_name: str, linker_smiles: str,
                            solvent_name: str = "-", solvent_volume_ml: float = 0.0,
                            additive_name: str = "-", additive_volume_ml: float = 0.0,
                            modulator_name: str = "-", modulator_volume_ml: float = 0.0,
-                           modulator_concentration: float = None,
+                           modulator_concentration: float = 100.0,  # Default 100% pure
                            energy_scale_factor: float = 1.0) -> dict:
     """
     Analisis ekonomi MOF dengan perhitungan energi yang diperbaiki.
@@ -601,6 +583,8 @@ def run_economic_analysis(metal_name: str, linker_smiles: str,
     INPUT UTAMA: 
     - linker_smiles: SMILES string untuk lookup linker name dan price
     - smiles: SMILES untuk perhitungan Cp (bisa sama dengan linker_smiles)
+    - modulator_concentration: % concentration (default 100% = pure)
+                              User dapat input nilai spesifik sesuai Excel
     
     UPTAKE DATA:
     - gravimetric_wc dan volumetric_wc sekarang diambil dari database berdasarkan SMILES
