@@ -58,13 +58,13 @@ export default function MOFScreening() {
   // REMOVED: concentrationMapping - tidak ada auto-fill
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/get-prices")
+    fetch("http://localhost:8000/get-prices")
       .then(res => res.json())
       .then(data => { if (data && !data.error) setPriceDb(data); })
       .catch(err => console.error("Database offline"));
     
     // Load SMILES mapping
-    fetch("http://127.0.0.1:8000/get-smiles-mapping")
+    fetch("http://localhost:8000/get-smiles-mapping")
       .then(res => res.json())
       .then(data => { if (data && !data.error) setSmilesMapping(data.mapping || {}); })
       .catch(err => console.error("SMILES mapping offline"));
@@ -185,7 +185,7 @@ export default function MOFScreening() {
     });
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/analyze", { method: "POST", body: data });
+      const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
       const result = await res.json();
@@ -261,7 +261,7 @@ export default function MOFScreening() {
     });
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/analyze", { method: "POST", body: data });
+      const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
       const result = await res.json();
