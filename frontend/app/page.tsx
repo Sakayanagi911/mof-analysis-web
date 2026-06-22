@@ -66,21 +66,34 @@ export default function MOFScreening() {
     // Load SMILES mapping
     fetch("http://localhost:8000/get-smiles-mapping")
       .then(res => res.json())
-      .then(data => { if (data && !data.error) setSmilesMapping(data.mapping || {}); })
+      .then(data => { 
+        if (data && !data.error) {
+          setSmilesMapping(data.mapping || {});
+        }
+      })
       .catch(err => console.error("SMILES mapping offline"));
     
     // REMOVED: Load concentration mapping - user input manual
   }, []);
 
-  // Auto-fill Linker Name dari SMILES (tanpa auto-fill concentration)
+  // Auto-fill Linker Name dari SMILES - gunakan Name1 sebagai prioritas
   useEffect(() => {
     if (formData.smiles && smilesMapping[formData.smiles]) {
       const linkerData = smilesMapping[formData.smiles];
       
+      // Handle name1 as string (which may contain [ ] brackets)
+      let displayName = "";
+      if (linkerData.name1) {
+        displayName = linkerData.name1;
+      } else if (linkerData.linker_name) {
+        displayName = linkerData.linker_name;
+      } else {
+        displayName = "";
+      }
+      
       setFormData(prev => ({
         ...prev,
-        linker_name: linkerData.linker_name || ""
-        // REMOVED: auto-fill concentration - user input manual
+        linker_name: displayName
       }));
     }
   }, [formData.smiles, smilesMapping]);
@@ -637,27 +650,72 @@ export default function MOFScreening() {
                             // Jika ada search term, filter. Jika tidak, tampilkan semua
                             if (!searchTerm) return true;
                             return smiles.toLowerCase().includes(searchTerm) || 
-                                   data.linker_name?.toLowerCase().includes(searchTerm);
+                                   data.linker_name?.toLowerCase().includes(searchTerm) ||
+                                   data.name1?.toLowerCase().includes(searchTerm) ||
+                                   data.cas1?.toLowerCase().includes(searchTerm);
                           })
                           // TIDAK ADA LIMIT - TAMPILKAN SEMUA
                           .map(([smiles, data]: [string, any]) => (
                             <div 
                               key={smiles} 
-                              className="px-5 py-3 hover:bg-blue-50/50 cursor-pointer border-b border-zinc-50 transition-colors"
+                              className="px-5 py-3 hover:bg-blue-50/50 cursor-pointer border-b border-zinc-50 transition-colors group"
                               onMouseDown={() => setFormData({...formData, smiles: smiles})}
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-semibold text-blue-600 mb-1">
-                                    {data.linker_name || "Unknown"}
+                                  <div 
+                                    className="text-sm font-bold font-mono text-black mb-2 overflow-hidden relative"
+                                    onMouseEnter={(e) => {
+                                      const textEl = e.currentTarget.querySelector('.marquee-text');
+                                      const containerWidth = e.currentTarget.clientWidth;
+                                      const textWidth = textEl.scrollWidth;
+                                      
+                                      if (textWidth > containerWidth) {
+                                        const scrollDistance = textWidth - containerWidth + 20;
+                                        textEl.style.transform = `translateX(-${scrollDistance}px)`;
+                                        textEl.style.transition = `transform ${Math.max(3, scrollDistance / 30)}s linear`;
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const textEl = e.currentTarget.querySelector('.marquee-text');
+                                      textEl.style.transform = 'translateX(0)';
+                                      textEl.style.transition = 'transform 0.5s ease-out';
+                                    }}
+                                  >
+                                    <div className="marquee-text whitespace-nowrap">
+                                      {smiles}
+                                    </div>
                                   </div>
-                                  <div className="text-[10px] font-mono text-zinc-500 truncate">
-                                    {smiles.length > 60 ? smiles.substring(0, 60) + "..." : smiles}
+                                  <div 
+                                    className="text-xs font-semibold text-blue-600 mb-1 overflow-hidden relative"
+                                    onMouseEnter={(e) => {
+                                      const textEl = e.currentTarget.querySelector('.marquee-text');
+                                      const containerWidth = e.currentTarget.clientWidth;
+                                      const textWidth = textEl.scrollWidth;
+                                      
+                                      if (textWidth > containerWidth) {
+                                        const scrollDistance = textWidth - containerWidth + 20;
+                                        textEl.style.transform = `translateX(-${scrollDistance}px)`;
+                                        textEl.style.transition = `transform ${Math.max(3, scrollDistance / 30)}s linear`;
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const textEl = e.currentTarget.querySelector('.marquee-text');
+                                      textEl.style.transform = 'translateX(0)';
+                                      textEl.style.transition = 'transform 0.5s ease-out';
+                                    }}
+                                  >
+                                    <div className="marquee-text whitespace-nowrap">
+                                      {data.name1 || "Unknown Name"}
+                                    </div>
+                                  </div>
+                                  <div className="text-[10px] text-zinc-500">
+                                    CAS: {data.cas1 || "N/A"}
                                   </div>
                                 </div>
                                 {data.price_eur_per_g !== null && data.price_eur_per_g !== undefined && (
                                   <div className="text-[10px] font-bold text-green-600 whitespace-nowrap">
-                                    €{data.price_eur_per_g.toFixed(2)}/g
+                                    ${(data.price_eur_per_g * 1.15).toFixed(2)}/g
                                   </div>
                                 )}
                               </div>
@@ -667,7 +725,9 @@ export default function MOFScreening() {
                           const searchTerm = formData.smiles.toLowerCase();
                           if (!searchTerm) return false; // Jika tidak ada search, tidak tampilkan "no results"
                           return smiles.toLowerCase().includes(searchTerm) || 
-                                 data.linker_name?.toLowerCase().includes(searchTerm);
+                                 data.linker_name?.toLowerCase().includes(searchTerm) ||
+                                 data.name1?.toLowerCase().includes(searchTerm) ||
+                                 data.cas1?.toLowerCase().includes(searchTerm);
                         }).length === 0 && formData.smiles && (
                           <div className="px-5 py-4 text-sm text-zinc-400 text-center">
                             No matching SMILES found
@@ -685,12 +745,29 @@ export default function MOFScreening() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div className="sm:col-span-2 space-y-1.5">
                       <Label className="text-[11px] font-medium text-zinc-400 ml-1 tracking-wide">Linker Name (Auto-filled)</Label>
-                      <Input 
-                        value={formData.linker_name} 
-                        readOnly 
-                        placeholder="Auto-filled from SMILES..." 
-                        className="h-10 rounded-[12px] border-none bg-zinc-100/50 text-zinc-500 font-medium text-[13px] shadow-inner cursor-not-allowed" 
-                      />
+                      <div 
+                        className="h-10 rounded-[12px] border-none bg-zinc-100/50 text-zinc-500 font-medium text-[13px] shadow-inner cursor-default flex items-center px-3 overflow-hidden relative"
+                        onMouseEnter={(e) => {
+                          const textEl = e.currentTarget.querySelector('.marquee-text');
+                          const containerWidth = e.currentTarget.clientWidth - 24; // Account for padding
+                          const textWidth = textEl.scrollWidth;
+                          
+                          if (textWidth > containerWidth) {
+                            const scrollDistance = textWidth - containerWidth + 20;
+                            textEl.style.transform = `translateX(-${scrollDistance}px)`;
+                            textEl.style.transition = `transform ${Math.max(3, scrollDistance / 30)}s linear`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          const textEl = e.currentTarget.querySelector('.marquee-text');
+                          textEl.style.transform = 'translateX(0)';
+                          textEl.style.transition = 'transform 0.5s ease-out';
+                        }}
+                      >
+                        <div className="marquee-text whitespace-nowrap">
+                          {formData.linker_name || "Auto-filled from SMILES..."}
+                        </div>
+                      </div>
                     </div>
                     <div className="sm:col-span-1">
                       <InputGroup label="Mass" unit="mg" val={formData.linker_mass} k="linker_mass" s={setFormData} d={formData} placeholder="0" />

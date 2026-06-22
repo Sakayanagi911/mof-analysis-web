@@ -408,233 +408,325 @@
     "mapping": {
       "COC1=C(C=C(C(=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)OC)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "(R)-H₄L",
+        "name1": "[\"5',5''''-(2,5-Dimethoxy-1,4-phenylene)bis[1,1':3',1''-terphenyl]-4,4''-dicarboxylate\"]",
+        "cas1": "1800290-01-0",
         "price_eur_per_g": 161.5,
         "source": "Linker1"
       },
       "C(C)OC1=C(C2=CC=C(C=C2C(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=C(C=C(C2=CC(=CC=C12)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)OCC": {
         "linker_name": "(R)-H₄L",
+        "name1": "(R)-H₄L Ethoxy",
+        "cas1": "123456-78-8",
         "price_eur_per_g": 161.5,
         "source": "Linker1"
       },
       "C(=O)(O)C1=CC=C(C=C1)C1=CC(=CC(=C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "H₃BBC",
+        "name1": "[\"1,3,5-tris(4-Carboxyphenyl)benzene\", \"1,3,5-tris(4-carboxylatephenyl)benzene\", \"benzene-1,3,4-tribenzoate\", \"4,4',4''-benzene-1,3,5-tribenzoate\"]",
+        "cas1": "50446-44-1",
         "price_eur_per_g": 6.867999999999999,
         "source": "Linker1"
       },
       "C1(=CC(=CC(=C1)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O)C1=CC=CC=C1C(=O)O": {
         "linker_name": "H3(btb)",
+        "name1": "[\"benzene-1,3,5-tribenzoate\", \"1,3,5-benzenetribenzoate\"]",
+        "cas1": "955050-88-1",
         "price_eur_per_g": 48.279999999999994,
         "source": "Linker1"
       },
       "C(C)C1(C2=CC(=CC=C2C=2C1=C1C(=C3C=4C=CC(=CC4C(C23)(CC)CC)C2=CC=C(C(=O)O)C=C2)C(C2=CC(=CC=C21)C2=CC=C(C(=O)O)C=C2)(CC)CC)C2=CC=C(C(=O)O)C=C2)CC": {
         "linker_name": "H₃L",
+        "name1": "4,4',4''-(5,5,10,10,15,15-hexaethyl-10,15-dihydro-5H-diindeno[1,2-a:1',2'-c]fluorene-2,7,12-triyl)tribenzoate",
+        "cas1": "-",
         "price_eur_per_g": 74.8,
         "source": "Linker1"
       },
       "P(=O)(O)(O)O": {
         "linker_name": "L",
+        "name1": "[\"dihydrogen_phosphate\", \"phosphito\", \"Hydrogenphosphate\", \"phosphate\"]",
+        "cas1": "7664-38-2",
         "price_eur_per_g": 0.01474706,
         "source": "Linker1"
       },
       "N1=CC(=CC=C1)C(=O)NCCNC(=O)C=1C=NC=CC1": {
         "linker_name": "3-dpye",
+        "name1": "[\"N,N'-ethane-1,2-diyldinico\", \"1,2-bis(3-Pyridinecarboxamide)ethane\"]",
+        "cas1": "49807-92-3",
         "price_eur_per_g": 191.25,
         "source": "Linker1"
       },
       "C1(=CC(=CC(=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1)C1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H₃btb",
+        "name1": "[\"4,4',4''-Benzene-1,3,5-triyltris(benzoate)\", \"4,4',4''-(benzene-1,3,5-triyl)tribenzoateo\", \"4,4',4''-benzene-1,3,5-triylbenzoate\", \"4,4',4''-Benzene-1,3,5-triyltribenzoate\", \"benzene-1,3,5-tris(4-benzoate)\", \"4,4',4''-(1,3,5-triphenylene)-tribenzoate\", \"1,3,5-tris(4-Carbxoylatephenyl)benzene\", \"4,4',4''-(Benzene-1,3,5-triyl)tribenzoate\", \"Benzene-1,3,5-tris(phenyl-4-carboxylate)\", \"(Benzene-1,3,5-triyl)-4,4',4''-tribenzoate\", \"Benzene-1,3,5-tris(4-benzoate)\"]",
+        "cas1": "50446-44-1",
         "price_eur_per_g": 6.8765,
         "source": "Linker1"
       },
       "N1N=NN=C1C1=CC=C(C=C1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
         "linker_name": "H3L₃",
+        "name1": "[\"4'-(1H-tetrazol-5-yl)biphenyl-3,5-dicarboxylate\"]",
+        "cas1": "1159595-96-6",
         "price_eur_per_g": 1606.5,
         "source": "Linker1"
       },
       "C(=O)(O)C1=CC=C(OCC(COC2=CC=C(C(=O)O)C=C2)(COC2=CC=C(C=C2)C(=O)O)COC2=CC=C(C=C2)C(=O)O)C=C1": {
         "linker_name": "H4TCM",
+        "name1": "[\"4-(3-(4-Carboxylatephenoxy)-2,2-bis((4-carboxyphenoxy)methyl)propoxy)benzoate\", \"4-(3-(4-carboxylatephenoxy)-2,2-bis((4-carboxyphenoxy)methyl)propoxy)benzoate\", \"4-(3-(4-carboxylatephenoxy)-2,2-bis[(4-carboxylatephenoxy)methyl]propoxy)benzoate\", \"tetrakis[4-(carboxylatephenoxy)methyl]methane\", \"4-(3-(4-Carboxyphenoxy)-2,2-bis((4-carboxyphenoxy)methyl)propoxy)benzoate\"]",
+        "cas1": "245551-35-3",
         "price_eur_per_g": 140.25,
         "source": "Linker1"
       },
       "C1(=CC(=CC(=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1)C#CC1=CC=C(C(=O)O)C=C1": {
         "linker_name": "BTEB (C₃₀H₁₅O₆)",
+        "name1": "[\"4,4',4''-(Benzene-1,3,5-triyltriethyne-2,1-diyl)tribenzoate\", \"1,3,5-tris((4-carboxylatephenyl)ethynyl)benzene\", \"benzene-1,3,5-triyl-tris(ethyne-2,1-diyl)]tribenzoate\", \"4,4',4''-[benzene-1,3,5-triyl-tris(ethyne-2,1-diyl)]tribenzoate\", \"4,4',4''-(benzene-1,3,5-triyl-tris(ethyne-2,1-diyl)tribenzoate)\"]",
+        "cas1": "205383-17-1",
         "price_eur_per_g": 134.81,
         "source": "Linker1"
       },
       "C1(=CC=C(C=C1)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C#CC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "PDEB",
+        "name1": "[\"5,5'-(1,4-Phenylenediethyne-2,1-diyl)diisophthalate\"]",
+        "cas1": "957014-40-3",
         "price_eur_per_g": 130.9,
         "source": "Linker1"
       },
       "C1(=CC(=CC(=C1)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O)C=1C=C2C=CC(=CC2=CC1)C(=O)O": {
         "linker_name": "H₃BTN",
+        "name1": "[\"6,6',6''-Benzene-1,3,5-triyltrinaphthalene-2-carboxylate\", \"6,6',6''-benzene-1,3,5-triyltri(2-naphthoate)\", \"6',6''-benzene-1,3,5-triyltri(naphthalene-2-carboxylate)\", \"6,6',6''-Benzene-1,3,5-triyltris(2-naphthoate)\"]",
+        "cas1": "138916-83-3",
         "price_eur_per_g": 141.60999999999999,
         "source": "Linker1"
       },
       "C1=C(C=CC=2C3=CC=C(C=C3NC12)C(=O)O)C(=O)O": {
         "linker_name": "2,7-H₂CDC",
+        "name1": "[\"9H-Carbazole-2,7-dicarboxylate\"]",
+        "cas1": "1409971-87-4",
         "price_eur_per_g": 76.67,
         "source": "Linker1"
       },
       "C1(=CC(=CC(=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1)C(=O)NC1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H3L3H2O",
         "price_eur_per_g": 219.29999999999998,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"4,4',4''-(benzene-1,3,5-triyltris(carbonylimino))tribenzoate\", \"4,4',4''-[1,3,5-benzenetriyltris(carbonylimino)]tribenzoate\"]",
+        "cas1": "120360-51-2"
       },
       "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": {
         "linker_name": "(H2)",
         "price_eur_per_g": 158.1,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5-(3,5-bis(4-carboxyphenyl)phenyl)benzene-1,3-dicarboxylate\"]",
+        "cas1": "1250980-04-1"
       },
       "C(=O)(O)C=CC=1C=C(C(=O)O)C=C(C1)C=CC(=O)O": {
         "linker_name": "H₃L₁",
         "price_eur_per_g": 219.29999999999998,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "3,5-bis(2-carboxylateethenyl)benzoate",
+        "cas1": "-"
       },
       "C(=O)(O)C1=CC=C(C=C1)C(C1=CC=C(C=C1)C(=O)O)(C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "L1-H4",
         "price_eur_per_g": 144.5,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"tetrakis(4-Carboxyphenyl)methane\", \"4,4',4'',4'''-Methanetetrayltetrabenzoate\"]",
+        "cas1": "160248-28-2"
       },
       "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H4TCPP",
         "price_eur_per_g": 82.45,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"4,4',4'',4'''-pyrazine-2,3,5,6-tetrabenzoate\"]",
+        "cas1": "2089016-10-2"
       },
       "C(#CC#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₃L₁",
         "price_eur_per_g": 393.55,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5'-(Butadiyne-1,4-diyl)diisophthalate\", \"1,4-bis(3,5-Dicarboxylatephenyl)buta-1,3-diyne\"]",
+        "cas1": "1239608-21-9"
       },
       "C(=O)(O)C1=CC=C(C=C1)C=1C=NC=C(C1)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "H₂L",
+        "name1": "[\"3,5-bis(4-carboxylatephenyl)pyridine\"]",
+        "cas1": "171820-04-5",
         "price_eur_per_g": 30.429999999999996,
         "source": "Linker1"
       },
       "N1(C=NC=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₂L",
         "price_eur_per_g": 100.62,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5-(1H-Imidazol-1-yl)isophthalate\"]",
+        "cas1": "1643586-52-0"
       },
       "C1(=CC(=CC(=C1)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O)COC=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₆tL₁",
         "price_eur_per_g": 260.09999999999997,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "5,5',5''-(Benzene-1,3,5-triyltris(methyleneoxy))-tri-isophthalate",
+        "cas1": "-"
       },
       "N1=CC(=CC=C1)NC(CN1N=NN=C1)=O": {
         "linker_name": "TAAP",
         "price_eur_per_g": 4558.0,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"N-(pyridin-3-yl)-2-(1H-tetrazol-1-yl)acetamide\"]",
+        "cas1": "-"
       },
       "C1(=CC=C(C=C1)CN1N=CN=C1)CN1N=CN=C1": {
         "linker_name": "BBTZ",
         "price_eur_per_g": 15.164,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"1,4-bis(1,2,4-triazol-1-ylmethyl)benzene\", \"1,1'-(1,4-phenylenebis(methylene))bis(1H-1,2,4-triazole)\"]",
+        "cas1": "143131-66-2"
       },
       "C1(=CC=C(C=C1)C(=O)O)C1=CC(=CC(=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "H₃L",
+        "name1": "[\"1,1':3',1''-Terphenyl-4,4'',5'-tricarboxylate\"]",
+        "cas1": "1263218-51-4",
         "price_eur_per_g": 74.8,
         "source": "Linker1"
       },
       "N1(N=NC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₄TADIP",
         "price_eur_per_g": 884.0,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "5,5'-(1H-1,2,3-triazole-1,4-diyl)diisophthalate",
+        "cas1": "1403744-65-9"
       },
       "C1(=CC=C(C=C1)C(=O)O)C(=O)O": {
         "linker_name": "H₂BDC",
+        "name1": "[\"Terephthalate\", \"Tetradeuteroterephthalate\", \"Benzene-1,4-dicarboxylate\", \"1,4-Benzenedicarboxylate\", \"terephthtalate\"]",
+        "cas1": "100-21-0",
         "price_eur_per_g": 0.0215,
         "source": "Linker1"
       },
       "O=S1(C2=C(C3=C1C=C(C=C3)C(=O)O)C=CC(=C2)C(=O)O)=O": {
         "linker_name": "H₂L2",
         "price_eur_per_g": 34.51,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5-Dioxodibenzo(b,d)thiophene-3,7-dicarboxylate\", \"4,4'-bi-benzoate-2,2'-sulfone\"]",
+        "cas1": "23613-32-3"
       },
       "O1C(=CC=C1C(=O)O)C(=O)O": {
         "linker_name": "H₂FDC",
         "price_eur_per_g": 0.22865000000000002,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"furan-2,5-dicarboxylate\"]",
+        "cas1": "3238-40-2"
       },
       "N=1SN=C2C1C(=CC=C2C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=2C=C(C=C(C2)C(=O)O)C(=O)O": {
         "linker_name": "H₄L",
         "price_eur_per_g": 205.54,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5'-(2,1,3-benzothiadiazole-4,7-diyl)di(benzene-1,3-dicarboxylate)\", \"5,5'-(2,1,3-Benzothiadiazole-4,7-diyl)dibenzene-1,3-dicarboxylate\"]",
+        "cas1": "1627605-35-9"
       },
       "COC1=C(C(=CC(=C1)C(=O)O)OC)C1=C(C=C(C=C1OC)C(=O)O)OC": {
         "linker_name": "H₂L",
         "price_eur_per_g": 30.429999999999996,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "2,2',6,6'-tetramethoxybiphenyl-4,4'-dicarboxylate",
+        "cas1": "-"
       },
       "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₄EBTC",
         "price_eur_per_g": 103.19,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5'-Ethyne-1,2-diyldiisophthalate\", \"1,1'-(Ethyne-1,2-diyl)benzene-3,3',5,5'-tetracarboxylate\", \"5,5'-ethyne-1,2-diyldibenzene-1,3-dicarboxylate\", \"5-[(3-carboxy-5-carboxylatephenyl)ethynyl]benzene-1,3-dicarboxylate\", \"5,5'-(ethyne-1,2-diyl)-bis(benzene-1,3-dicarboxylate)\", \"5-((3,5-dicarboxylatephenyl)ethynyl)isophthalate\", \"5,5'-(1,2-Ethynyl)bis-1,3-benzenedicarboxylate\", \"3,3'-(ethyne-1,2-diyl)bis(5-carboxybenzoate)\"]",
+        "cas1": "957014-38-9"
       },
       "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=CC=C(N(C2=CC=C(C=C2)C2=CC(=CC(=C2)C(=O)O)C(=O)O)C2=CC=C(C=C2)C=2C=C(C=C(C2)C(=O)O)C(=O)O)C=C1": {
         "linker_name": "H₆LNPh",
         "price_eur_per_g": 87.38,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"4',4'',4'''-nitrilotribiphenyl-3,5-dicarboxylate\"]",
+        "cas1": "1347748-59-7"
       },
       "S1C(=CC=C1C(=O)O)C(=O)O": {
         "linker_name": "H₂thb",
+        "name1": "[\"Thiophene-2,5-dicarboxylate\", \"2,5-thiophenedicarboxylate\"]",
+        "cas1": "4282-31-9",
         "price_eur_per_g": 0.11645000000000001,
         "source": "Linker1"
       },
       "C(=O)(O)C1=CC=C(C=C1)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C=1C=C(C=C(C1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H₄L",
         "price_eur_per_g": 80.75,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"3,3',5,5'-tetrakis(4-carboxylatephenyl)-1,1'-biphenyl\", \"biphenyl-3,3',5,5'-tetra-(phenyl-4-carboxylate)\"]",
+        "cas1": "1383925-31-2"
       },
       "C(=O)(O)C1=CC=C(C=C1)N=NC1=CC=C(C(=O)O)C=C1": {
         "linker_name": "H₂AzDC",
         "price_eur_per_g": 10.166,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"Azobenzene-4,4'-dicarboxylate\", \"4-((4-carboxyphenyl)diazenyl)benzoate\"]",
+        "cas1": "586-91-4"
       },
       "C(=O)(O)C=1C=C(C=C(C1)C(=O)O)C1=NC=C(C=N1)C1=CC(=CC(=C1)C(=O)O)C(=O)O": {
         "linker_name": "H₄L₁",
         "price_eur_per_g": 361.59,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "2,5-bis(3,5-Dicarboxylatephenyl)pyrimidine",
+        "cas1": "1601485-40-8"
       },
       "N1=C(C=CC(=C1)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₄NPA",
         "price_eur_per_g": 61.879999999999995,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5'-(pyridine-2,5-diyl)dibenzene-1,3-dicarboxylate\", \"5,5'-(pyridine-2,5-diyl)di(benzene-1,3-dicarboxylate)\", \"5,5'-(pyridine-2,5-diyl)diisophthalate\"]",
+        "cas1": "1431292-15-7"
       },
       "C1(=CC=CC2=C(C=CC=C12)C=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": {
         "linker_name": "H₄L",
         "price_eur_per_g": 229.62,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5,5'-Naphthalene-1,5-diyldiisophthalate\"]",
+        "cas1": "1895077-69-6"
       },
       "C1(=CC(=CC=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O": {
         "linker_name": "3,4′-bpdc",
         "price_eur_per_g": 38.589999999999996,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"3,4'-Biphenyldicarboxylate\"]",
+        "cas1": "92152-01-7"
       },
       "C(=O)O": {
         "linker_name": "H4L",
+        "name1": "[\"formate\"]",
+        "cas1": "64-18-6",
         "price_eur_per_g": 0.0182,
         "source": "Linker1"
       },
       "C(=O)(O)C=1C=C(COC=2C=C(C=C(C(=O)O)C2)C(=O)O)C=C(C1)C(=O)O": {
         "linker_name": "H₄L",
         "price_eur_per_g": 462.4,
-        "source": "Linker1"
+        "source": "Linker1",
+        "name1": "[\"5-(3,5-dicarboxybenzyloxy)isophthalate\", \"5-(3,5-Dicarboxylatebenzyloxy)isophthalate\"]",
+        "cas1": "156750-08-2"
       },
       "N12CCN(CC1)CC2": {
         "linker_name": "DABCO",
+        "name1": "[\"1,4-diazabicyclo[2.2.2]octane\", \"1,4-diazabicyclo(2.2.0)octane\", \"1,4-diazabicyclo(2.2.2)octane\"]",
+        "cas1": "280-57-9",
         "price_eur_per_g": 0.07735,
         "source": "Linker2"
       },
       "N1=CC=C(C=C1)NC(=O)C1=CC=C(C=C1)C1=CC=C(C=C1)C(=O)NC1=CC=NC=C1": {
         "linker_name": "L",
         "price_eur_per_g": 1.5222,
-        "source": "Linker2"
+        "source": "Linker2",
+        "name1": "[\"N,N'-di(pyridin-4-yl)biphenyl-4,4'-dicarboxamide\"]",
+        "cas1": "-"
       },
       "N1=CC=C(C=C1)C1=NC(=NC(=N1)C1=CC=NC=C1)C1=CC=NC=C1": {
         "linker_name": "tpt",
         "price_eur_per_g": 8.517,
-        "source": "Linker2"
+        "source": "Linker2",
+        "name1": "[\"2,4,6-tris(4-Pyridyl)1,3,5-triazine\", \"tri(pyridin-4-yl)-1,3,5-triazine\", \"2,4,6-tris(pyridin-4-yl)-1,3,5-triazine\", \"2,4,6-tris(4-Pyridyl)-1,3,5-triazine\", \"2,4,6-tris(4'-Pyridyl)-1,3,5-triazine\", \"2,4,6-tri(pyridin-4-yl)-1,3,5-triazine\", \"2,4,6-Tripyridin-4-yl-1,3,5-triazine\", \"tris(4-pyridyl)-1,3,5-triazine\", \"2,4,6-tris(4-Pyridyl)triazine\"]",
+        "cas1": "42333-78-8"
       }
     }
   },

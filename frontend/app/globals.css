@@ -137,3 +137,19 @@
     -moz-appearance: textfield;
   }
 }
+
+@layer utilities {
+  /* Marquee animation for long text */
+  .marquee-container {
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  
+  .marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+    transition: transform 0.5s ease-out;
+  }
+}
