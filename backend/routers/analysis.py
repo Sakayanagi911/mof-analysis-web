@@ -71,17 +71,22 @@ async def analyze_mof(
     reaction_time: str = Form("24"), 
     temperature: str = Form("120")
 ):
-    # Parser aman 
+    # Parser aman - untuk geometric factors, jika kosong atau 0 maka gunakan 0
     def parse_f(val: str, default: float = 0.0) -> float:
         try:
             return float(val) if val and str(val).strip() != "" else default
         except (ValueError, TypeError):
             return default
 
-    # 1. Parsing Form Data
-    f_pv, f_gsa, f_vsa = parse_f(pv, 1.2), parse_f(gsa, 3000.0), parse_f(vsa, 1500.0)
-    f_lcd, f_pld, f_density = parse_f(lcd, 12.1), parse_f(pld, 8.0), parse_f(density, 0.8)
-    valid_vf = parse_f(vf, 0.5) / 100.0 if parse_f(vf, 0.5) > 1.0 else parse_f(vf, 0.5)
+    # 1. Parsing Form Data - geometric factors tanpa default fallback (gunakan 0)
+    f_pv = parse_f(pv, 0.0)
+    f_gsa = parse_f(gsa, 0.0)
+    f_vsa = parse_f(vsa, 0.0)
+    f_lcd = parse_f(lcd, 0.0)
+    f_pld = parse_f(pld, 0.0)
+    f_density = parse_f(density, 0.0)
+    f_vf = parse_f(vf, 0.0)
+    valid_vf = f_vf / 100.0 if f_vf > 1.0 else f_vf
     
     f_metal_mass = parse_f(metal_mass, 0.0)
     f_linker_mass = parse_f(linker_mass, 0.0)

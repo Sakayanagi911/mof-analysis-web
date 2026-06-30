@@ -100,13 +100,14 @@ export default function MOFScreening() {
 
   // Separate calculation functions for different sections
   const calculateHydrogenMetrics = useCallback(() => {
-    const f_pv = parseFloat(formData.pv) || 1.2;
-    const f_gsa = parseFloat(formData.gsa) || 3000;
-    const f_vsa = parseFloat(formData.vsa) || 1500;
-    const f_lcd = parseFloat(formData.lcd) || 12.1;
-    const f_pld = parseFloat(formData.pld) || 8.0;
-    const f_density = parseFloat(formData.density) || 0.8;
-    const f_vf = parseFloat(formData.vf) || 0.5;
+    // Jika ada geometric factor yang 0 atau kosong, return 0 untuk semua
+    const f_pv = parseFloat(formData.pv) || 0;
+    const f_gsa = parseFloat(formData.gsa) || 0;
+    const f_vsa = parseFloat(formData.vsa) || 0;
+    const f_lcd = parseFloat(formData.lcd) || 0;
+    const f_pld = parseFloat(formData.pld) || 0;
+    const f_density = parseFloat(formData.density) || 0;
+    const f_vf = parseFloat(formData.vf) || 0;
     const valid_vf = f_vf > 1.0 ? f_vf / 100.0 : f_vf;
 
     // Calculate WUG using the correct polynomial equation (4-1)
