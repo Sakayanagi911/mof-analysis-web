@@ -1079,61 +1079,63 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     # Calculate liquid volume for debugging
     v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     
-    # ====== QHEAT CALCULATION - FRIEND'S FORMULA ======
-    # Formula dari teman:
-    # Qheat (MJ/1000 L) = total sensible energy (J) / (heat eff × Vreactor)  
-    # Vreactor = 1.2 × (product/1000) / (uptake vol / (uptake grav × 100))
+    # ====== V_REACTOR CALCULATION - EXACT FRIEND'S FORMULA ======
+    # Rumus EXACT dari teman (no modifications):
+    # Qheat (MJ/1000 L) = total sensible energy (J) / (heat eff × V_reactor)
+    # V_reactor = 1.2 × (product/1000) / (uptake vol / (uptake grav × 100))
     
-    # Calculate liquid volume for reference
-    v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
+    # IMPORTANT: Per instruksi user:
+    # - product = user input product_mass_mg  ✅
+    # - total sensible energy = dari output perhitungan e_sens_total  ✅  
+    # - heat_eff = 0.75  ✅
+    # - uptake vol & uptake grav = dari output perhitungan geometric factors
+    #   (saat ini masih dari database/parameter, perlu clarification dari user)
     
-    # Friend's Vreactor formula
-    product_g = product_mass_mg / 1000.0  # mg → g
-    
-    # Note: Friend's formula uses (uptake_grav × 100) instead of (uptake_grav / 100)
-    # This might be the source of discrepancy, but implementing exactly as given
-    vreactor_friend = 1.2 * product_g / (volumetric_wc / (gravimetric_wc * 100))
-    
-    print(f"📊 Friend's Vreactor calculation:")
-    print(f"   Product: {product_mass_mg} mg = {product_g:.6f} g")
-    print(f"   Volumetric WC: {volumetric_wc:.2f} g/L")
-    print(f"   Gravimetric WC: {gravimetric_wc:.2f}%")
-    print(f"   Density term: {volumetric_wc} / ({gravimetric_wc} × 100) = {volumetric_wc / (gravimetric_wc * 100):.6f}")
-    print(f"   V_reactor = 1.2 × {product_g:.6f} / {volumetric_wc / (gravimetric_wc * 100):.6f} = {vreactor_friend:.6f} L")
-    
-    # Friend's Qheat formula
-    if vreactor_friend > 0 and heat_eff > 0:
-        # Qheat = E_sens / (heat_eff × V_reactor)
-        qheat_friend = e_sens_total / (heat_eff * vreactor_friend)  # J
-        qheat_mj_friend = qheat_friend / 1e6  # Convert to MJ
+    if gravimetric_wc > 0 and volumetric_wc > 0:
+        # EXACT implementation of friend's formula
+        product_term = product_mass_mg / 1000.0  # (product/1000) - FROM USER INPUT
+        uptake_term = volumetric_wc / (gravimetric_wc * 100)  # (uptake vol / (uptake grav × 100))
+        v_reactor_l = 1.2 * product_term / uptake_term
         
-        print(f"📊 Friend's Qheat calculation:")
-        print(f"   E_sens: {e_sens_total:.2f} J")
-        print(f"   Heat efficiency: {heat_eff}")
-        print(f"   V_reactor: {vreactor_friend:.6f} L")
-        print(f"   Qheat: {e_sens_total:.2f} / ({heat_eff} × {vreactor_friend:.6f}) = {qheat_friend:.2f} J = {qheat_mj_friend:.5f} MJ")
+        print(f"📊 Friend's EXACT V_Reactor formula:")
+        print(f"   Product: {product_mass_mg} mg (user input)")
+        print(f"   product/1000 = {product_mass_mg}/1000 = {product_term:.6f}")
+        print(f"   uptake vol = {volumetric_wc:.2f} g/L (geometric factors)")
+        print(f"   uptake grav = {gravimetric_wc:.2f}% (geometric factors)")
+        print(f"   (uptake vol)/(uptake grav × 100) = {volumetric_wc}/({gravimetric_wc}×100) = {uptake_term:.6f}")
+        print(f"   V_reactor = 1.2 × {product_term:.6f} / {uptake_term:.6f} = {v_reactor_l:.6f} L")
         
-        # Use friend's result
-        qheat_mj_1000l = qheat_mj_friend
-        v_reactor_l = vreactor_friend
+    else:
+        # Fallback values
+        v_reactor_l = 0.001
+    
+    # ====== QHEAT CALCULATION - EXACT FRIEND'S FORMULA ======  
+    # Qheat (MJ/1000 L) = total sensible energy (J) / (heat eff × V_reactor) × 1000
+    # 
+    # CONFIRMED COMPONENTS per user instruction:
+    # - total sensible energy = e_sens_total (FROM OUTPUT PERHITUNGAN) ✅
+    # - heat eff = 0.75 (FIXED) ✅
+    # - V_reactor = calculated above using user input product_mass_mg ✅
+    # - MULTIPLY BY 1000 ✅
+    
+    if v_reactor_l > 0 and heat_eff > 0:
+        qheat_friend_j = e_sens_total / (heat_eff * v_reactor_l)  # J
+        qheat_mj_1000l = (qheat_friend_j * 1000) / 1e6  # Convert J to MJ and multiply by 1000
+        
+        print(f"📊 Friend's EXACT Qheat formula:")
+        print(f"   E_sens total: {e_sens_total:.2f} J (from calculation output)")
+        print(f"   Heat efficiency: {heat_eff} (fixed)")
+        print(f"   V_reactor: {v_reactor_l:.6f} L (from user input + geometric factors)")
+        print(f"   Qheat = ({e_sens_total:.2f} / ({heat_eff} × {v_reactor_l:.6f})) × 1000")
+        print(f"   Qheat = {qheat_friend_j:.2f} × 1000 = {qheat_friend_j*1000:.2f} J")
+        print(f"   Qheat = {qheat_mj_1000l:.5f} MJ")
         
     else:
         qheat_mj_1000l = 0.0
         v_reactor_l = 0.001  # Default small value to prevent division by zero
     
-    # Alternative calculation for comparison (standard physics)
-    if gravimetric_wc > 0:
-        density_mof_standard = volumetric_wc / (gravimetric_wc / 100.0)  # Standard formula
-        v_mof_standard = product_g / density_mof_standard
-        v_reactor_standard = 1.2 * v_mof_standard
-        qheat_standard = e_sens_total / (heat_eff * v_reactor_standard) / 1e6
-        
-        print(f"📊 Standard physics comparison:")
-        print(f"   MOF density (standard): {density_mof_standard:.2f} g/L")
-        print(f"   V_MOF: {v_mof_standard:.9f} L")
-        print(f"   V_reactor (standard): {v_reactor_standard:.9f} L")
-        print(f"   Qheat (standard): {qheat_standard:.5f} MJ")
-        print(f"   Difference: {abs(qheat_mj_1000l - qheat_standard) / qheat_standard * 100:.1f}%")
+    # Calculate liquid volume for debugging  
+    v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     
     print(f"📊 Volume reference:")
     print(f"   V_Liquid: {v_liquid_l:.6f} L ({v_liquid_l*1000:.2f} mL)")
@@ -1184,9 +1186,9 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         "v_reactor_l": round(v_reactor_l, 6),  # untuk debugging
         # Debug info tambahan
         "debug_info": {
-            "density_mof_g_per_l": round(density_mof_standard, 2) if 'density_mof_standard' in locals() else 100.0,
-            "g_mof": round(product_g, 6),
-            "v_mof_l": round(v_mof_standard, 6) if 'v_mof_standard' in locals() else 0.001,
+            "density_mof_g_per_l": round(uptake_term, 6) if 'uptake_term' in locals() else 100.0,
+            "g_mof": round(product_term, 6) if 'product_term' in locals() else 0.005,
+            "v_mof_l": round(v_reactor_l/1.2, 9) if 'v_reactor_l' in locals() else 0.001,
             "v_liquid_l": round(v_liquid_l, 6),
             "m_total_g": round(m_total_g, 4),
             "density_total": round(density_total, 2),
