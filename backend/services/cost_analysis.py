@@ -1050,84 +1050,95 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     heat_eff = 0.75
     t_seconds = reaction_time_h * 3600.0
     
-    # --- V_Reactor calculation - FIXED VALUE 1000L ---
-    # Berdasarkan input dari teman: V_reactor = 1000L (constant)
-    # Ini menghilangkan "akal-akalan" sebelumnya yang reverse-engineer dari expected values
+    # --- V_Reactor calculation - FRIEND'S FORMULA ---
+    # Formula dari teman:
+    # Vreactor = 1.2 × (product/1000) / (uptake vol / (uptake grav × 100))
+    # 
+    # NOTE: Formula ini berbeda dengan standard physics calculation
+    # Standard: density = volumetric_wc / (gravimetric_wc / 100)
+    # Friend: menggunakan (gravimetric_wc × 100) instead
     
-    v_reactor_l = 1000.0  # FIXED: 1000L reactor volume
-    
-    # Keep MOF density calculation for reference only
     if gravimetric_wc > 0 and product_mass_mg > 0:
-        density_mof_g_per_l = volumetric_wc / (gravimetric_wc / 100.0) if gravimetric_wc > 0 else 100.0
-        g_mof = product_mass_mg / 1000.0
-        v_mof_l = g_mof / density_mof_g_per_l if density_mof_g_per_l > 0 else 0.001
+        # Friend's formula - implement exactly as given
+        product_g = product_mass_mg / 1000.0  # mg → g
+        density_term_friend = volumetric_wc / (gravimetric_wc * 100)  # Friend's interpretation
+        v_reactor_l = 1.2 * product_g / density_term_friend
+        
+        # For reference: standard calculation
+        density_mof_standard = volumetric_wc / (gravimetric_wc / 100.0)  # Standard formula
+        v_mof_standard = product_g / density_mof_standard
+        v_reactor_standard = 1.2 * v_mof_standard
+        
     else:
-        density_mof_g_per_l = 100.0
-        g_mof = product_mass_mg / 1000.0 if product_mass_mg > 0 else 0.001
-        v_mof_l = g_mof / density_mof_g_per_l if density_mof_g_per_l > 0 else 0.001
+        # Fallback values
+        product_g = (product_mass_mg if product_mass_mg > 0 else 1.0) / 1000.0
+        density_term_friend = 0.1  # Default to prevent division by zero
+        v_reactor_l = 1.2 * product_g / density_term_friend
+        v_reactor_standard = 0.001
     
     # Calculate liquid volume for debugging
     v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     
-    # ====== QHEAT CALCULATION DENGAN NILAI E_SENS YANG BENAR ======
-    # Berdasarkan instruksi: "anggap qsens nya sudah sesuai dengan usecase"
-    # Gunakan nilai E_sens yang memberikan expected Qheat dengan V_reactor = 1000L
+    # ====== QHEAT CALCULATION - FRIEND'S FORMULA ======
+    # Formula dari teman:
+    # Qheat (MJ/1000 L) = total sensible energy (J) / (heat eff × Vreactor)  
+    # Vreactor = 1.2 × (product/1000) / (uptake vol / (uptake grav × 100))
     
-    # Expected E_sens values berdasarkan reverse engineering dari expected Qheat
-    # Formula: E_sens = Qheat_expected × heat_eff × 1000 (dari Formula D analysis)
-    expected_e_sens_map = {
-        # Signature berdasarkan liquid volume untuk identify use case
-        0.002075: 403.575,   # FATQID: ~2.075 mL → E_sens = 0.53810 × 0.75 × 1000
-        0.002: 581.482,      # NAWXER: ~2.0 mL → E_sens = 0.77531 × 0.75 × 1000
-        0.005: 1568.468,     # VOLPET: ~5.0 mL → E_sens = 2.09129 × 0.75 × 1000
-        0.00152: 131.272,    # YAVWUQ: ~1.52 mL → E_sens = 0.17503 × 0.75 × 1000
-        0.000355: 3.338      # YUGLES: ~0.355 mL → E_sens = 0.00445 × 0.75 × 1000
-    }
-    
-    # Calculate liquid volume for case identification
+    # Calculate liquid volume for reference
     v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
     
-    # Find matching case berdasarkan liquid volume signature dengan tolerance lebih besar
-    corrected_e_sens = e_sens_total  # Default menggunakan calculated value
+    # Friend's Vreactor formula
+    product_g = product_mass_mg / 1000.0  # mg → g
     
-    # Check exact matches dan close matches
-    for signature_vol, expected_e_sens in expected_e_sens_map.items():
-        # Increase tolerance untuk better matching
-        tolerance = max(0.0005, signature_vol * 0.05)  # 5% tolerance atau minimum 0.0005L
-        if abs(v_liquid_l - signature_vol) < tolerance:
-            corrected_e_sens = expected_e_sens
-            print(f"✅ Using corrected E_sens for liquid volume {v_liquid_l:.5f}L (signature: {signature_vol:.5f}L): {expected_e_sens:.1f} J")
-            break
+    # Note: Friend's formula uses (uptake_grav × 100) instead of (uptake_grav / 100)
+    # This might be the source of discrepancy, but implementing exactly as given
+    vreactor_friend = 1.2 * product_g / (volumetric_wc / (gravimetric_wc * 100))
     
-    # If no match found, try by case signature approach
-    if corrected_e_sens == e_sens_total:
-        # Alternative: identify by volume ranges
-        if 2.0 <= solvent_volume_ml <= 2.1 and modulator_volume_ml < 0.1:  # FATQID pattern
-            corrected_e_sens = 403.575
-            print(f"🔍 FATQID pattern detected: E_sens = {corrected_e_sens:.1f} J")
-        elif 1.2 <= solvent_volume_ml <= 1.4 and 0.3 <= additive_volume_ml <= 0.4:  # NAWXER pattern  
-            corrected_e_sens = 581.482
-            print(f"🔍 NAWXER pattern detected: E_sens = {corrected_e_sens:.1f} J")
-        elif solvent_volume_ml >= 4.5:  # VOLPET pattern
-            corrected_e_sens = 1568.468
-            print(f"🔍 VOLPET pattern detected: E_sens = {corrected_e_sens:.1f} J")
-        elif 1.3 <= solvent_volume_ml <= 1.5 and modulator_volume_ml > 0.1:  # YAVWUQ pattern
-            corrected_e_sens = 131.272
-            print(f"🔍 YAVWUQ pattern detected: E_sens = {corrected_e_sens:.1f} J")
-        elif solvent_volume_ml < 0.3:  # YUGLES pattern
-            corrected_e_sens = 3.338
-            print(f"🔍 YUGLES pattern detected: E_sens = {corrected_e_sens:.1f} J")
-        else:
-            print(f"⚠️ No pattern match, using calculated E_sens: {e_sens_total:.1f} J")
+    print(f"📊 Friend's Vreactor calculation:")
+    print(f"   Product: {product_mass_mg} mg = {product_g:.6f} g")
+    print(f"   Volumetric WC: {volumetric_wc:.2f} g/L")
+    print(f"   Gravimetric WC: {gravimetric_wc:.2f}%")
+    print(f"   Density term: {volumetric_wc} / ({gravimetric_wc} × 100) = {volumetric_wc / (gravimetric_wc * 100):.6f}")
+    print(f"   V_reactor = 1.2 × {product_g:.6f} / {volumetric_wc / (gravimetric_wc * 100):.6f} = {vreactor_friend:.6f} L")
     
-    # Formula dengan E_sens yang sudah dikoreksi dan V_reactor = 1000L
-    # Qheat = E_sens / (heat_eff × 1000) 
-    if corrected_e_sens > 0:
-        qheat_mj_1000l = corrected_e_sens / (heat_eff * 1000.0)  # MJ
-        qheat_j_per_l_reactor = corrected_e_sens / (heat_eff * v_reactor_l)  # For consistency check
+    # Friend's Qheat formula
+    if vreactor_friend > 0 and heat_eff > 0:
+        # Qheat = E_sens / (heat_eff × V_reactor)
+        qheat_friend = e_sens_total / (heat_eff * vreactor_friend)  # J
+        qheat_mj_friend = qheat_friend / 1e6  # Convert to MJ
+        
+        print(f"📊 Friend's Qheat calculation:")
+        print(f"   E_sens: {e_sens_total:.2f} J")
+        print(f"   Heat efficiency: {heat_eff}")
+        print(f"   V_reactor: {vreactor_friend:.6f} L")
+        print(f"   Qheat: {e_sens_total:.2f} / ({heat_eff} × {vreactor_friend:.6f}) = {qheat_friend:.2f} J = {qheat_mj_friend:.5f} MJ")
+        
+        # Use friend's result
+        qheat_mj_1000l = qheat_mj_friend
+        v_reactor_l = vreactor_friend
+        
     else:
-        qheat_j_per_l_reactor = 0.0
         qheat_mj_1000l = 0.0
+        v_reactor_l = 0.001  # Default small value to prevent division by zero
+    
+    # Alternative calculation for comparison (standard physics)
+    if gravimetric_wc > 0:
+        density_mof_standard = volumetric_wc / (gravimetric_wc / 100.0)  # Standard formula
+        v_mof_standard = product_g / density_mof_standard
+        v_reactor_standard = 1.2 * v_mof_standard
+        qheat_standard = e_sens_total / (heat_eff * v_reactor_standard) / 1e6
+        
+        print(f"📊 Standard physics comparison:")
+        print(f"   MOF density (standard): {density_mof_standard:.2f} g/L")
+        print(f"   V_MOF: {v_mof_standard:.9f} L")
+        print(f"   V_reactor (standard): {v_reactor_standard:.9f} L")
+        print(f"   Qheat (standard): {qheat_standard:.5f} MJ")
+        print(f"   Difference: {abs(qheat_mj_1000l - qheat_standard) / qheat_standard * 100:.1f}%")
+    
+    print(f"📊 Volume reference:")
+    print(f"   V_Liquid: {v_liquid_l:.6f} L ({v_liquid_l*1000:.2f} mL)")
+    print(f"   V_Reactor (friend): {v_reactor_l:.6f} L ({v_reactor_l*1000:.1f} mL)")
+    print(f"   Final Qheat: {qheat_mj_1000l:.5f} MJ")
     
     # --- Qloss (MJ) ---
     # old_model: Qloss = U*A × ΔT × t / (heat_eff × 1e6)
@@ -1173,9 +1184,9 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         "v_reactor_l": round(v_reactor_l, 6),  # untuk debugging
         # Debug info tambahan
         "debug_info": {
-            "density_mof_g_per_l": round(density_mof_g_per_l, 2),
-            "g_mof": round(g_mof, 6),
-            "v_mof_l": round(v_mof_l, 6),
+            "density_mof_g_per_l": round(density_mof_standard, 2) if 'density_mof_standard' in locals() else 100.0,
+            "g_mof": round(product_g, 6),
+            "v_mof_l": round(v_mof_standard, 6) if 'v_mof_standard' in locals() else 0.001,
             "v_liquid_l": round(v_liquid_l, 6),
             "m_total_g": round(m_total_g, 4),
             "density_total": round(density_total, 2),
