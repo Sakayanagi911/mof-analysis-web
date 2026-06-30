@@ -983,6 +983,9 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         concentration_factor = modulator_concentration / 100.0  # convert % to fraction
         n_mod = (m_mod_g / mr_mod) * concentration_factor  # mol (adjusted for concentration)
         
+        # Calculate PURE modulator volume (for v_liquid calculation in E_stirr)
+        v_mod_pure = modulator_volume_ml * concentration_factor  # mL (pure volume after dilution)
+        
         # CORRECTION FACTOR berdasarkan data empiris dari model asli
         # Untuk match dengan expected values dari use cases
         modulator_correction_factor = 1.0
@@ -1001,6 +1004,7 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         m_mod_g = 0.0
         concentration_factor = 0.0
         n_mod = 0.0
+        v_mod_pure = 0.0  # No modulator
     
     # Metal: dari mass
     if metal_mass_mg > 0:
@@ -1076,8 +1080,8 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         v_reactor_l = 1.2 * product_g / density_term_friend
         v_reactor_standard = 0.001
     
-    # Calculate liquid volume for debugging
-    v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
+    # Calculate liquid volume for debugging (use PURE modulator volume)
+    v_liquid_l = (solvent_volume_ml + additive_volume_ml + v_mod_pure) / 1000.0
     
     # ====== V_REACTOR CALCULATION - EXACT FRIEND'S FORMULA ======
     # Rumus EXACT dari teman (no modifications):
@@ -1134,8 +1138,8 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         qheat_mj_1000l = 0.0
         v_reactor_l = 0.001  # Default small value to prevent division by zero
     
-    # Calculate liquid volume for debugging  
-    v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
+    # Calculate liquid volume for debugging (use PURE modulator volume)
+    v_liquid_l = (solvent_volume_ml + additive_volume_ml + v_mod_pure) / 1000.0
     
     print(f"📊 Volume reference:")
     print(f"   V_Liquid: {v_liquid_l:.6f} L ({v_liquid_l*1000:.2f} mL)")
@@ -1151,8 +1155,13 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
     # --- Estirr (MJ) ---
     # old_model: Estirr = 0.015985 × Density_Tot(g/L) × Time(h) × 3600 / 1e6
     # Density_Tot = m_total(g) / V_liquid(L)
-    v_liquid_l = (solvent_volume_ml + additive_volume_ml + modulator_volume_ml) / 1000.0
-    m_liquid_g = m_solv_g + m_add_g + m_mod_g
+    # IMPORTANT: Use PURE modulator volume and mass (after concentration adjustment)
+    v_liquid_l = (solvent_volume_ml + additive_volume_ml + v_mod_pure) / 1000.0
+    
+    # Calculate pure modulator mass (mass × concentration factor)
+    m_mod_pure_g = m_mod_g * (concentration_factor if modulator_volume_ml > 0 else 0.0)
+    
+    m_liquid_g = m_solv_g + m_add_g + m_mod_pure_g
     m_solid_g = ((metal_mass_mg if metal_mass_mg > 0 else 0.0) + 
                  (linker_mass_mg if linker_mass_mg > 0 else 0.0)) / 1000.0
     m_total_g = m_liquid_g + m_solid_g
