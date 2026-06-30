@@ -34,7 +34,7 @@ export default function MOFScreening() {
   
   const [formData, setFormData] = useState({
     // Geometric Factors - updated default values for testing
-    pv: "1.32", gsa: "3553", vsa: "2.156", lcd: "11.53", pld: "8.55", vf: "0.8", density: "0.61",
+    pv: "1.32", gsa: "3553", vsa: "2156", lcd: "11.53", pld: "8.55", vf: "0.8", density: "0.61",
     
     // FATQID (Use Case 1) - Default values (kecuali SMILES tetap kosong)
     solvent_name: "DMF",   
