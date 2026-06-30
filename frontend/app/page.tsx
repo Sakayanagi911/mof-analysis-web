@@ -33,8 +33,8 @@ export default function MOFScreening() {
   const [metalSearch, setMetalSearch] = useState("CuSO₄·5H₂O");
   
   const [formData, setFormData] = useState({
-    // Geometric Factors - default values (LCD = 12.0)
-    pv: "1.2", gsa: "3000", vsa: "1500", lcd: "12.0", pld: "8", vf: "0.5", density: "0.8",
+    // Geometric Factors - updated default values for testing
+    pv: "1.32", gsa: "3553", vsa: "2.156", lcd: "11.53", pld: "8.55", vf: "0.8", density: "0.61",
     
     // FATQID (Use Case 1) - Default values (kecuali SMILES tetap kosong)
     solvent_name: "DMF",   
