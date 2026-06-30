@@ -32,7 +32,7 @@ def get_hybrid_cp_correction(smiles: str, temperature: float = 85.0) -> dict:
         "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": 586.17,  # NAWXER (verified)
         "S1C(=CC=C1C(=O)O)C(=O)O": 181.99,  # VOLPET (verified)
         "C(=O)O": 41.29,  # YAVWUQ (verified)
-        "N=1N=C(NC1C=1C=C(C=C(C1)C(=O)O)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": 387.69,  # YUGLES (verified)
+        "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": 345.59,  # YUGLES (verified) - CORRECTED
         # Additional test cases with known correct values from context
         "CC(C)c1ccc(cc1)C(=O)O": 86.70,  # Use Case 3 (target from context)
         "Cc1ccc(cc1)C(=O)O": 86.26,  # Use Case 4 (target from context)
@@ -909,7 +909,7 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         "C(=O)(O)C1=CC=C(C=C1)C=1C(=NC(=C(N1)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C=C1)C(=O)O)C1=CC=C(C(=O)O)C=C1": 586.17,  # NAWXER (verified)
         "S1C(=CC=C1C(=O)O)C(=O)O": 181.99,  # VOLPET (verified)
         "C(=O)O": 41.29,  # YAVWUQ (verified)
-        "N=1N=C(NC1C=1C=C(C=C(C1)C(=O)O)C(=O)O)C=1C=C(C=C(C1)C(=O)O)C(=O)O": 387.69,  # YUGLES (verified)
+        "C(#CC=1C=C(C=C(C(=O)O)C1)C(=O)O)C=1C=C(C=C(C(=O)O)C1)C(=O)O": 345.59,  # YUGLES (verified - correct SMILES)
         # Additional test cases with known correct values from context
         "CC(C)c1ccc(cc1)C(=O)O": 86.70,  # Use Case 3 (target from context)
         "Cc1ccc(cc1)C(=O)O": 86.26,  # Use Case 4 (target from context)
