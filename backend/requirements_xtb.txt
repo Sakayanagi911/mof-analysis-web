@@ -1,0 +1,10 @@
+# Additional requirements for xTB structure analysis
+ase>=3.22.0  # Atomic Simulation Environment
+numpy>=1.24.0
+scipy>=1.10.0
+rdkit>=2023.9.1  # For automatic atom matching in RMSD calculations
+
+# Note: xTB itself needs to be installed separately
+# Windows: Download from https://github.com/grimme-lab/xtb/releases
+# Linux/Mac: conda install -c conda-forge xtb
+# Or compile from source: https://xtb-docs.readthedocs.io/en/latest/setup.html

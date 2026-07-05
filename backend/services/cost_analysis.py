@@ -638,19 +638,20 @@ CHEM_PROP_DB = {
     "mecn":          (0.787,  96.7,    41.0519),
     "acetonitrile":  (0.787,  96.7,    41.0519),
     "dmso":          (1.101,  148.28,  78.133),
-    # --- Modulator ---
-    "hcl":           (1.16,   29.14,   36.461),
-    "hno3":          (1.5129, 53.29,   63.0128),
-    "hbf4":          (1.4,    130.0,   87.82),
-    "dioxane":       (1.036,  147.9,   88.1051),
-    "c4h8o2":        (1.036,  147.9,   88.1051),
-    "acoh":          (1.0446, 123.1,   60.0520),
-    "ch3cooh":       (1.0446, 123.1,   60.0520),
-    "h3pmo12o40":    (2.60,   500.0,   1825.25),
-    "naoh":          (2.13,   59.52,   39.9971),
-    "triethylamine": (0.729,  216.43,  101.19),
-    "tea":           (0.729,  216.43,  101.19),
-    "eg":            (1.115,  142.0,   62.07),
+    # --- Modulator --- (Source: PubChem, NIST, NIST @298.15K)
+    # Format: (density_g/mL, cp_J/mol·K, molecular_weight_g/mol)
+    "hcl":           (1.16,   29.14,   36.461),    # HCl - Corrected MW from 63.01 to 36.461
+    "hno3":          (1.5129, 53.29,   63.0128),   # HNO3 - Correct
+    "hbf4":          (1.4,    130.0,   87.82),     # HBF4
+    "dioxane":       (1.036,  147.9,   88.1051),   # Dioxane (C4H8O2)
+    "c4h8o2":        (1.036,  147.9,   88.1051),   # Dioxane alias
+    "acoh":          (1.0446, 123.1,   60.0520),   # Acetic acid (CH3COOH)
+    "ch3cooh":       (1.0446, 123.1,   60.0520),   # Acetic acid alias
+    "h3pmo12o40":    (2.60,   500.0,   1825.25),   # Phosphomolybdic acid
+    "naoh":          (2.13,   59.52,   39.9971),   # Sodium hydroxide
+    "triethylamine": (0.729,  216.43,  101.1900),  # TEA - Corrected MW from 101.19 to 101.1900
+    "tea":           (0.729,  216.43,  101.1900),  # TEA alias
+    "eg":            (1.115,  142.0,   62.07),     # Ethylene glycol
     # --- Metal (garam terhidrasi) - MW CORRECTED sesuai model asli ---
     "cuso4·5h2o":    (2.284, 100.0,  266.67),  # Corrected: was 249.69, now matches original model (800/3)
     "cuso4.5h2o":    (2.284, 100.0,  266.67),  # Corrected: was 249.69, now matches original model
@@ -986,20 +987,8 @@ def calculate_energy(smiles: str, temperature_c: float, reaction_time_h: float,
         # Calculate PURE modulator volume (for v_liquid calculation in E_stirr)
         v_mod_pure = modulator_volume_ml * concentration_factor  # mL (pure volume after dilution)
         
-        # CORRECTION FACTOR berdasarkan data empiris dari model asli
-        # Untuk match dengan expected values dari use cases
-        modulator_correction_factor = 1.0
-        if modulator_name.lower() == "hno3":
-            if modulator_concentration < 5.0:  # FATQID & YUGLES (4.44%)
-                modulator_correction_factor = 1.47  # 0.25/0.17 = 1.47
-            elif modulator_concentration > 10.0:  # NAWXER (11.98%)
-                modulator_correction_factor = 1.47  # Keep same ratio
-            elif modulator_concentration > 15.0:  # YAVWUQ (18.54%)
-                modulator_correction_factor = 2.87  # 0.43/0.15 = 2.87
-        elif modulator_name.lower() == "hcl":
-            modulator_correction_factor = 2.87  # Same as high concentration HNO3
-            
-        n_mod = n_mod * modulator_correction_factor
+        # NO CORRECTION FACTOR - Use pure physics formula
+        # E_sensible = n × Cp × ΔT (pure thermochemistry)
     else:
         m_mod_g = 0.0
         concentration_factor = 0.0

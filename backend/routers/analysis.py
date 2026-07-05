@@ -47,7 +47,9 @@ def get_energy_scale_factor(solvent_vol: float, additive_vol: float, modulator_v
 
 @router.post("/analyze")
 async def analyze_mof(
-    file: UploadFile = File(None),
+    file: UploadFile = File(None),  # DEPRECATED: Use file_embedded instead
+    file_free: UploadFile = File(None),      # NEW: Free linker XYZ
+    file_embedded: UploadFile = File(None),  # NEW: Embedded linker XYZ
     pv: str = Form("1.2"), 
     gsa: str = Form("3000"), 
     vsa: str = Form("1500"),
@@ -162,73 +164,153 @@ async def analyze_mof(
         energy_scale_factor=get_energy_scale_factor(f_solvent_vol, f_additive_vol, f_modulator_vol)
     )
     
-    # Calculate xTB structure analysis from uploaded CIF file
-    from services.xtb_runner import XTB_AVAILABLE, analyze_cif_structure
+    # Calculate xTB structure analysis from uploaded file(s)
+    # Accepts 3 modes:
+    # 1. TWO XYZ files (file_free + file_embedded) - BEST method, matches notebook
+    # 2. Single XYZ (file or file_embedded) - Auto-optimize to get free linker
+    # 3. CIF file (file) - Auto-extract + optimize
+    from services.xtb_runner import XTB_AVAILABLE, analyze_cif_structure, analyze_embedded_xyz, analyze_two_xyz_files
     
     structure_result = {
-        "conformational_energy_kcal": 0.0,  # Default value instead of None
-        "rmsd_final_angstrom": 0.0,         # Default value instead of None
-        "me_delta_length_angstrom": 0.0,    # Default value instead of None
-        "me_delta_angle_deg": 0.0,          # Default value instead of None
-        "structure_status": "No CIF file uploaded",
+        "conformational_energy_kcal": 0.0,
+        "rmsd_final_angstrom": 0.0,
+        "me_delta_length_angstrom": 0.0,
+        "me_delta_angle_deg": 0.0,
+        "structure_status": "No structure file uploaded",
         "structure_feasible": None,
-        "xtb_available": XTB_AVAILABLE
+        "xtb_available": XTB_AVAILABLE,
+        "stability_score": "Unknown",
+        "stability_level": 0,
+        "free_structure": None,
+        "embedded_structure": None
     }
     
-    # Analyze structure if CIF file is uploaded
-    if file and file.filename.endswith('.cif'):
+    # Determine which file(s) were uploaded
+    upload_mode = None
+    if file_free and file_embedded:
+        upload_mode = "two_xyz"
+    elif file_embedded or (file and file.filename.endswith('.xyz')):
+        upload_mode = "single_xyz"
+    elif file and file.filename.endswith('.cif'):
+        upload_mode = "cif"
+    
+    # Analyze structure based on upload mode
+    if upload_mode:
         try:
-            # Save uploaded file temporarily
+            # Save uploaded file(s) temporarily
             upload_dir = Path(__file__).parent.parent / "data" / "uploads"
             upload_dir.mkdir(parents=True, exist_ok=True)
             
-            file_content = await file.read()
-            file_path = upload_dir / file.filename
-            
-            with open(file_path, "wb") as f:
-                f.write(file_content)
-            
-            # Run xTB structure analysis
-            if XTB_AVAILABLE:
-                analysis = analyze_cif_structure(str(file_path))
+            if upload_mode == "two_xyz":
+                # Mode 1: TWO XYZ files (best method)
+                print(f"📂 Analyzing TWO XYZ files (matches notebook workflow)")
                 
-                if analysis["success"]:
-                    structure_result = {
-                        "conformational_energy_kcal": analysis["conformational_energy_kcal"],
-                        "rmsd_final_angstrom": analysis["rmsd_final_angstrom"],
-                        "me_delta_length_angstrom": analysis["me_delta_length_angstrom"],
-                        "me_delta_angle_deg": analysis["me_delta_angle_deg"],
-                        "structure_status": f"ΔE = {analysis['conformational_energy_kcal']:.2f} kcal/mol, RMSD = {analysis['rmsd_final_angstrom']:.4f} Å",
-                        "structure_feasible": abs(analysis["conformational_energy_kcal"]) < 20.0,  # < 20 kcal/mol considered stable
-                        "xtb_available": True,
-                        "embedded_energy_kcal": analysis.get("embedded_energy_kcal", 0.0),
-                        "free_energy_kcal": analysis.get("free_energy_kcal", 0.0)
-                    }
+                # Save free linker file
+                free_content = await file_free.read()
+                free_path = upload_dir / file_free.filename
+                with open(free_path, "wb") as f:
+                    f.write(free_content)
+                
+                # Save embedded linker file
+                embedded_content = await file_embedded.read()
+                embedded_path = upload_dir / file_embedded.filename
+                with open(embedded_path, "wb") as f:
+                    f.write(embedded_content)
+                
+                if XTB_AVAILABLE:
+                    analysis = analyze_two_xyz_files(str(free_path), str(embedded_path))
                 else:
-                    error_msg = analysis.get('error', 'Unknown error')
-                    structure_result["structure_status"] = f"xTB analysis failed: {error_msg}"
-            else:
-                # Quick fallback when xTB not available
-                structure_result = {
-                    "conformational_energy_kcal": 12.5,
-                    "rmsd_final_angstrom": 0.15,
-                    "me_delta_length_angstrom": 0.003,
-                    "me_delta_angle_deg": 2.1,
-                    "structure_status": "Estimated values (xTB not available)",
-                    "structure_feasible": True,
-                    "xtb_available": False
-                }
+                    analysis = {"success": False, "error": "xTB not available"}
+                
+                # Clean up
+                if free_path.exists():
+                    free_path.unlink()
+                if embedded_path.exists():
+                    embedded_path.unlink()
             
-            # Clean up temporary file
-            if file_path.exists():
-                file_path.unlink()
+            elif upload_mode == "single_xyz":
+                # Mode 2: Single XYZ (auto-optimize)
+                target_file = file_embedded if file_embedded else file
+                
+                print(f"📂 Analyzing single XYZ file (auto-optimize): {target_file.filename}")
+                
+                file_content = await target_file.read()
+                file_path = upload_dir / target_file.filename
+                with open(file_path, "wb") as f:
+                    f.write(file_content)
+                
+                if XTB_AVAILABLE:
+                    analysis = analyze_embedded_xyz(str(file_path))
+                else:
+                    analysis = {"success": False, "error": "xTB not available"}
+                
+                # Clean up
+                if file_path.exists():
+                    file_path.unlink()
+            
+            else:  # upload_mode == "cif"
+                # Mode 3: CIF (auto-extract + optimize)
+                print(f"📂 Analyzing CIF file (auto-extract linker): {file.filename}")
+                
+                file_content = await file.read()
+                file_path = upload_dir / file.filename
+                with open(file_path, "wb") as f:
+                    f.write(file_content)
+                
+                if XTB_AVAILABLE:
+                    analysis = analyze_cif_structure(str(file_path))
+                else:
+                    analysis = {"success": False, "error": "xTB not available"}
+                
+                # Clean up
+                if file_path.exists():
+                    file_path.unlink()
+            
+            # Process analysis results
+            if analysis["success"]:
+                delta_e = analysis["conformational_energy_kcal"]
+                
+                # Determine stability level based on ΔE
+                if delta_e < 5.0:
+                    stability_score = "Very Stable"
+                    stability_level = 3
+                    structure_feasible = True
+                elif 5.0 <= delta_e <= 15.0:
+                    stability_score = "Moderately Stable"
+                    stability_level = 2
+                    structure_feasible = True
+                else:  # delta_e > 15.0
+                    stability_score = "Unstable"
+                    stability_level = 1
+                    structure_feasible = False
+                
+                structure_result = {
+                    "conformational_energy_kcal": delta_e,
+                    "rmsd_final_angstrom": analysis["rmsd_final_angstrom"],
+                    "me_delta_length_angstrom": analysis["me_delta_length_angstrom"],
+                    "me_delta_angle_deg": analysis["me_delta_angle_deg"],
+                    "structure_status": f"ΔE = {delta_e:.2f} kcal/mol - {stability_score}",
+                    "structure_feasible": structure_feasible,
+                    "xtb_available": True,
+                    "embedded_energy_kcal": analysis.get("embedded_energy_kcal", 0.0),
+                    "free_energy_kcal": analysis.get("free_energy_kcal", 0.0),
+                    "stability_score": stability_score,
+                    "stability_level": stability_level,
+                    "free_structure": analysis.get("free_structure"),
+                    "embedded_structure": analysis.get("embedded_structure"),
+                    "upload_mode": upload_mode
+                }
+            else:
+                error_msg = analysis.get('error', 'Unknown error')
+                structure_result["structure_status"] = f"xTB analysis failed: {error_msg}"
+                structure_result["upload_mode"] = upload_mode
                 
         except Exception as e:
+            import traceback
             error_msg = f"File processing error: {str(e)}"
+            traceback.print_exc()
             structure_result["structure_status"] = error_msg
-    
-    elif file and not file.filename.endswith('.cif'):
-        structure_result["structure_status"] = "Please upload a CIF file for structure analysis"
+            structure_result["upload_mode"] = upload_mode if upload_mode else "unknown"
     
     # Check feasibility using calculated WUG/WUV (dynamic) for DOE feasibility
     # But use database values for cost feasibility
@@ -312,6 +394,13 @@ async def analyze_mof(
             "structure_status": structure_result["structure_status"],
             "structure_feasible": structure_result["structure_feasible"],
             "xtb_available": structure_result["xtb_available"],
+            
+            # NEW: 3D Structure data for visualization
+            "free_structure": structure_result.get("free_structure"),
+            "embedded_structure": structure_result.get("embedded_structure"),
+            "upload_mode": structure_result.get("upload_mode", "none"),
+            "stability_score": structure_result.get("stability_score", "Unknown"),
+            "stability_level": structure_result.get("stability_level", 0),
             
             "econ_feasible": econ_result["is_feasible"],
             # Overall feasibility: DOE (dynamic WUG/WUV) + Economic (database-based cost) + Structure

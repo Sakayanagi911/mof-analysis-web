@@ -10,9 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import MOF3DViewer from "@/components/MOF3DViewer";
+import LinkerStructureViewer from "@/components/LinkerStructureViewer";  // NEW: Import Linker Viewer
 
 export default function MOFScreening() {
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);  // CIF for 3D visualization
+  const [freeLinkerFile, setFreeLinkerFile] = useState<File | null>(null);  // NEW: Free linker XYZ
+  const [embeddedLinkerFile, setEmbeddedLinkerFile] = useState<File | null>(null);  // NEW: Embedded linker XYZ
   const [price_db, setPriceDb] = useState<any>({ 
     metals: {}, 
     solvents: {}, 
@@ -241,65 +245,177 @@ export default function MOFScreening() {
   ]);
 
   const calculateStructureAnalysis = useCallback(async () => {
-    if (!file || !file.name.endsWith('.cif')) {
-      return {
-        conformational_energy_kcal: 0.0,
-        rmsd_final_angstrom: 0.0,
-        me_delta_length_angstrom: 0.0,
-        me_delta_angle_deg: 0.0,
-        structure_status: "No CIF file uploaded",
-        structure_feasible: null,
-        xtb_available: true
-      };
-    }
-
-    const data = new FormData();
-    data.append('file', file);
+    // THREE MODES:
+    // Mode 1 (BEST): freeLinkerFile + embeddedLinkerFile → Two XYZ analysis
+    // Mode 2: embeddedLinkerFile only → Auto-optimize 
+    // Mode 3: file (CIF) only → Auto-extract + optimize (less accurate)
     
-    // Add minimal required fields for structure analysis
-    data.append('metal_name', formData.metal_name || "Cu");
-    data.append('smiles', formData.smiles || "O=C(O)c1ccc(cc1)C(=O)O");
-    data.append('pv', formData.pv); data.append('gsa', formData.gsa); data.append('vsa', formData.vsa);
-    data.append('lcd', formData.lcd); data.append('pld', formData.pld); data.append('vf', formData.vf); 
-    data.append('density', formData.density);
-    
-    // Add default values for other required fields
-    ['metal_mass', 'linker_mass', 'product_mass', 'reaction_time', 'temperature'].forEach(field => {
-      data.append(field, "0");
-    });
-    ['solvent_name', 'additive_name', 'modulator_name'].forEach(field => {
-      data.append(field, "-");
-    });
-    ['solvent_volume', 'additive_volume', 'modulator_volume'].forEach(field => {
-      data.append(field, "0");
-    });
-
-    try {
-      const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // Check if we have two XYZ files (Mode 1 - BEST)
+    if (freeLinkerFile && embeddedLinkerFile) {
+      const data = new FormData();
+      data.append('file_free', freeLinkerFile);
+      data.append('file_embedded', embeddedLinkerFile);
       
-      const result = await res.json();
-      if (result.status === "success") {
-        return {
-          conformational_energy_kcal: result.results.conformational_energy_kcal || 0.0,
-          rmsd_final_angstrom: result.results.rmsd_final_angstrom || 0.0,
-          me_delta_length_angstrom: result.results.me_delta_length_angstrom || 0.0,
-          me_delta_angle_deg: result.results.me_delta_angle_deg || 0.0,
-          structure_status: result.results.structure_status || "Analysis completed",
-          structure_feasible: result.results.structure_feasible,
-          xtb_available: result.results.xtb_available || true
-        };
-      }
-    } catch (err) {
-      console.error("Structure analysis failed:", err);
-    }
+      // Add minimal required fields
+      data.append('metal_name', formData.metal_name || "Cu");
+      data.append('smiles', formData.smiles || "O=C(O)c1ccc(cc1)C(=O)O");
+      data.append('pv', formData.pv); data.append('gsa', formData.gsa); data.append('vsa', formData.vsa);
+      data.append('lcd', formData.lcd); data.append('pld', formData.pld); data.append('vf', formData.vf); 
+      data.append('density', formData.density);
+      
+      // Add default values for other required fields
+      ['metal_mass', 'linker_mass', 'product_mass', 'reaction_time', 'temperature'].forEach(field => {
+        data.append(field, "0");
+      });
+      ['solvent_name', 'additive_name', 'modulator_name'].forEach(field => {
+        data.append(field, "-");
+      });
+      ['solvent_volume', 'additive_volume', 'modulator_volume'].forEach(field => {
+        data.append(field, "0");
+      });
 
+      try {
+        const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const result = await res.json();
+        if (result.status === "success") {
+          console.log('✅ Two XYZ API response:', result.results);
+          console.log('📊 free_structure:', result.results.free_structure);
+          console.log('📊 embedded_structure:', result.results.embedded_structure);
+          
+          return {
+            conformational_energy_kcal: result.results.conformational_energy_kcal || 0.0,
+            rmsd_final_angstrom: result.results.rmsd_final_angstrom || 0.0,
+            me_delta_length_angstrom: result.results.me_delta_length_angstrom || 0.0,
+            me_delta_angle_deg: result.results.me_delta_angle_deg || 0.0,
+            structure_status: result.results.structure_status || "Two XYZ files analyzed",
+            structure_feasible: result.results.structure_feasible,
+            xtb_available: result.results.xtb_available || true,
+            stability_score: result.results.stability_score || "Unknown",
+            stability_level: result.results.stability_level || 0,
+            upload_mode: result.results.upload_mode || "two_xyz",
+            free_structure: result.results.free_structure,
+            embedded_structure: result.results.embedded_structure
+          };
+        }
+      } catch (err) {
+        console.error("Two XYZ analysis failed:", err);
+      }
+    }
+    
+    // Mode 2: Single embedded XYZ (auto-optimize)
+    if (embeddedLinkerFile) {
+      const data = new FormData();
+      data.append('file_embedded', embeddedLinkerFile);
+      
+      // Add minimal required fields
+      data.append('metal_name', formData.metal_name || "Cu");
+      data.append('smiles', formData.smiles || "O=C(O)c1ccc(cc1)C(=O)O");
+      data.append('pv', formData.pv); data.append('gsa', formData.gsa); data.append('vsa', formData.vsa);
+      data.append('lcd', formData.lcd); data.append('pld', formData.pld); data.append('vf', formData.vf); 
+      data.append('density', formData.density);
+      
+      // Add default values
+      ['metal_mass', 'linker_mass', 'product_mass', 'reaction_time', 'temperature'].forEach(field => {
+        data.append(field, "0");
+      });
+      ['solvent_name', 'additive_name', 'modulator_name'].forEach(field => {
+        data.append(field, "-");
+      });
+      ['solvent_volume', 'additive_volume', 'modulator_volume'].forEach(field => {
+        data.append(field, "0");
+      });
+
+      try {
+        const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const result = await res.json();
+        if (result.status === "success") {
+          return {
+            conformational_energy_kcal: result.results.conformational_energy_kcal || 0.0,
+            rmsd_final_angstrom: result.results.rmsd_final_angstrom || 0.0,
+            me_delta_length_angstrom: result.results.me_delta_length_angstrom || 0.0,
+            me_delta_angle_deg: result.results.me_delta_angle_deg || 0.0,
+            structure_status: result.results.structure_status || "Single XYZ analyzed",
+            structure_feasible: result.results.structure_feasible,
+            xtb_available: result.results.xtb_available || true,
+            stability_score: result.results.stability_score || "Unknown",
+            stability_level: result.results.stability_level || 0,
+            upload_mode: result.results.upload_mode || "single_xyz",
+            free_structure: result.results.free_structure,
+            embedded_structure: result.results.embedded_structure
+          };
+        }
+      } catch (err) {
+        console.error("Single XYZ analysis failed:", err);
+      }
+    }
+    
+    // Mode 3: CIF file (auto-extract, less accurate)
+    if (file && file.name.endsWith('.cif')) {
+      const data = new FormData();
+      data.append('file', file);
+      
+      // Add minimal required fields
+      data.append('metal_name', formData.metal_name || "Cu");
+      data.append('smiles', formData.smiles || "O=C(O)c1ccc(cc1)C(=O)O");
+      data.append('pv', formData.pv); data.append('gsa', formData.gsa); data.append('vsa', formData.vsa);
+      data.append('lcd', formData.lcd); data.append('pld', formData.pld); data.append('vf', formData.vf); 
+      data.append('density', formData.density);
+      
+      // Add default values
+      ['metal_mass', 'linker_mass', 'product_mass', 'reaction_time', 'temperature'].forEach(field => {
+        data.append(field, "0");
+      });
+      ['solvent_name', 'additive_name', 'modulator_name'].forEach(field => {
+        data.append(field, "-");
+      });
+      ['solvent_volume', 'additive_volume', 'modulator_volume'].forEach(field => {
+        data.append(field, "0");
+      });
+
+      try {
+        const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: data });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const result = await res.json();
+        if (result.status === "success") {
+          return {
+            conformational_energy_kcal: result.results.conformational_energy_kcal || 0.0,
+            rmsd_final_angstrom: result.results.rmsd_final_angstrom || 0.0,
+            me_delta_length_angstrom: result.results.me_delta_length_angstrom || 0.0,
+            me_delta_angle_deg: result.results.me_delta_angle_deg || 0.0,
+            structure_status: result.results.structure_status || "CIF analyzed",
+            structure_feasible: result.results.structure_feasible,
+            xtb_available: result.results.xtb_available || true,
+            stability_score: result.results.stability_score || "Unknown",
+            stability_level: result.results.stability_level || 0,
+            upload_mode: result.results.upload_mode || "cif",
+            free_structure: result.results.free_structure,
+            embedded_structure: result.results.embedded_structure
+          };
+        }
+      } catch (err) {
+        console.error("CIF analysis failed:", err);
+      }
+    }
+    
+    // No files uploaded
     return {
-      conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
-      me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
-      structure_status: "Analysis failed", structure_feasible: false, xtb_available: true
+      conformational_energy_kcal: 0.0,
+      rmsd_final_angstrom: 0.0,
+      me_delta_length_angstrom: 0.0,
+      me_delta_angle_deg: 0.0,
+      structure_status: "No structure file uploaded",
+      structure_feasible: null,
+      xtb_available: true,
+      stability_score: "Unknown",
+      stability_level: 0,
+      upload_mode: "none"
     };
-  }, [file, formData.metal_name, formData.smiles, formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.vf, formData.density]);
+  }, [freeLinkerFile, embeddedLinkerFile, file, formData.metal_name, formData.smiles, formData.pv, formData.gsa, formData.vsa, formData.lcd, formData.pld, formData.vf, formData.density]);
 
   // State for different calculation results
   const [hydrogenMetrics, setHydrogenMetrics] = useState({
@@ -315,12 +431,57 @@ export default function MOFScreening() {
   const [structureResults, setStructureResults] = useState({
     conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
     me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
-    structure_status: "No CIF file uploaded", structure_feasible: null, xtb_available: true
+    structure_status: "No structure files uploaded", structure_feasible: null, xtb_available: true,
+    stability_score: "Unknown", stability_level: 0, upload_mode: "none",
+    free_structure: null as any, embedded_structure: null as any
   });
+  
+  const [structure3D, setStructure3D] = useState<any>(null);  // NEW: For 3D visualization
+  const [loading3D, setLoading3D] = useState(false);  // NEW: Loading state for 3D
 
   const [loadingStates, setLoadingStates] = useState({
     hydrogen: false, costEnergy: false, structure: false
   });
+  
+  // NEW: Fetch 3D visualization when CIF file is uploaded
+  useEffect(() => {
+    console.log("📂 File changed:", file?.name, "Type:", file?.type);
+    
+    if (file && file.name.endsWith('.cif')) {
+      console.log("✅ CIF file detected, fetching 3D data...");
+      setLoading3D(true);
+      const data = new FormData();
+      data.append('file', file);
+      
+      fetch("http://localhost:8000/api/structure/3d-view", {
+        method: "POST",
+        body: data
+      })
+        .then(res => {
+          console.log("📡 Response status:", res.status);
+          return res.json();
+        })
+        .then(result => {
+          console.log("📦 3D data received:", result);
+          if (result.status === "success") {
+            setStructure3D(result);
+            console.log("✅ 3D structure set successfully");
+          } else {
+            console.error("❌ API returned error:", result);
+          }
+        })
+        .catch(err => {
+          console.error("❌ 3D visualization failed:", err);
+        })
+        .finally(() => {
+          setLoading3D(false);
+          console.log("🏁 3D loading finished");
+        });
+    } else {
+      console.log("ℹ️ No CIF file, clearing 3D structure");
+      setStructure3D(null);
+    }
+  }, [file]);
 
   // Real-time calculation effects for different sections
   
@@ -350,9 +511,9 @@ export default function MOFScreening() {
     }
   }, [calculateCostAndEnergy]);
 
-  // 3. Structure Analysis - API call when file changes
+  // 3. Structure Analysis - API call when files change
   useEffect(() => {
-    if (file && file.name.endsWith('.cif')) {
+    if (freeLinkerFile || embeddedLinkerFile || (file && file.name.endsWith('.cif'))) {
       setLoadingStates(prev => ({ ...prev, structure: true }));
       const timer = setTimeout(async () => {
         const results = await calculateStructureAnalysis();
@@ -365,7 +526,9 @@ export default function MOFScreening() {
       setStructureResults({
         conformational_energy_kcal: 0.0, rmsd_final_angstrom: 0.0, 
         me_delta_length_angstrom: 0.0, me_delta_angle_deg: 0.0,
-        structure_status: "No CIF file uploaded", structure_feasible: null, xtb_available: true
+        structure_status: "No structure files uploaded", structure_feasible: null, xtb_available: true,
+        stability_score: "Unknown", stability_level: 0, upload_mode: "none",
+        free_structure: null, embedded_structure: null
       });
     }
   }, [calculateStructureAnalysis]);
@@ -420,14 +583,46 @@ export default function MOFScreening() {
             <h2 className="text-2xl font-bold tracking-tight">Configuration</h2>
             
             <div className="space-y-4">
-              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure File" />
-              <div 
-                className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-zinc-200 hover:border-indigo-300'}`}
-                onClick={() => document.getElementById('cif-upload')?.click()}
-              >
-                <Upload className={`mx-auto w-8 h-8 mb-3 ${file ? 'text-indigo-600' : 'text-zinc-400'}`} />
-                <p className="text-sm font-semibold truncate px-4">{file ? file.name : "Drop .cif file here"}</p>
-                <input id="cif-upload" type="file" className="hidden" accept=".cif" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure Files" />
+              
+              {/* Free Linker XYZ Upload (NEW) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-zinc-600">
+                    Free Linker (XYZ)
+                  </Label>
+                </div>
+                <p className="text-[10px] text-zinc-500 italic">
+                  Optimized free linker • For accurate ΔE with embedded linker
+                </p>
+                <div 
+                  className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${freeLinkerFile ? 'border-blue-400 bg-blue-50/50' : 'border-zinc-200 hover:border-blue-300'}`}
+                  onClick={() => document.getElementById('free-xyz-upload')?.click()}
+                >
+                  <Upload className={`mx-auto w-8 h-8 mb-3 ${freeLinkerFile ? 'text-blue-600' : 'text-zinc-400'}`} />
+                  <p className="text-sm font-semibold truncate px-4">{freeLinkerFile ? freeLinkerFile.name : "Drop free linker .xyz file"}</p>
+                  <input id="free-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setFreeLinkerFile(e.target.files?.[0] || null)} />
+                </div>
+              </div>
+              
+              {/* Embedded Linker XYZ Upload */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-zinc-600">
+                    Embedded Linker (XYZ)
+                  </Label>
+                </div>
+                <p className="text-[10px] text-zinc-500 italic">
+                  Linker extracted from MOF • For conformational energy (ΔE)
+                </p>
+                <div 
+                  className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${embeddedLinkerFile ? 'border-green-400 bg-green-50/50' : 'border-zinc-200 hover:border-green-300'}`}
+                  onClick={() => document.getElementById('embedded-xyz-upload')?.click()}
+                >
+                  <Upload className={`mx-auto w-8 h-8 mb-3 ${embeddedLinkerFile ? 'text-green-600' : 'text-zinc-400'}`} />
+                  <p className="text-sm font-semibold truncate px-4">{embeddedLinkerFile ? embeddedLinkerFile.name : "Drop embedded linker .xyz file"}</p>
+                  <input id="embedded-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setEmbeddedLinkerFile(e.target.files?.[0] || null)} />
+                </div>
               </div>
             </div>
 
@@ -949,6 +1144,86 @@ export default function MOFScreening() {
                   </div>
                 )}
                 
+                {/* Stability Interpretation Card - Based on ΔE */}
+                {(freeLinkerFile || embeddedLinkerFile) && structureResults.conformational_energy_kcal > 0 && (
+                  <div className={`p-4 md:p-6 rounded-2xl border-2 transition-all ${
+                    structureResults.conformational_energy_kcal < 5 
+                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300' 
+                      : structureResults.conformational_energy_kcal <= 15 
+                      ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300' 
+                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-300'
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        {structureResults.conformational_energy_kcal < 5 && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                        {structureResults.conformational_energy_kcal >= 5 && structureResults.conformational_energy_kcal <= 15 && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                        {structureResults.conformational_energy_kcal > 15 && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={
+                          structureResults.conformational_energy_kcal < 5 
+                            ? 'text-green-700' 
+                            : structureResults.conformational_energy_kcal <= 15 
+                            ? 'text-yellow-700' 
+                            : 'text-red-700'
+                        }>
+                          Stability Assessment
+                        </span>
+                      </h4>
+                      <Badge className={`text-xs font-bold ${
+                        structureResults.conformational_energy_kcal < 5 
+                          ? 'bg-green-100 text-green-700 border-green-200' 
+                          : structureResults.conformational_energy_kcal <= 15 
+                          ? 'bg-yellow-100 text-yellow-700 border-yellow-200' 
+                          : 'bg-red-100 text-red-700 border-red-200'
+                      }`}>
+                        {structureResults.conformational_energy_kcal < 5 
+                          ? '✓ Very Stable' 
+                          : structureResults.conformational_energy_kcal <= 15 
+                          ? '⚠ Moderately Stable' 
+                          : '✗ Unstable'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl font-bold font-mono">
+                          <span className={
+                            structureResults.conformational_energy_kcal < 5 
+                              ? 'text-green-700' 
+                              : structureResults.conformational_energy_kcal <= 15 
+                              ? 'text-yellow-700' 
+                              : 'text-red-700'
+                          }>
+                            ΔE = {structureResults.conformational_energy_kcal.toFixed(2)}
+                          </span>
+                          <span className="text-lg ml-2 opacity-70">kcal/mol</span>
+                        </div>
+                      </div>
+                      <p className="text-xs leading-relaxed opacity-80">
+                        {structureResults.conformational_energy_kcal < 5 
+                          ? 'Linker geometry is well-preserved in the MOF framework. Highly feasible for synthesis.' 
+                          : structureResults.conformational_energy_kcal <= 15 
+                          ? 'Moderate conformational strain detected. Synthesis is feasible but may require optimization.' 
+                          : 'Significant conformational strain. High energy penalty suggests this MOF may be challenging to synthesize.'}
+                      </p>
+                      {/* Visual Scale */}
+                      <div className="relative pt-3">
+                        <div className="h-2 bg-gradient-to-r from-green-300 via-yellow-300 to-red-300 rounded-full"></div>
+                        <div 
+                          className="absolute top-3 w-1 h-4 bg-gray-900 rounded-full transition-all"
+                          style={{
+                            left: `${Math.min(100, Math.max(0, (structureResults.conformational_energy_kcal / 20) * 100))}%`
+                          }}
+                        ></div>
+                        <div className="flex justify-between text-[9px] font-medium mt-1 opacity-60">
+                          <span>0</span>
+                          <span>5</span>
+                          <span>15</span>
+                          <span>20+</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* 4 Output xTB */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   {/* 1. Energi konformasi linker (kcal/mol) */}
@@ -1018,6 +1293,152 @@ export default function MOFScreening() {
                   </div>
                 </div>
               </div>
+              
+              {/* NEW: 3D Linker Structure Visualization - Two XYZ Files */}
+              {(structureResults.free_structure || structureResults.embedded_structure) && (
+                <div className="space-y-6 pt-8 border-t border-zinc-100 animate-in slide-in-from-bottom duration-700">
+                  <LinkerStructureViewer
+                    freeStructure={structureResults.free_structure}
+                    embeddedStructure={structureResults.embedded_structure}
+                    uploadMode={structureResults.upload_mode || 'none'}
+                    loading={loadingStates.structure}
+                  />
+                </div>
+              )}
+              
+              {/* NEW: 3D Visualization from CIF - Futuristic & Dynamic */}
+              {structure3D && (
+                <div className="space-y-6 pt-8 border-t border-zinc-100 animate-in slide-in-from-bottom duration-700">
+                  {/* Section Header - Futuristic */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 rounded-full shadow-lg">
+                      <Box className="w-4 h-4 text-white animate-pulse" />
+                      <h4 className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">3D Structure</h4>
+                    </div>
+                    <div className="h-0.5 bg-gradient-to-r from-indigo-200 via-purple-200 to-transparent flex-1" />
+                    {loading3D && (
+                      <div className="flex items-center gap-2 text-[8px] text-indigo-600 font-bold bg-indigo-50 px-3 py-1.5 rounded-full animate-pulse border border-indigo-200">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        LOADING
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Structure Info Cards - Modern Grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    {/* Formula */}
+                    <div className="group relative bg-gradient-to-br from-blue-500 to-cyan-600 p-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-white/80 uppercase tracking-[0.15em]">Formula</span>
+                          <Database className="w-3.5 h-3.5 text-white/60" />
+                        </div>
+                        <div className="text-base md:text-lg font-mono font-black text-white break-all">
+                          {structure3D.formula || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total Atoms */}
+                    <div className="group relative bg-gradient-to-br from-purple-500 to-pink-600 p-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-white/80 uppercase tracking-[0.15em]">Atoms</span>
+                          <Layers className="w-3.5 h-3.5 text-white/60" />
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-white tabular-nums">
+                          {structure3D.structure_3d?.atoms?.length || 0}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cell Length */}
+                    <div className="group relative bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-white/80 uppercase tracking-[0.15em]">Cell a</span>
+                          <Box className="w-3.5 h-3.5 text-white/60" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl md:text-3xl font-black text-white tabular-nums">
+                            {structure3D.cell_params?.a?.toFixed(2) || 'N/A'}
+                          </span>
+                          <span className="text-xs font-bold text-white/70">Å</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Volume */}
+                    <div className="group relative bg-gradient-to-br from-orange-500 to-red-600 p-5 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-white/80 uppercase tracking-[0.15em]">Volume</span>
+                          <Scale className="w-3.5 h-3.5 text-white/60" />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl md:text-2xl font-black text-white tabular-nums">
+                            {structure3D.cell_params ? 
+                              (structure3D.cell_params.a * structure3D.cell_params.b * structure3D.cell_params.c).toFixed(0) 
+                              : 'N/A'}
+                          </span>
+                          <span className="text-xs font-bold text-white/70">Å³</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 3D Viewer Container - Futuristic Design */}
+                  <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-indigo-100/50 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+                    {/* Animated Header */}
+                    <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-size-200 animate-gradient">
+                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
+                      <div className="relative px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <Box className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm md:text-base font-black text-white uppercase tracking-wider">MOF Structure</h3>
+                            <p className="text-[10px] text-white/70 font-medium">Unit Cell Visualization</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm font-bold text-[10px] px-3 py-1">
+                          Interactive View
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Viewer Area */}
+                    <div className="p-6">
+                      <div className="relative bg-gradient-to-br from-white via-slate-50 to-blue-50/30 rounded-2xl border-2 border-indigo-100 overflow-hidden shadow-inner" style={{ height: '480px' }}>
+                        {/* Decorative grid background */}
+                        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9InNtYWxsR3JpZCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDYwIDAgTCAwIDAgMCA2MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTBlN2ZmIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjc21hbGxHcmlkKSIvPjwvc3ZnPg==')] opacity-40" />
+                        
+                        {/* Real 3D Viewer using 3Dmol.js */}
+                        <div className="relative z-10 w-full h-full">
+                          {structure3D.cif_content ? (
+                            <MOF3DViewer 
+                              cifContent={structure3D.cif_content}
+                              style={{ width: '100%', height: '100%' }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center p-8">
+                              <div className="text-center space-y-4">
+                                <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mx-auto" />
+                                <p className="text-sm font-bold text-indigo-600">Loading CIF content...</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
