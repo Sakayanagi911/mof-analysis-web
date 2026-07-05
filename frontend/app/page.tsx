@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { 
   Upload, Activity, Database, Loader2, 
   CheckCircle2, XCircle, FlaskConical, Layers, 
-  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale, DollarSign, Weight
+  Box, Thermometer, Clock, Beaker, Zap, AlertTriangle, ChevronDown, Search, Scale, DollarSign, Weight, X
 } from 'lucide-react';
 
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import MOF3DViewer from "@/components/MOF3DViewer";
 import LinkerStructureViewer from "@/components/LinkerStructureViewer";  // NEW: Import Linker Viewer
 
 export default function MOFScreening() {
+  const [showAbout, setShowAbout] = useState(false);
+
   const [file, setFile] = useState<File | null>(null);  // CIF for 3D visualization
   const [freeLinkerFile, setFreeLinkerFile] = useState<File | null>(null);  // NEW: Free linker XYZ
   const [embeddedLinkerFile, setEmbeddedLinkerFile] = useState<File | null>(null);  // NEW: Embedded linker XYZ
@@ -568,12 +570,27 @@ export default function MOFScreening() {
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
       <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="p-2 bg-indigo-600 rounded-xl group-hover:rotate-12 transition-transform duration-300">
-                <Activity className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-3">
+            {/* TRIAXIS-MOF Logo */}
+            <div className="relative">
+              <img 
+                src="/triaxismof.svg" 
+                alt="TRIAXIS-MOF Logo" 
+                className="w-10 h-10 rounded-full"
+              />
             </div>
-            <span className="text-xl font-bold tracking-tight">MOF<span className="text-indigo-600">Scan</span></span>
+            <span className="text-xl font-bold tracking-tight">
+              TRIAXIS<span className="text-indigo-600">-MOF</span>
+            </span>
           </div>
+          
+          {/* About Button */}
+          <button 
+            onClick={() => setShowAbout(true)}
+            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium rounded-xl transition-colors duration-200"
+          >
+            About
+          </button>
         </div>
       </nav>
 
@@ -1006,20 +1023,82 @@ export default function MOFScreening() {
           <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden">
             {(loadingStates.costEnergy || loadingStates.structure) && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
             
-            <header className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-12">
-              <div className="space-y-2">
-                <h3 className="text-[10px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em]">Screening Result</h3>
-                <h1 className={`text-5xl md:text-8xl font-black tracking-tighter transition-colors duration-500 ${overallFeasibility.is_overall_feasible ? 'text-indigo-600' : 'text-red-500'}`}>
-                  {loadingStates.costEnergy || loadingStates.structure ? "Analyzing..." : overallFeasibility.is_overall_feasible ? "Feasible" : "Denied"}
-                </h1>
-              </div>
-              {structureResults.structure_status && (
-                <div className="flex flex-col items-start sm:items-end gap-3">
-                    <Badge className="bg-zinc-900 text-white rounded-full px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest shadow-lg">
-                      {loadingStates.structure ? "Analyzing Structure..." : structureResults.structure_status}
-                    </Badge>
+            <header className="relative">
+              {/* Subtle Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/3 via-purple-500/3 to-blue-500/3 rounded-2xl -z-10" />
+              
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 p-6 mb-6">
+                <div className="space-y-3">
+                  {/* Compact Title with Icon */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Activity className="w-3 h-3 text-white" />
+                    </div>
+                    <h3 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em]">
+                      Screening Result
+                    </h3>
+                  </div>
+                  
+                  {/* Compact Main Status */}
+                  <div className="relative">
+                    <h1 className={`text-4xl md:text-6xl font-black tracking-tight transition-all duration-700 ${
+                      overallFeasibility.is_overall_feasible 
+                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600' 
+                        : 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600'
+                    }`}>
+                      {loadingStates.costEnergy || loadingStates.structure ? (
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 animate-pulse">
+                          Analyzing...
+                        </span>
+                      ) : overallFeasibility.is_overall_feasible ? "Feasible" : "Rejected"}
+                    </h1>
+                    
+                    {/* Compact underline */}
+                    <div className={`h-1 rounded-full mt-1 transition-all duration-700 ${
+                      overallFeasibility.is_overall_feasible 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' 
+                        : 'bg-gradient-to-r from-red-500 to-rose-600 w-3/4'
+                    }`} />
+                  </div>
+                  
+                  {/* Compact Description */}
+                  <p className={`text-xs font-medium transition-colors duration-500 ${
+                    overallFeasibility.is_overall_feasible 
+                      ? 'text-green-700' 
+                      : 'text-red-700'
+                  }`}>
+                    {loadingStates.costEnergy || loadingStates.structure 
+                      ? "Running analysis..." 
+                      : overallFeasibility.is_overall_feasible 
+                        ? "MOF meets all criteria" 
+                        : "Criteria not met"}
+                  </p>
                 </div>
-              )}
+                
+                {/* Compact Status Badges */}
+                <div className="flex flex-col items-start sm:items-end gap-2">
+                  {structureResults.structure_status && (
+                    <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide border-0 shadow-lg">
+                      {loadingStates.structure ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 bg-white/80 rounded-full animate-pulse" />
+                          Analyzing...
+                        </div>
+                      ) : structureResults.structure_status}
+                    </Badge>
+                  )}
+                  
+                  {/* Compact Score Indicator */}
+                  <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-zinc-200">
+                    <div className={`w-2 h-2 rounded-full transition-colors duration-500 ${
+                      overallFeasibility.is_overall_feasible ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                    }`} />
+                    <span className="text-[10px] font-bold text-zinc-600">
+                      {overallFeasibility.is_overall_feasible ? 'PASS' : 'FAIL'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </header>
 
             <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -1462,6 +1541,117 @@ export default function MOFScreening() {
           </div>
         </section>
       </main>
+      
+      {/* About Modal */}
+      {showAbout && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl mx-4 bg-white rounded-[32px] shadow-2xl animate-in slide-in-from-top duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between p-8 border-b border-zinc-100">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="/triaxismof.svg" 
+                  alt="TRIAXIS-MOF Logo" 
+                  className="w-12 h-12 rounded-full"
+                />
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">TRIAXIS-MOF</h2>
+                  <p className="text-sm text-zinc-500">Triple-Modality Analytics for Explainable, Integrated Screening</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAbout(false)}
+                className="p-2 hover:bg-zinc-100 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-zinc-400" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="p-8 max-h-96 overflow-y-auto">
+              <div className="prose prose-zinc max-w-none">
+                <p className="text-lg leading-relaxed mb-6">
+                  <strong>TRIAXIS-MOF</strong> (Triple-Modality Analytics for Explainable, Integrated Screening of Metal–Organic Frameworks) 
+                  is an integrated, data-driven screening platform designed to identify high-performance MOF materials for industrial 
+                  hydrogen storage applications.
+                </p>
+                
+                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-2xl mb-6">
+                  <h3 className="text-lg font-semibold text-indigo-900 mb-3">Database Coverage</h3>
+                  <p className="text-indigo-700">
+                    Built on a comprehensive database of <strong>98,694 CoRE-MOF</strong>, more than <strong>500 SynMOF</strong> and 
+                    <strong> MOF DB-BAM</strong> structures, ensuring extensive material coverage and reliable predictions.
+                  </p>
+                </div>
+                
+                <h3 className="text-lg font-semibold mb-4">Three Core Analytical Pillars</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white border border-zinc-200 p-5 rounded-xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <span className="text-green-600 font-bold text-sm">1</span>
+                      </div>
+                      <h4 className="font-semibold text-green-800">White-box ML</h4>
+                    </div>
+                    <p className="text-sm text-zinc-600">
+                      Interpretable machine learning for transparent performance prediction with full explainability.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white border border-zinc-200 p-5 rounded-xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-sm">2</span>
+                      </div>
+                      <h4 className="font-semibold text-blue-800">Energy Evaluation</h4>
+                    </div>
+                    <p className="text-sm text-zinc-600">
+                      Synthesis energy assessment for comprehensive economic feasibility analysis.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white border border-zinc-200 p-5 rounded-xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-600 font-bold text-sm">3</span>
+                      </div>
+                      <h4 className="font-semibold text-purple-800">DFT Validation</h4>
+                    </div>
+                    <p className="text-sm text-zinc-600">
+                      Quantum-level density functional theory analysis for stability validation.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-zinc-50 to-slate-50 p-6 rounded-2xl">
+                  <h3 className="text-lg font-semibold mb-3">Unified Decision Pipeline</h3>
+                  <p className="text-zinc-700 mb-4">
+                    These three modalities are unified into a single explainable and physically consistent decision pipeline, 
+                    ensuring transparency, scientific rigor, and full auditability.
+                  </p>
+                  <p className="text-zinc-700">
+                    <strong>TRIAXIS-MOF</strong> generates robust material fingerprints, interpretable predictions, and 
+                    quantum-validated stability insights, accelerating the discovery of hydrogen storage materials that are 
+                    both technically viable and economically competitive.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Footer */}
+      <footer className="mt-16 border-t border-zinc-200/50 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+          <div className="text-center">
+            <p className="text-sm text-zinc-500">
+              © 2026 TRIAXIS-MOF. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

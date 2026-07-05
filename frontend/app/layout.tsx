@@ -9,8 +9,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MOFScan - Economic & Energy Analysis",
-  description: "Modern Apple-like MOF Analysis App",
+  title: "TRIAXISMOF - Insightful MOF Screener",
+  description: "Advanced MOF Analysis and Screening Platform",
+  icons: {
+    icon: "/triaxismof.svg",
+  },
 };
 
 export default function RootLayout({
