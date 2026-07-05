@@ -579,55 +579,11 @@ export default function MOFScreening() {
 
       <main className="max-w-7xl mx-auto py-6 md:py-12 px-4 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         <section className="lg:col-span-4 space-y-8 animate-in slide-in-from-left duration-700">
-          <div className="bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/50 p-6 md:p-8 shadow-sm space-y-8">
+          <div className="sticky top-4 bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/50 p-6 md:p-8 shadow-sm space-y-8">
             <h2 className="text-2xl font-bold tracking-tight">Configuration</h2>
             
             <div className="space-y-4">
-              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="01 Structure Files" />
-              
-              {/* Free Linker XYZ Upload (NEW) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-zinc-600">
-                    Free Linker (XYZ)
-                  </Label>
-                </div>
-                <p className="text-[10px] text-zinc-500 italic">
-                  Optimized free linker • For accurate ΔE with embedded linker
-                </p>
-                <div 
-                  className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${freeLinkerFile ? 'border-blue-400 bg-blue-50/50' : 'border-zinc-200 hover:border-blue-300'}`}
-                  onClick={() => document.getElementById('free-xyz-upload')?.click()}
-                >
-                  <Upload className={`mx-auto w-8 h-8 mb-3 ${freeLinkerFile ? 'text-blue-600' : 'text-zinc-400'}`} />
-                  <p className="text-sm font-semibold truncate px-4">{freeLinkerFile ? freeLinkerFile.name : "Drop free linker .xyz file"}</p>
-                  <input id="free-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setFreeLinkerFile(e.target.files?.[0] || null)} />
-                </div>
-              </div>
-              
-              {/* Embedded Linker XYZ Upload */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-zinc-600">
-                    Embedded Linker (XYZ)
-                  </Label>
-                </div>
-                <p className="text-[10px] text-zinc-500 italic">
-                  Linker extracted from MOF • For conformational energy (ΔE)
-                </p>
-                <div 
-                  className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${embeddedLinkerFile ? 'border-green-400 bg-green-50/50' : 'border-zinc-200 hover:border-green-300'}`}
-                  onClick={() => document.getElementById('embedded-xyz-upload')?.click()}
-                >
-                  <Upload className={`mx-auto w-8 h-8 mb-3 ${embeddedLinkerFile ? 'text-green-600' : 'text-zinc-400'}`} />
-                  <p className="text-sm font-semibold truncate px-4">{embeddedLinkerFile ? embeddedLinkerFile.name : "Drop embedded linker .xyz file"}</p>
-                  <input id="embedded-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setEmbeddedLinkerFile(e.target.files?.[0] || null)} />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-6 border-t border-zinc-100">
-              <SectionHeader icon={<Layers className="w-4 h-4" />} text="02 Geometric Factors" />
+              <SectionHeader icon={<Layers className="w-4 h-4" />} text="01 Geometric Factors" />
               <div className="grid grid-cols-1 gap-4">
                 <InputGroup icon={<Activity className="w-4 h-4"/>} label="ASA Gravimetric" unit="m²/g" val={formData.gsa} k="gsa" s={setFormData} d={formData} />
                 <InputGroup icon={<Layers className="w-4 h-4"/>} label="ASA Volumetric" unit="m²/cm³" val={formData.vsa} k="vsa" s={setFormData} d={formData} />
@@ -644,7 +600,7 @@ export default function MOFScreening() {
             </div>
 
             <div className="space-y-4 pt-6 border-t border-zinc-100">
-              <SectionHeader icon={<Beaker className="w-4 h-4" />} text="03 Synthesis Conditions" />
+              <SectionHeader icon={<Beaker className="w-4 h-4" />} text="02 Synthesis Conditions" />
               <div className="space-y-4">
                 
                 {/* 1. Solvent */}
@@ -980,9 +936,71 @@ export default function MOFScreening() {
                 </div>
               </div>
             </div>
+
+            <div className="space-y-4 pt-6 border-t border-zinc-100">
+              <SectionHeader icon={<Layers className="w-4 h-4" />} text="02 Geometric Factors" />
+              <div className="grid grid-cols-1 gap-4">
+                <InputGroup icon={<Activity className="w-4 h-4"/>} label="ASA Gravimetric" unit="m²/g" val={formData.gsa} k="gsa" s={setFormData} d={formData} />
+                <InputGroup icon={<Layers className="w-4 h-4"/>} label="ASA Volumetric" unit="m²/cm³" val={formData.vsa} k="vsa" s={setFormData} d={formData} />
+                <InputGroup icon={<Box className="w-4 h-4"/>} label="Void Fraction" unit="φ" val={formData.vf} k="vf" s={setFormData} d={formData} />
+                <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="Pore Volume" unit="cm³/g" val={formData.pv} k="pv" s={setFormData} d={formData} />
+                    <InputGroup label="Density" unit="g/cm³" val={formData.density} k="density" s={setFormData} d={formData} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="LCD" unit="Å" val={formData.lcd} k="lcd" s={setFormData} d={formData} />
+                    <InputGroup label="PLD" unit="Å" val={formData.pld} k="pld" s={setFormData} d={formData} />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-zinc-100">
+              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="03 Structure Files" />
+              
+              <div className="space-y-4">
+                {/* Free Linker XYZ Upload */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-zinc-600">
+                      Free Linker (XYZ)
+                    </Label>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 italic">
+                    Optimized free linker • For accurate ΔE with embedded linker
+                  </p>
+                  <div 
+                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${freeLinkerFile ? 'border-blue-400 bg-blue-50/50' : 'border-zinc-200 hover:border-blue-300'}`}
+                    onClick={() => document.getElementById('free-xyz-upload')?.click()}
+                  >
+                    <Upload className={`mx-auto w-8 h-8 mb-3 ${freeLinkerFile ? 'text-blue-600' : 'text-zinc-400'}`} />
+                    <p className="text-sm font-semibold truncate px-4">{freeLinkerFile ? freeLinkerFile.name : "Drop free linker .xyz file"}</p>
+                    <input id="free-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setFreeLinkerFile(e.target.files?.[0] || null)} />
+                  </div>
+                </div>
+                
+                {/* Embedded Linker XYZ Upload */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-zinc-600">
+                      Embedded Linker (XYZ)
+                    </Label>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 italic">
+                    Linker extracted from MOF • For conformational energy (ΔE)
+                  </p>
+                  <div 
+                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${embeddedLinkerFile ? 'border-green-400 bg-green-50/50' : 'border-zinc-200 hover:border-green-300'}`}
+                    onClick={() => document.getElementById('embedded-xyz-upload')?.click()}
+                  >
+                    <Upload className={`mx-auto w-8 h-8 mb-3 ${embeddedLinkerFile ? 'text-green-600' : 'text-zinc-400'}`} />
+                    <p className="text-sm font-semibold truncate px-4">{embeddedLinkerFile ? embeddedLinkerFile.name : "Drop embedded linker .xyz file"}</p>
+                    <input id="embedded-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setEmbeddedLinkerFile(e.target.files?.[0] || null)} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
-
         {/* RESULTS SECTION */}
         <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
           <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden">
