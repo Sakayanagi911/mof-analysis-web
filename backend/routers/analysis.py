@@ -270,16 +270,20 @@ async def analyze_mof(
             if analysis["success"]:
                 delta_e = analysis["conformational_energy_kcal"]
                 
-                # Determine stability level based on ΔE
-                if delta_e < 5.0:
+                # Determine stability level based on ΔE - Updated ranges
+                if delta_e <= 50.0:
                     stability_score = "Very Stable"
+                    stability_level = 4
+                    structure_feasible = True
+                elif 50.0 < delta_e <= 85.0:
+                    stability_score = "Stable"
                     stability_level = 3
                     structure_feasible = True
-                elif 5.0 <= delta_e <= 15.0:
-                    stability_score = "Moderately Stable"
+                elif 85.0 < delta_e <= 250.0:
+                    stability_score = "Less Stable"
                     stability_level = 2
-                    structure_feasible = True
-                else:  # delta_e > 15.0
+                    structure_feasible = False  # Changed to False
+                else:  # delta_e > 250.0
                     stability_score = "Unstable"
                     stability_level = 1
                     structure_feasible = False

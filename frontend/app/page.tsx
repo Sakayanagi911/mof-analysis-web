@@ -552,8 +552,15 @@ export default function MOFScreening() {
 
     const timeOk = parseFloat(formData.reaction_time) <= MAX_REACTION_TIME;
     const tempOk = parseFloat(formData.temperature) <= MAX_TEMPERATURE;
-    const costOk = costEnergyResults.mof_cost <= MAX_MOF_COST && costEnergyResults.storage_cost <= MAX_STORAGE_COST;
-    const structureOk = structureResults.structure_feasible !== false;
+    
+    // Updated cost feasibility: treat 0 values as feasible (green)
+    const costOk = ((costEnergyResults.mof_cost === 0 || (costEnergyResults.mof_cost > 0 && costEnergyResults.mof_cost <= MAX_MOF_COST)) && 
+                   (costEnergyResults.storage_cost === 0 || (costEnergyResults.storage_cost > 0 && costEnergyResults.storage_cost <= MAX_STORAGE_COST)));
+    
+    // Updated structure feasibility logic - only Very Stable and Stable are feasible
+    const structureOk = structureResults.structure_feasible !== false && 
+                       (structureResults.conformational_energy_kcal <= 85 || 
+                        structureResults.conformational_energy_kcal === 0);
 
     return {
       is_overall_feasible: hydrogenMetrics.doe_feasible && costOk && timeOk && tempOk && structureOk,
@@ -564,7 +571,7 @@ export default function MOFScreening() {
       structure_feasible: structureResults.structure_feasible
     };
   }, [hydrogenMetrics.doe_feasible, costEnergyResults.mof_cost, costEnergyResults.storage_cost, 
-      formData.reaction_time, formData.temperature, structureResults.structure_feasible]);
+      formData.reaction_time, formData.temperature, structureResults.structure_feasible, structureResults.conformational_energy_kcal]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
@@ -1131,20 +1138,20 @@ export default function MOFScreening() {
                     <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">CALCULATING</div>
                   ) : (
                     <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
-                      (Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30 && 
-                       Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300)
+                      ((Number(dynamicCosts.mof_cost) >= 0 && Number(dynamicCosts.mof_cost) <= 30) && 
+                       (Number(dynamicCosts.storage_cost) >= 0 && Number(dynamicCosts.storage_cost) <= 300))
                         ? 'text-green-600 bg-green-50' 
                         : 'text-red-600 bg-red-50'
                     }`}>
-                      {(Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30 && 
-                        Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300)
+                      {((Number(dynamicCosts.mof_cost) >= 0 && Number(dynamicCosts.mof_cost) <= 30) && 
+                        (Number(dynamicCosts.storage_cost) >= 0 && Number(dynamicCosts.storage_cost) <= 300))
                         ? 'FEASIBLE' : 'NOT FEASIBLE'}
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="MOF Production Cost" val={dynamicCosts.mof_cost} unit="USD/kg" target="30" ok={Number(dynamicCosts.mof_cost) > 0 && Number(dynamicCosts.mof_cost) <= 30} />
-                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="Hydrogen Storage Cost" val={dynamicCosts.storage_cost} unit="USD/kg H2" target="300" ok={Number(dynamicCosts.storage_cost) > 0 && Number(dynamicCosts.storage_cost) <= 300} />
+                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="MOF Production Cost" val={dynamicCosts.mof_cost} unit="USD/kg" target="30" ok={Number(dynamicCosts.mof_cost) >= 0 && Number(dynamicCosts.mof_cost) <= 30} />
+                  <ResultBox icon={<DollarSign className="w-4 h-4"/>} label="Hydrogen Storage Cost" val={dynamicCosts.storage_cost} unit="USD/kg H2" target="300" ok={Number(dynamicCosts.storage_cost) >= 0 && Number(dynamicCosts.storage_cost) <= 300} />
                 </div>
               </div>
 
@@ -1212,17 +1219,11 @@ export default function MOFScreening() {
                     <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">ANALYZING</div>
                   ) : (
                     <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
-                      (structureResults.conformational_energy_kcal >= 0 && structureResults.conformational_energy_kcal <= 20 &&
-                       structureResults.rmsd_final_angstrom >= 0 && structureResults.rmsd_final_angstrom <= 1.0 &&
-                       structureResults.me_delta_length_angstrom >= 0 && structureResults.me_delta_length_angstrom <= 0.05 &&
-                       structureResults.me_delta_angle_deg >= 0 && structureResults.me_delta_angle_deg <= 10)
+                      structureResults.conformational_energy_kcal <= 85
                         ? 'text-green-600 bg-green-50' 
                         : 'text-red-600 bg-red-50'
                     }`}>
-                      {(structureResults.conformational_energy_kcal >= 0 && structureResults.conformational_energy_kcal <= 20 &&
-                        structureResults.rmsd_final_angstrom >= 0 && structureResults.rmsd_final_angstrom <= 1.0 &&
-                        structureResults.me_delta_length_angstrom >= 0 && structureResults.me_delta_length_angstrom <= 0.05 &&
-                        structureResults.me_delta_angle_deg >= 0 && structureResults.me_delta_angle_deg <= 10)
+                      {structureResults.conformational_energy_kcal <= 85
                         ? 'FEASIBLE' : 'NOT FEASIBLE'}
                     </div>
                   )}
@@ -1244,21 +1245,26 @@ export default function MOFScreening() {
                 {/* Stability Interpretation Card - Based on ΔE */}
                 {(freeLinkerFile || embeddedLinkerFile) && structureResults.conformational_energy_kcal > 0 && (
                   <div className={`p-4 md:p-6 rounded-2xl border-2 transition-all ${
-                    structureResults.conformational_energy_kcal < 5 
+                    structureResults.conformational_energy_kcal <= 50
                       ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300' 
-                      : structureResults.conformational_energy_kcal <= 15 
-                      ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300' 
+                      : structureResults.conformational_energy_kcal <= 85
+                      ? 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-300' 
+                      : structureResults.conformational_energy_kcal <= 250
+                      ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300'
                       : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-300'
                   }`}>
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                        {structureResults.conformational_energy_kcal < 5 && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                        {structureResults.conformational_energy_kcal >= 5 && structureResults.conformational_energy_kcal <= 15 && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
-                        {structureResults.conformational_energy_kcal > 15 && <XCircle className="w-4 h-4 text-red-600" />}
+                        {structureResults.conformational_energy_kcal <= 50 && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                        {structureResults.conformational_energy_kcal > 50 && structureResults.conformational_energy_kcal <= 85 && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                        {structureResults.conformational_energy_kcal > 85 && structureResults.conformational_energy_kcal <= 250 && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                        {structureResults.conformational_energy_kcal > 250 && <XCircle className="w-4 h-4 text-red-600" />}
                         <span className={
-                          structureResults.conformational_energy_kcal < 5 
+                          structureResults.conformational_energy_kcal <= 50
                             ? 'text-green-700' 
-                            : structureResults.conformational_energy_kcal <= 15 
+                            : structureResults.conformational_energy_kcal <= 85
+                            ? 'text-blue-700'
+                            : structureResults.conformational_energy_kcal <= 250
                             ? 'text-yellow-700' 
                             : 'text-red-700'
                         }>
@@ -1266,16 +1272,20 @@ export default function MOFScreening() {
                         </span>
                       </h4>
                       <Badge className={`text-xs font-bold ${
-                        structureResults.conformational_energy_kcal < 5 
+                        structureResults.conformational_energy_kcal <= 50
                           ? 'bg-green-100 text-green-700 border-green-200' 
-                          : structureResults.conformational_energy_kcal <= 15 
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'bg-blue-100 text-blue-700 border-blue-200'
+                          : structureResults.conformational_energy_kcal <= 250
                           ? 'bg-yellow-100 text-yellow-700 border-yellow-200' 
                           : 'bg-red-100 text-red-700 border-red-200'
                       }`}>
-                        {structureResults.conformational_energy_kcal < 5 
+                        {structureResults.conformational_energy_kcal <= 50
                           ? '✓ Very Stable' 
-                          : structureResults.conformational_energy_kcal <= 15 
-                          ? '⚠ Moderately Stable' 
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? '✓ Stable'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? '⚠ Less Stable' 
                           : '✗ Unstable'}
                       </Badge>
                     </div>
@@ -1283,9 +1293,11 @@ export default function MOFScreening() {
                       <div className="flex items-center gap-3">
                         <div className="text-3xl font-bold font-mono">
                           <span className={
-                            structureResults.conformational_energy_kcal < 5 
+                            structureResults.conformational_energy_kcal <= 50
                               ? 'text-green-700' 
-                              : structureResults.conformational_energy_kcal <= 15 
+                              : structureResults.conformational_energy_kcal <= 85
+                              ? 'text-blue-700'
+                              : structureResults.conformational_energy_kcal <= 250
                               ? 'text-yellow-700' 
                               : 'text-red-700'
                           }>
@@ -1295,26 +1307,29 @@ export default function MOFScreening() {
                         </div>
                       </div>
                       <p className="text-xs leading-relaxed opacity-80">
-                        {structureResults.conformational_energy_kcal < 5 
-                          ? 'Linker geometry is well-preserved in the MOF framework. Highly feasible for synthesis.' 
-                          : structureResults.conformational_energy_kcal <= 15 
-                          ? 'Moderate conformational strain detected. Synthesis is feasible but may require optimization.' 
-                          : 'Significant conformational strain. High energy penalty suggests this MOF may be challenging to synthesize.'}
+                        {structureResults.conformational_energy_kcal <= 50
+                          ? 'Low conformational energy indicates excellent linker adaptability within the MOF framework. Structure is very stable and feasible for synthesis.' 
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'Moderate conformational energy shows good linker adaptation. Structure is stable with high synthesis feasibility.'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? 'High conformational energy indicates strain on the linker. Structure is less stable, synthesis requires special optimization conditions.' 
+                          : 'Very high conformational energy shows significant linker distortion. Structure is unstable, synthesis is extremely challenging or not feasible.'}
                       </p>
                       {/* Visual Scale */}
                       <div className="relative pt-3">
-                        <div className="h-2 bg-gradient-to-r from-green-300 via-yellow-300 to-red-300 rounded-full"></div>
+                        <div className="h-2 bg-gradient-to-r from-green-300 via-blue-300 via-yellow-300 to-red-300 rounded-full"></div>
                         <div 
                           className="absolute top-3 w-1 h-4 bg-gray-900 rounded-full transition-all"
                           style={{
-                            left: `${Math.min(100, Math.max(0, (structureResults.conformational_energy_kcal / 20) * 100))}%`
+                            left: `${Math.min(100, Math.max(0, (structureResults.conformational_energy_kcal / 300) * 100))}%`
                           }}
                         ></div>
                         <div className="flex justify-between text-[9px] font-medium mt-1 opacity-60">
                           <span>0</span>
-                          <span>5</span>
-                          <span>15</span>
-                          <span>20+</span>
+                          <span>50</span>
+                          <span>85</span>
+                          <span>250</span>
+                          <span>300+</span>
                         </div>
                       </div>
                     </div>
@@ -1323,59 +1338,250 @@ export default function MOFScreening() {
                 
                 {/* 4 Output xTB */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                  {/* 1. Energi konformasi linker (kcal/mol) */}
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 md:p-6 rounded-2xl border border-purple-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                  {/* 1. Conformational Energy with stability-based colors */}
+                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
+                    structureResults.conformational_energy_kcal <= 50
+                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
+                      : structureResults.conformational_energy_kcal <= 85
+                      ? 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100/50'
+                      : structureResults.conformational_energy_kcal <= 250
+                      ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-100/50'
+                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
+                  }`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Conformational Energy</span>
-                      <Zap className="w-4 h-4 text-purple-500" />
+                      <span className={`text-xs font-bold uppercase tracking-wider ${
+                        structureResults.conformational_energy_kcal <= 50
+                          ? 'text-green-600'
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'text-blue-600'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>Conformational Energy</span>
+                      <Zap className={`w-4 h-4 ${
+                        structureResults.conformational_energy_kcal <= 50
+                          ? 'text-green-500'
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'text-blue-500'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                      }`} />
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl md:text-3xl font-bold text-purple-900 font-mono">
+                      <span className={`text-2xl md:text-3xl font-bold font-mono ${
+                        structureResults.conformational_energy_kcal <= 50
+                          ? 'text-green-900'
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'text-blue-900'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? 'text-yellow-900'
+                          : 'text-red-900'
+                      }`}>
                         {structureResults.conformational_energy_kcal.toFixed(1)}
                       </span>
-                      <span className="text-sm font-medium text-purple-600">kcal/mol</span>
+                      <span className={`text-sm font-medium ${
+                        structureResults.conformational_energy_kcal <= 50
+                          ? 'text-green-600'
+                          : structureResults.conformational_energy_kcal <= 85
+                          ? 'text-blue-600'
+                          : structureResults.conformational_energy_kcal <= 250
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>kcal/mol</span>
                     </div>
                   </div>
 
-                  {/* 2. RMSD Final (Å) */}
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-6 rounded-2xl border border-blue-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                  {/* 2. RMSD Final (Å) with simple explanation */}
+                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
+                    structureResults.rmsd_final_angstrom <= 0.7 
+                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
+                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
+                  }`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">RMSD Final</span>
-                      <Activity className="w-4 h-4 text-blue-500" />
+                      <span className={`text-xs font-bold uppercase tracking-wider ${
+                        structureResults.rmsd_final_angstrom <= 0.7 ? 'text-green-600' : 'text-red-600'
+                      }`}>RMSD Final</span>
+                      <Activity className={`w-4 h-4 ${
+                        structureResults.rmsd_final_angstrom <= 0.7 ? 'text-green-500' : 'text-red-500'
+                      }`} />
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl md:text-3xl font-bold text-blue-900 font-mono">
+                      <span className={`text-2xl md:text-3xl font-bold font-mono ${
+                        structureResults.rmsd_final_angstrom <= 0.7 ? 'text-green-900' : 'text-red-900'
+                      }`}>
                         {structureResults.rmsd_final_angstrom.toFixed(4)}
                       </span>
-                      <span className="text-sm font-medium text-blue-600">Å</span>
+                      <span className={`text-sm font-medium ${
+                        structureResults.rmsd_final_angstrom <= 0.7 ? 'text-green-600' : 'text-red-600'
+                      }`}>Å</span>
+                    </div>
+                    <p className={`text-[10px] mt-2 font-medium ${
+                      structureResults.rmsd_final_angstrom <= 0.7 ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {structureResults.rmsd_final_angstrom <= 0.7 
+                        ? '≤ 0.7 Å: Good structural alignment' 
+                        : '> 0.7 Å: Poor structural alignment'}
+                    </p>
+                  </div>
+
+                  {/* 3. ME delta length (Å) with range-based color coding */}
+                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
+                    (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
+                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs font-bold uppercase tracking-wider ${
+                        (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>ME Δ Length</span>
+                      <Box className={`w-4 h-4 ${
+                        (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-2xl md:text-3xl font-bold font-mono ${
+                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                            ? 'text-green-900'
+                            : 'text-red-900'
+                        }`}>
+                          {structureResults.me_delta_length_angstrom >= 0 ? '+' : ''}{structureResults.me_delta_length_angstrom.toFixed(6)}
+                        </span>
+                        <span className={`text-sm font-medium ${
+                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}>Å</span>
+                      </div>
+                      {/* Visual Scale */}
+                      <div className="space-y-2">
+                        <div className={`flex items-center justify-between text-[10px] font-medium ${
+                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                            ? 'text-green-700'
+                            : 'text-red-700'
+                        }`}>
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
+                              <path d="M19 12H5M5 12L12 5M5 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>-0.1</span>
+                          </div>
+                          <div className="text-center">
+                            <span>0</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>+0.7</span>
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
+                              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <div className={`w-full h-1 rounded-full ${
+                            (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                              ? 'bg-green-200'
+                              : 'bg-red-200'
+                          }`}></div>
+                          <div className={`absolute top-0 left-0 w-full h-1 rounded-full opacity-60 ${
+                            (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                              ? 'bg-gradient-to-r from-green-400 via-green-100 to-green-400'
+                              : 'bg-gradient-to-r from-red-400 via-red-100 to-red-400'
+                          }`}></div>
+                        </div>
+                        <div className={`flex items-center justify-between text-[9px] ${
+                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}>
+                          <span>Bond Shortening</span>
+                          <span>Bond Elongation</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 3. ME delta length (Å) */}
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-6 rounded-2xl border border-green-100/50 transition-all hover:scale-[1.02] shadow-sm">
+                  {/* 4. ME delta angle (deg) with range-based color coding */}
+                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
+                    (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
+                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
+                  }`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-green-600 uppercase tracking-wider">ME Δ Length</span>
-                      <Box className="w-4 h-4 text-green-500" />
+                      <span className={`text-xs font-bold uppercase tracking-wider ${
+                        (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>ME Δ Angle</span>
+                      <Thermometer className={`w-4 h-4 ${
+                        (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`} />
                     </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl md:text-3xl font-bold text-green-900 font-mono">
-                        {structureResults.me_delta_length_angstrom.toFixed(6)}
-                      </span>
-                      <span className="text-sm font-medium text-green-600">Å</span>
-                    </div>
-                  </div>
-
-                  {/* 4. ME delta angle (deg) */}
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 md:p-6 rounded-2xl border border-orange-100/50 transition-all hover:scale-[1.02] shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">ME Δ Angle</span>
-                      <Thermometer className="w-4 h-4 text-orange-500" />
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl md:text-3xl font-bold text-orange-900 font-mono">
-                        {structureResults.me_delta_angle_deg.toFixed(4)}
-                      </span>
-                      <span className="text-sm font-medium text-orange-600">deg</span>
+                    <div className="space-y-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-2xl md:text-3xl font-bold font-mono ${
+                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                            ? 'text-green-900'
+                            : 'text-red-900'
+                        }`}>
+                          {structureResults.me_delta_angle_deg >= 0 ? '+' : ''}{structureResults.me_delta_angle_deg.toFixed(4)}
+                        </span>
+                        <span className={`text-sm font-medium ${
+                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}>deg</span>
+                      </div>
+                      {/* Visual Scale */}
+                      <div className="space-y-2">
+                        <div className={`flex items-center justify-between text-[10px] font-medium ${
+                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                            ? 'text-green-700'
+                            : 'text-red-700'
+                        }`}>
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
+                              <path d="M19 12H5M5 12L12 5M5 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>-0.3</span>
+                          </div>
+                          <div className="text-center">
+                            <span>0</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>+0.2</span>
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
+                              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <div className={`w-full h-1 rounded-full ${
+                            (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                              ? 'bg-green-200'
+                              : 'bg-red-200'
+                          }`}></div>
+                          <div className={`absolute top-0 left-0 w-full h-1 rounded-full opacity-60 ${
+                            (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                              ? 'bg-gradient-to-r from-green-400 via-green-100 to-green-400'
+                              : 'bg-gradient-to-r from-red-400 via-red-100 to-red-400'
+                          }`}></div>
+                        </div>
+                        <div className={`flex items-center justify-between text-[9px] ${
+                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}>
+                          <span>Angle Narrowing</span>
+                          <span>Angle Widening</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
