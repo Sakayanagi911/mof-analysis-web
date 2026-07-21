@@ -282,7 +282,7 @@ async def analyze_mof(
                 elif 85.0 < delta_e <= 250.0:
                     stability_score = "Less Stable"
                     stability_level = 2
-                    structure_feasible = False  # Changed to False
+                    structure_feasible = True  # Changed to True - Less Stable is still feasible
                 else:  # delta_e > 250.0
                     stability_score = "Unstable"
                     stability_level = 1
@@ -307,6 +307,7 @@ async def analyze_mof(
             else:
                 error_msg = analysis.get('error', 'Unknown error')
                 structure_result["structure_status"] = f"xTB analysis failed: {error_msg}"
+                structure_result["structure_feasible"] = False  # Set to False when analysis fails
                 structure_result["upload_mode"] = upload_mode
                 
         except Exception as e:
@@ -314,6 +315,7 @@ async def analyze_mof(
             error_msg = f"File processing error: {str(e)}"
             traceback.print_exc()
             structure_result["structure_status"] = error_msg
+            structure_result["structure_feasible"] = False  # Set to False when processing fails
             structure_result["upload_mode"] = upload_mode if upload_mode else "unknown"
     
     # Check feasibility using calculated WUG/WUV (dynamic) for DOE feasibility

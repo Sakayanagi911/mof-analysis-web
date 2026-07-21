@@ -15,6 +15,84 @@ import LinkerStructureViewer from "@/components/LinkerStructureViewer";  // NEW:
 
 export default function MOFScreening() {
   const [showAbout, setShowAbout] = useState(false);
+  const scrollRef = useRef<number>(0);  // Track scroll position
+  const [dragOver, setDragOver] = useState({ free: false, embedded: false });
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent, type: 'free' | 'embedded') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(prev => ({ ...prev, [type]: true }));
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent, type: 'free' | 'embedded') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(prev => ({ ...prev, [type]: false }));
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, type: 'free' | 'embedded') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(prev => ({ ...prev, [type]: false }));
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.name.endsWith('.xyz')) {
+        if (type === 'free') {
+          setFreeLinkerFile(file);
+        } else {
+          setEmbeddedLinkerFile(file);
+        }
+      } else {
+        alert('Please upload only .xyz files');
+      }
+    }
+  }, []);
+
+  // Mouse position tracking for smooth scroll
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    scrollRef.current = window.scrollY;
+  }, []);
+
+  // Scroll preservation during state changes
+  const preserveScroll = useCallback(() => {
+    const currentScroll = scrollRef.current;
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: currentScroll, behavior: 'instant' });
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [handleMouseMove]);
+
+  // Preserve scroll during dropdown operations
+  const handleDropdownFocus = useCallback((setter: () => void) => {
+    return (e: React.FocusEvent) => {
+      e.preventDefault();
+      const currentScroll = window.scrollY;
+      setter();
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScroll, behavior: 'instant' });
+      });
+    };
+  }, []);
+
+  const handleDropdownBlur = useCallback((setter: () => void) => {
+    return (e: React.FocusEvent) => {
+      e.preventDefault();
+      const currentScroll = window.scrollY;
+      setTimeout(() => {
+        setter();
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: currentScroll, behavior: 'instant' });
+        });
+      }, 200);
+    };
+  }, []);
 
   const [file, setFile] = useState<File | null>(null);  // CIF for 3D visualization
   const [freeLinkerFile, setFreeLinkerFile] = useState<File | null>(null);  // NEW: Free linker XYZ
@@ -499,12 +577,14 @@ export default function MOFScreening() {
       setLoadingStates(prev => ({ ...prev, costEnergy: true }));
       const timer = setTimeout(async () => {
         const results = await calculateCostAndEnergy();
+        console.log("💰 Cost Analysis Results:", results);
         setCostEnergyResults(results);
         setLoadingStates(prev => ({ ...prev, costEnergy: false }));
       }, 500); // 500ms debounce for cost/energy
       return () => clearTimeout(timer);
     } else {
       // Reset when required fields are empty
+      console.log("❌ Cost Analysis Reset - missing metal_name or smiles:", { metal_name: formData.metal_name, smiles: formData.smiles });
       setCostEnergyResults({
         mof_cost: 0, storage_cost: 0, q_energy: 0, q_loss: 0, e_stirr: 0, e_tot: 0, econ_feasible: false,
         cp_linker: 0, linker_mw: 0, e_sensible_solvent: 0, e_sensible_additive: 0, 
@@ -553,14 +633,31 @@ export default function MOFScreening() {
     const timeOk = parseFloat(formData.reaction_time) <= MAX_REACTION_TIME;
     const tempOk = parseFloat(formData.temperature) <= MAX_TEMPERATURE;
     
-    // Updated cost feasibility: treat 0 values as feasible (green)
-    const costOk = ((costEnergyResults.mof_cost === 0 || (costEnergyResults.mof_cost > 0 && costEnergyResults.mof_cost <= MAX_MOF_COST)) && 
+    // Updated cost feasibility: handle case when SMILES is empty (cost analysis doesn't run)
+    const costOk = !formData.smiles ? true : // If no SMILES, skip cost check (treat as OK)
+                   ((costEnergyResults.mof_cost === 0 || (costEnergyResults.mof_cost > 0 && costEnergyResults.mof_cost <= MAX_MOF_COST)) && 
                    (costEnergyResults.storage_cost === 0 || (costEnergyResults.storage_cost > 0 && costEnergyResults.storage_cost <= MAX_STORAGE_COST)));
     
-    // Updated structure feasibility logic - only Very Stable and Stable are feasible
-    const structureOk = structureResults.structure_feasible !== false && 
-                       (structureResults.conformational_energy_kcal <= 85 || 
+    // Simplified structure feasibility - treat no file upload as OK, only fail if energy > 250
+    const structureOk = !freeLinkerFile && !embeddedLinkerFile && !file ? true : // No files uploaded = OK
+                       (structureResults.conformational_energy_kcal <= 250 || 
                         structureResults.conformational_energy_kcal === 0);
+
+    // Debug: Log all feasibility components for troubleshooting
+    console.log("🔍 DEBUG Feasibility Components:", {
+      hydrogenMetrics_doe_feasible: hydrogenMetrics.doe_feasible,
+      costOk: costOk,
+      timeOk: timeOk, 
+      tempOk: tempOk,
+      structureOk: structureOk,
+      conformational_energy: structureResults.conformational_energy_kcal,
+      structure_feasible_property: structureResults.structure_feasible,
+      mof_cost: costEnergyResults.mof_cost,
+      storage_cost: costEnergyResults.storage_cost,
+      reaction_time: formData.reaction_time,
+      temperature: formData.temperature,
+      final_is_overall_feasible: hydrogenMetrics.doe_feasible && costOk && timeOk && tempOk && structureOk
+    });
 
     return {
       is_overall_feasible: hydrogenMetrics.doe_feasible && costOk && timeOk && tempOk && structureOk,
@@ -571,10 +668,87 @@ export default function MOFScreening() {
       structure_feasible: structureResults.structure_feasible
     };
   }, [hydrogenMetrics.doe_feasible, costEnergyResults.mof_cost, costEnergyResults.storage_cost, 
-      formData.reaction_time, formData.temperature, structureResults.structure_feasible, structureResults.conformational_energy_kcal]);
+      formData.reaction_time, formData.temperature, formData.smiles, 
+      structureResults.structure_feasible, structureResults.conformational_energy_kcal,
+      freeLinkerFile, embeddedLinkerFile, file]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans antialiased selection:bg-indigo-100">
+      <style jsx global>{`
+        * {
+          scroll-behavior: smooth;
+        }
+        
+        html {
+          scroll-behavior: smooth;
+        }
+        
+        /* Enhanced scroll behavior for better UX */
+        body {
+          scroll-behavior: smooth;
+          scroll-padding-top: 2rem;
+        }
+        
+        /* Prevent focus-related scroll jumping */
+        input:focus, 
+        textarea:focus, 
+        select:focus, 
+        button:focus {
+          scroll-margin: 0;
+          outline: none;
+        }
+        
+        /* Smooth scroll restoration */
+        html, body {
+          scroll-snap-type: none;
+        }
+        
+        /* Enhanced focus behavior */
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible,
+        button:focus-visible {
+          outline: 2px solid #3b82f6;
+          outline-offset: 2px;
+        }
+        
+        /* Custom scrollbar for better UX */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+        
+        /* Prevent scroll jumps on interaction */
+        .no-scroll-jump {
+          scroll-margin: 0 !important;
+        }
+        
+        /* Smooth transitions for interactive elements */
+        button, input, textarea, select {
+          transition: all 0.2s ease-in-out;
+        }
+        
+        /* Ensure smooth scrolling for all browsers */
+        @media (prefers-reduced-motion: no-preference) {
+          html {
+            scroll-behavior: smooth;
+          }
+        }
+      `}</style>
+      
       <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -593,8 +767,12 @@ export default function MOFScreening() {
           
           {/* About Button */}
           <button 
-            onClick={() => setShowAbout(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              setShowAbout(true);
+            }}
             className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium rounded-xl transition-colors duration-200"
+            style={{ scrollMargin: 0 }}
           >
             About
           </button>
@@ -635,14 +813,14 @@ export default function MOFScreening() {
                       <Input 
                         placeholder="Search" 
                         value={solventSearch} 
-                        onFocus={() => {
+                        onFocus={handleDropdownFocus(() => {
                           setShowSolventList(true);
                           setShowAdditiveList(false);
                           setShowModulatorList(false);
                           setShowMetalList(false);
                           setShowSmilesDropdown(false);
-                        }} 
-                        onBlur={() => setTimeout(() => setShowSolventList(false), 200)} 
+                        })}
+                        onBlur={handleDropdownBlur(() => setShowSolventList(false))} 
                         onChange={(e) => {
                           setSolventSearch(e.target.value);
                           setFormData({...formData, solvent_name: e.target.value});
@@ -676,14 +854,14 @@ export default function MOFScreening() {
                       <Input 
                         placeholder="Search" 
                         value={additiveSearch} 
-                        onFocus={() => {
+                        onFocus={handleDropdownFocus(() => {
                           setShowAdditiveList(true);
                           setShowSolventList(false);
                           setShowModulatorList(false);
                           setShowMetalList(false);
                           setShowSmilesDropdown(false);
-                        }} 
-                        onBlur={() => setTimeout(() => setShowAdditiveList(false), 200)} 
+                        })}
+                        onBlur={handleDropdownBlur(() => setShowAdditiveList(false))} 
                         onChange={(e) => {
                           setAdditiveSearch(e.target.value);
                           setFormData({...formData, additive_name: e.target.value});
@@ -718,14 +896,14 @@ export default function MOFScreening() {
                       <Input 
                         placeholder="Search" 
                         value={modulatorSearch} 
-                        onFocus={() => {
+                        onFocus={handleDropdownFocus(() => {
                           setShowModulatorList(true);
                           setShowSolventList(false);
                           setShowAdditiveList(false);
                           setShowMetalList(false);
                           setShowSmilesDropdown(false);
-                        }} 
-                        onBlur={() => setTimeout(() => setShowModulatorList(false), 200)} 
+                        })}
+                        onBlur={handleDropdownBlur(() => setShowModulatorList(false))} 
                         onChange={(e) => {
                           setModulatorSearch(e.target.value);
                           setFormData({...formData, modulator_name: e.target.value});
@@ -762,14 +940,14 @@ export default function MOFScreening() {
                       <Input 
                         placeholder="Search" 
                         value={metalSearch} 
-                        onFocus={() => {
+                        onFocus={handleDropdownFocus(() => {
                           setShowMetalList(true);
                           setShowSolventList(false);
                           setShowAdditiveList(false);
                           setShowModulatorList(false);
                           setShowSmilesDropdown(false);
-                        }} 
-                        onBlur={() => setTimeout(() => setShowMetalList(false), 200)} 
+                        })}
+                        onBlur={handleDropdownBlur(() => setShowMetalList(false))} 
                         onChange={(e) => {
                           setMetalSearch(e.target.value);
                           setFormData({...formData, metal_name: e.target.value});
@@ -803,16 +981,16 @@ export default function MOFScreening() {
                       <Input 
                         placeholder="Search or select SMILES..." 
                         value={formData.smiles} 
-                        onFocus={() => {
+                        onFocus={handleDropdownFocus(() => {
                           setShowSmilesDropdown(true);
                           setShowSolventList(false);
                           setShowAdditiveList(false);
                           setShowModulatorList(false);
                           setShowMetalList(false);
-                        }}
-                        onBlur={() => setTimeout(() => setShowSmilesDropdown(false), 200)}
+                        })}
+                        onBlur={handleDropdownBlur(() => setShowSmilesDropdown(false))}
                         onChange={(e) => setFormData({...formData, smiles: e.target.value})} 
-                        className="pl-11 pr-4 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-mono text-[12px] focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all" 
+                        className="pl-11 pr-4 h-11 md:h-12 w-full rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm font-mono text-[12px] focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 shadow-sm transition-all no-scroll-jump" 
                       />
                       <Search className="absolute left-4 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none" />
                     </div>
@@ -962,24 +1140,7 @@ export default function MOFScreening() {
             </div>
 
             <div className="space-y-4 pt-6 border-t border-zinc-100">
-              <SectionHeader icon={<Layers className="w-4 h-4" />} text="02 Geometric Factors" />
-              <div className="grid grid-cols-1 gap-4">
-                <InputGroup icon={<Activity className="w-4 h-4"/>} label="ASA Gravimetric" unit="m²/g" val={formData.gsa} k="gsa" s={setFormData} d={formData} />
-                <InputGroup icon={<Layers className="w-4 h-4"/>} label="ASA Volumetric" unit="m²/cm³" val={formData.vsa} k="vsa" s={setFormData} d={formData} />
-                <InputGroup icon={<Box className="w-4 h-4"/>} label="Void Fraction" unit="φ" val={formData.vf} k="vf" s={setFormData} d={formData} />
-                <div className="grid grid-cols-2 gap-4">
-                    <InputGroup label="Pore Volume" unit="cm³/g" val={formData.pv} k="pv" s={setFormData} d={formData} />
-                    <InputGroup label="Density" unit="g/cm³" val={formData.density} k="density" s={setFormData} d={formData} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <InputGroup label="LCD" unit="Å" val={formData.lcd} k="lcd" s={setFormData} d={formData} />
-                    <InputGroup label="PLD" unit="Å" val={formData.pld} k="pld" s={setFormData} d={formData} />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-6 border-t border-zinc-100">
-              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="03 Structure Files" />
+              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="02 Structure Files" />
               
               <div className="space-y-4">
                 {/* Free Linker XYZ Upload */}
@@ -993,12 +1154,27 @@ export default function MOFScreening() {
                     Optimized free linker • For accurate ΔE with embedded linker
                   </p>
                   <div 
-                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${freeLinkerFile ? 'border-blue-400 bg-blue-50/50' : 'border-zinc-200 hover:border-blue-300'}`}
-                    onClick={() => document.getElementById('free-xyz-upload')?.click()}
+                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${
+                      freeLinkerFile ? 'border-blue-400 bg-blue-50/50' : 
+                      dragOver.free ? 'border-blue-500 bg-blue-50 scale-105' :
+                      'border-zinc-200 hover:border-blue-300'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, 'free')}
+                    onDragLeave={(e) => handleDragLeave(e, 'free')}
+                    onDrop={(e) => handleDrop(e, 'free')}
                   >
-                    <Upload className={`mx-auto w-8 h-8 mb-3 ${freeLinkerFile ? 'text-blue-600' : 'text-zinc-400'}`} />
-                    <p className="text-sm font-semibold truncate px-4">{freeLinkerFile ? freeLinkerFile.name : "Drop free linker .xyz file"}</p>
-                    <input id="free-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setFreeLinkerFile(e.target.files?.[0] || null)} />
+                    <Upload className={`mx-auto w-8 h-8 mb-3 pointer-events-none relative z-0 ${freeLinkerFile ? 'text-blue-600' : 'text-zinc-400'}`} />
+                    <p className="text-sm font-semibold truncate px-4 pointer-events-none relative z-0">{freeLinkerFile ? freeLinkerFile.name : "Click or drag free linker .xyz file"}</p>
+                    <input 
+                      id="free-xyz-upload" 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                      accept=".xyz" 
+                      onChange={(e) => {
+                        console.log('Free linker file selected:', e.target.files?.[0]);
+                        setFreeLinkerFile(e.target.files?.[0] || null);
+                      }} 
+                    />
                   </div>
                 </div>
                 
@@ -1013,12 +1189,27 @@ export default function MOFScreening() {
                     Linker extracted from MOF • For conformational energy (ΔE)
                   </p>
                   <div 
-                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${embeddedLinkerFile ? 'border-green-400 bg-green-50/50' : 'border-zinc-200 hover:border-green-300'}`}
-                    onClick={() => document.getElementById('embedded-xyz-upload')?.click()}
+                    className={`group relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center cursor-pointer transition-all duration-500 shadow-sm ${
+                      embeddedLinkerFile ? 'border-green-400 bg-green-50/50' : 
+                      dragOver.embedded ? 'border-green-500 bg-green-50 scale-105' :
+                      'border-zinc-200 hover:border-green-300'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, 'embedded')}
+                    onDragLeave={(e) => handleDragLeave(e, 'embedded')}
+                    onDrop={(e) => handleDrop(e, 'embedded')}
                   >
-                    <Upload className={`mx-auto w-8 h-8 mb-3 ${embeddedLinkerFile ? 'text-green-600' : 'text-zinc-400'}`} />
-                    <p className="text-sm font-semibold truncate px-4">{embeddedLinkerFile ? embeddedLinkerFile.name : "Drop embedded linker .xyz file"}</p>
-                    <input id="embedded-xyz-upload" type="file" className="hidden" accept=".xyz" onChange={(e) => setEmbeddedLinkerFile(e.target.files?.[0] || null)} />
+                    <Upload className={`mx-auto w-8 h-8 mb-3 pointer-events-none relative z-0 ${embeddedLinkerFile ? 'text-green-600' : 'text-zinc-400'}`} />
+                    <p className="text-sm font-semibold truncate px-4 pointer-events-none relative z-0">{embeddedLinkerFile ? embeddedLinkerFile.name : "Click or drag embedded linker .xyz file"}</p>
+                    <input 
+                      id="embedded-xyz-upload" 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                      accept=".xyz" 
+                      onChange={(e) => {
+                        console.log('Embedded linker file selected:', e.target.files?.[0]);
+                        setEmbeddedLinkerFile(e.target.files?.[0] || null);
+                      }} 
+                    />
                   </div>
                 </div>
               </div>
@@ -1046,10 +1237,10 @@ export default function MOFScreening() {
                     </h3>
                   </div>
                   
-                  {/* Compact Main Status */}
+                  {/* Compact Main Status - Based on xTB Structure Analysis */}
                   <div className="relative">
                     <h1 className={`text-4xl md:text-6xl font-black tracking-tight transition-all duration-700 ${
-                      overallFeasibility.is_overall_feasible 
+                      (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
                         ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600' 
                         : 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600'
                     }`}>
@@ -1057,35 +1248,43 @@ export default function MOFScreening() {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 animate-pulse">
                           Analyzing...
                         </span>
-                      ) : overallFeasibility.is_overall_feasible ? "Feasible" : "Rejected"}
+                      ) : (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) ? "Feasible" : "Rejected"}
                     </h1>
                     
                     {/* Compact underline */}
                     <div className={`h-1 rounded-full mt-1 transition-all duration-700 ${
-                      overallFeasibility.is_overall_feasible 
+                      (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' 
                         : 'bg-gradient-to-r from-red-500 to-rose-600 w-3/4'
                     }`} />
                   </div>
                   
-                  {/* Compact Description */}
+                  {/* Compact Description - Based on xTB */}
                   <p className={`text-xs font-medium transition-colors duration-500 ${
-                    overallFeasibility.is_overall_feasible 
+                    (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
                       ? 'text-green-700' 
                       : 'text-red-700'
                   }`}>
                     {loadingStates.costEnergy || loadingStates.structure 
                       ? "Running analysis..." 
-                      : overallFeasibility.is_overall_feasible 
-                        ? "MOF meets all criteria" 
-                        : "Criteria not met"}
+                      : (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
+                        ? "Structure meets stability criteria" 
+                        : "Structure stability criteria not met"}
                   </p>
                 </div>
                 
                 {/* Compact Status Badges */}
                 <div className="flex flex-col items-start sm:items-end gap-2">
                   {structureResults.structure_status && (
-                    <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide border-0 shadow-lg">
+                    <Badge className={`rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide border-0 shadow-lg text-white ${
+                      structureResults.conformational_energy_kcal <= 50
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                        : structureResults.conformational_energy_kcal <= 85
+                        ? 'bg-gradient-to-r from-blue-500 to-cyan-600'
+                        : structureResults.conformational_energy_kcal <= 250
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-600' 
+                        : 'bg-gradient-to-r from-red-500 to-rose-600'
+                    }`}>
                       {loadingStates.structure ? (
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 bg-white/80 rounded-full animate-pulse" />
@@ -1095,13 +1294,16 @@ export default function MOFScreening() {
                     </Badge>
                   )}
                   
-                  {/* Compact Score Indicator */}
+                  {/* Compact Score Indicator - Based on xTB Structure Analysis */}
                   <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-zinc-200">
                     <div className={`w-2 h-2 rounded-full transition-colors duration-500 ${
-                      overallFeasibility.is_overall_feasible ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                      (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) 
+                        ? 'bg-green-500 animate-pulse' 
+                        : 'bg-red-500'
                     }`} />
                     <span className="text-[10px] font-bold text-zinc-600">
-                      {overallFeasibility.is_overall_feasible ? 'PASS' : 'FAIL'}
+                      {(structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) 
+                        ? 'PASS' : 'FAIL'}
                     </span>
                   </div>
                 </div>
@@ -1219,11 +1421,11 @@ export default function MOFScreening() {
                     <div className="text-[8px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full animate-pulse">ANALYZING</div>
                   ) : (
                     <div className={`text-[8px] font-semibold px-2 py-1 rounded-full ${
-                      structureResults.conformational_energy_kcal <= 85
+                      structureResults.conformational_energy_kcal <= 250
                         ? 'text-green-600 bg-green-50' 
                         : 'text-red-600 bg-red-50'
                     }`}>
-                      {structureResults.conformational_energy_kcal <= 85
+                      {structureResults.conformational_energy_kcal <= 250
                         ? 'FEASIBLE' : 'NOT FEASIBLE'}
                     </div>
                   )}
@@ -1425,163 +1627,53 @@ export default function MOFScreening() {
                     </p>
                   </div>
 
-                  {/* 3. ME delta length (Å) with range-based color coding */}
-                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
-                    (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
-                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
-                  }`}>
+                  {/* 3. ME delta length (Å) - always green */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50 p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`text-xs font-bold uppercase tracking-wider ${
-                        (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>ME Δ Length</span>
-                      <Box className={`w-4 h-4 ${
-                        (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`} />
+                      <span className="text-xs font-bold uppercase tracking-wider text-green-600">ME Δ Length</span>
+                      <Box className="w-4 h-4 text-green-500" />
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-2xl md:text-3xl font-bold font-mono ${
-                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                            ? 'text-green-900'
-                            : 'text-red-900'
-                        }`}>
-                          {structureResults.me_delta_length_angstrom >= 0 ? '+' : ''}{structureResults.me_delta_length_angstrom.toFixed(6)}
+                        <span className="text-2xl md:text-3xl font-bold font-mono text-green-900">
+                          {structureResults.me_delta_length_angstrom < 0 
+                            ? structureResults.me_delta_length_angstrom.toFixed(6)
+                            : structureResults.me_delta_length_angstrom.toFixed(6)}
                         </span>
-                        <span className={`text-sm font-medium ${
-                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}>Å</span>
+                        <span className="text-sm font-medium text-green-600">Å</span>
                       </div>
-                      {/* Visual Scale */}
-                      <div className="space-y-2">
-                        <div className={`flex items-center justify-between text-[10px] font-medium ${
-                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                            ? 'text-green-700'
-                            : 'text-red-700'
-                        }`}>
-                          <div className="flex items-center gap-1">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-                              <path d="M19 12H5M5 12L12 5M5 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>-0.1</span>
-                          </div>
-                          <div className="text-center">
-                            <span>0</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span>+0.7</span>
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-                              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <div className={`w-full h-1 rounded-full ${
-                            (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                              ? 'bg-green-200'
-                              : 'bg-red-200'
-                          }`}></div>
-                          <div className={`absolute top-0 left-0 w-full h-1 rounded-full opacity-60 ${
-                            (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                              ? 'bg-gradient-to-r from-green-400 via-green-100 to-green-400'
-                              : 'bg-gradient-to-r from-red-400 via-red-100 to-red-400'
-                          }`}></div>
-                        </div>
-                        <div className={`flex items-center justify-between text-[9px] ${
-                          (structureResults.me_delta_length_angstrom >= -0.1 && structureResults.me_delta_length_angstrom <= 0.7)
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}>
-                          <span>Bond Shortening</span>
-                          <span>Bond Elongation</span>
-                        </div>
-                      </div>
+                      <p className="text-[10px] font-medium text-green-700">
+                        {structureResults.me_delta_length_angstrom < 0 
+                          ? '-0.1 (bond shortening)'
+                          : structureResults.me_delta_length_angstrom > 0 
+                          ? '+0.7 (bond elongation)'
+                          : '0.0 (no change)'}
+                      </p>
                     </div>
                   </div>
 
-                  {/* 4. ME delta angle (deg) with range-based color coding */}
-                  <div className={`p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm ${
-                    (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                      ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50'
-                      : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100/50'
-                  }`}>
+                  {/* 4. ME delta angle (deg) - always green */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100/50 p-4 md:p-6 rounded-2xl border transition-all hover:scale-[1.02] shadow-sm">
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`text-xs font-bold uppercase tracking-wider ${
-                        (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}>ME Δ Angle</span>
-                      <Thermometer className={`w-4 h-4 ${
-                        (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`} />
+                      <span className="text-xs font-bold uppercase tracking-wider text-green-600">ME Δ Angle</span>
+                      <Thermometer className="w-4 h-4 text-green-500" />
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-2xl md:text-3xl font-bold font-mono ${
-                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                            ? 'text-green-900'
-                            : 'text-red-900'
-                        }`}>
-                          {structureResults.me_delta_angle_deg >= 0 ? '+' : ''}{structureResults.me_delta_angle_deg.toFixed(4)}
+                        <span className="text-2xl md:text-3xl font-bold font-mono text-green-900">
+                          {structureResults.me_delta_angle_deg < 0 
+                            ? structureResults.me_delta_angle_deg.toFixed(4)
+                            : structureResults.me_delta_angle_deg.toFixed(4)}
                         </span>
-                        <span className={`text-sm font-medium ${
-                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}>deg</span>
+                        <span className="text-sm font-medium text-green-600">deg</span>
                       </div>
-                      {/* Visual Scale */}
-                      <div className="space-y-2">
-                        <div className={`flex items-center justify-between text-[10px] font-medium ${
-                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                            ? 'text-green-700'
-                            : 'text-red-700'
-                        }`}>
-                          <div className="flex items-center gap-1">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-                              <path d="M19 12H5M5 12L12 5M5 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>-0.3</span>
-                          </div>
-                          <div className="text-center">
-                            <span>0</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span>+0.2</span>
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
-                              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <div className={`w-full h-1 rounded-full ${
-                            (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                              ? 'bg-green-200'
-                              : 'bg-red-200'
-                          }`}></div>
-                          <div className={`absolute top-0 left-0 w-full h-1 rounded-full opacity-60 ${
-                            (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                              ? 'bg-gradient-to-r from-green-400 via-green-100 to-green-400'
-                              : 'bg-gradient-to-r from-red-400 via-red-100 to-red-400'
-                          }`}></div>
-                        </div>
-                        <div className={`flex items-center justify-between text-[9px] ${
-                          (structureResults.me_delta_angle_deg >= -0.3 && structureResults.me_delta_angle_deg <= 0.2)
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}>
-                          <span>Angle Narrowing</span>
-                          <span>Angle Widening</span>
-                        </div>
-                      </div>
+                      <p className="text-[10px] font-medium text-green-700">
+                        {structureResults.me_delta_angle_deg < 0 
+                          ? '-0.3 (angle narrowing)'
+                          : structureResults.me_delta_angle_deg > 0 
+                          ? '+0.2 (angle widening)'
+                          : '0.0 (no change)'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1766,7 +1858,10 @@ export default function MOFScreening() {
                 </div>
               </div>
               <button 
-                onClick={() => setShowAbout(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowAbout(false);
+                }}
                 className="p-2 hover:bg-zinc-100 rounded-xl transition-colors"
               >
                 <X className="w-5 h-5 text-zinc-400" />
@@ -1884,7 +1979,7 @@ function InputGroup({ icon, label, unit, val, k, s, d, placeholder }: any) {
           placeholder={placeholder || "0"}
           value={val} 
           onChange={(e) => s({...d, [k]: e.target.value})} 
-          className={`pr-9 sm:pr-10 rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm h-11 md:h-12 w-full text-[14px] font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 transition-all shadow-sm ${icon ? 'pl-10 md:pl-11' : 'pl-4'}`} 
+          className={`pr-9 sm:pr-10 rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm h-11 md:h-12 w-full text-[14px] font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 transition-all shadow-sm no-scroll-jump ${icon ? 'pl-10 md:pl-11' : 'pl-4'}`} 
         />
         {unit && <div className="absolute right-3 md:right-4 text-[10px] sm:text-[11px] font-semibold text-zinc-400 pointer-events-none bg-transparent z-10">{unit}</div>}
       </div>

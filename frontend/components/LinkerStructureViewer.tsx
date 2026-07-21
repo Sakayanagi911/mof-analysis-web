@@ -258,8 +258,12 @@ const LinkerStructureViewer: React.FC<LinkerStructureViewerProps> = ({
           {/* Modern Toggle Buttons */}
           <div className="flex items-center gap-2 bg-gradient-to-r from-gray-100 to-gray-200 p-1.5 rounded-xl shadow-inner">
             <button
-              onClick={() => setViewMode('sidebyside')}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setViewMode('sidebyside');
+              }}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 no-scroll-jump ${
                 viewMode === 'sidebyside'
                   ? 'bg-white text-indigo-700 shadow-lg scale-105'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -271,8 +275,12 @@ const LinkerStructureViewer: React.FC<LinkerStructureViewerProps> = ({
               Side-by-Side
             </button>
             <button
-              onClick={() => setViewMode('overlay')}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setViewMode('overlay');
+              }}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 no-scroll-jump ${
                 viewMode === 'overlay'
                   ? 'bg-white text-purple-700 shadow-lg scale-105'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
