@@ -683,10 +683,11 @@ export default function MOFScreening() {
           scroll-behavior: smooth;
         }
         
-        /* Enhanced scroll behavior for better UX */
+        /* Clean and minimal styling */
         body {
           scroll-behavior: smooth;
           scroll-padding-top: 2rem;
+          background: #fafafa;
         }
         
         /* Prevent focus-related scroll jumping */
@@ -698,37 +699,54 @@ export default function MOFScreening() {
           outline: none;
         }
         
-        /* Smooth scroll restoration */
-        html, body {
-          scroll-snap-type: none;
-        }
-        
-        /* Enhanced focus behavior */
+        /* Enhanced focus behavior with subtle glow */
         input:focus-visible,
         textarea:focus-visible,
         select:focus-visible,
         button:focus-visible {
-          outline: 2px solid #3b82f6;
+          outline: 2px solid transparent;
           outline-offset: 2px;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
-        /* Custom scrollbar for better UX */
+        /* Clean glassmorphism effects */
+        .glass-card {
+          backdrop-filter: blur(12px);
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(229, 231, 235, 0.8);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        }
+        
+        .glass-input {
+          backdrop-filter: blur(8px);
+          background: rgba(255, 255, 255, 0.98);
+          border: 1px solid rgba(209, 213, 219, 0.6);
+          transition: all 0.2s ease;
+        }
+        
+        .glass-input:focus {
+          background: white;
+          border-color: rgba(59, 130, 246, 0.5);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+        }
+        
+        /* Clean scrollbar */
         ::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
         
         ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
+          background: #f9fafb;
+          border-radius: 8px;
         }
         
         ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
+          background: #d1d5db;
+          border-radius: 8px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
+          background: #9ca3af;
         }
         
         /* Prevent scroll jumps on interaction */
@@ -736,9 +754,15 @@ export default function MOFScreening() {
           scroll-margin: 0 !important;
         }
         
-        /* Smooth transitions for interactive elements */
+        /* Smooth transitions */
         button, input, textarea, select {
-          transition: all 0.2s ease-in-out;
+          transition: all 0.2s ease;
+        }
+        
+        /* Subtle hover effects */
+        .hover-lift:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
         
         /* Ensure smooth scrolling for all browsers */
@@ -749,40 +773,51 @@ export default function MOFScreening() {
         }
       `}</style>
       
-      <nav className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/70 backdrop-blur-xl px-4 md:px-8 py-4">
+      <nav className="sticky top-0 z-50 w-full border-b border-white/20 bg-white/60 backdrop-blur-xl px-4 md:px-8 py-4 shadow-lg">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {/* TRIAXIS-MOF Logo */}
-            <div className="relative">
+          <div className="flex items-center gap-4">
+            {/* TRIAXIS-MOF Logo with enhanced styling */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
               <img 
                 src="/triaxismof.svg" 
                 alt="TRIAXIS-MOF Logo" 
-                className="w-10 h-10 rounded-full"
+                className="relative w-12 h-12 rounded-full ring-2 ring-white shadow-lg"
               />
             </div>
-            <span className="text-xl font-bold tracking-tight">
-              TRIAXIS<span className="text-indigo-600">-MOF</span>
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold tracking-tight gradient-text">
+                TRIAXIS-MOF
+              </span>
+              <span className="text-[10px] font-medium text-slate-500 tracking-wider uppercase">
+                INSIGHTFUL MOF SCREENER
+              </span>
+            </div>
           </div>
           
-          {/* About Button */}
+          {/* Enhanced About Button */}
           <button 
             onClick={(e) => {
               e.preventDefault();
               setShowAbout(true);
             }}
-            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium rounded-xl transition-colors duration-200"
+            className="group relative px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
             style={{ scrollMargin: 0 }}
           >
-            About
+            <span className="relative z-10">About</span>
+            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto py-6 md:py-12 px-4 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         <section className="lg:col-span-4 space-y-8 animate-in slide-in-from-left duration-700">
-          <div className="sticky top-4 bg-white/80 backdrop-blur-2xl rounded-[32px] border border-white/50 p-6 md:p-8 shadow-sm space-y-8">
-            <h2 className="text-2xl font-bold tracking-tight">Configuration</h2>
+          <div className="sticky top-6 glass-card rounded-[32px] p-6 md:p-8 space-y-8 hover-lift">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+              <h2 className="text-2xl font-bold tracking-tight gradient-text">Configuration</h2>
+            </div>
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
             
             <div className="space-y-4">
               <SectionHeader icon={<Layers className="w-4 h-4" />} text="01 Geometric Factors" />
@@ -1140,7 +1175,7 @@ export default function MOFScreening() {
             </div>
 
             <div className="space-y-4 pt-6 border-t border-zinc-100">
-              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="02 Structure Files" />
+              <SectionHeader icon={<FlaskConical className="w-4 h-4" />} text="03 Structure Files" />
               
               <div className="space-y-4">
                 {/* Free Linker XYZ Upload */}
@@ -1218,49 +1253,48 @@ export default function MOFScreening() {
         </section>
         {/* RESULTS SECTION */}
         <section className="lg:col-span-8 relative animate-in fade-in zoom-in duration-1000">
-          <div className="bg-white/90 backdrop-blur-3xl rounded-[48px] p-6 md:p-12 border border-white shadow-xl lg:sticky lg:top-28 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden">
-            {(loadingStates.costEnergy || loadingStates.structure) && <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600 animate-pulse" />}
+          <div className="glass-card rounded-[48px] p-6 md:p-12 space-y-8 md:space-y-12 min-h-[750px] flex flex-col overflow-hidden hover-lift">
+            {(loadingStates.costEnergy || loadingStates.structure) && (
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 animated-gradient rounded-t-[48px]" />
+            )}
             
-            <header className="relative">
-              {/* Subtle Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/3 via-purple-500/3 to-blue-500/3 rounded-2xl -z-10" />
-              
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 p-6 mb-6">
+            <header className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-6 p-6">
                 <div className="space-y-3">
-                  {/* Compact Title with Icon */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <Activity className="w-3 h-3 text-white" />
+                  {/* Simple Title */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <Activity className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em]">
+                    <h3 className="text-sm font-semibold text-gray-700">
                       Screening Result
                     </h3>
                   </div>
                   
-                  {/* Compact Main Status - Based on xTB Structure Analysis */}
+                  {/* Clean Main Status */}
                   <div className="relative">
-                    <h1 className={`text-4xl md:text-6xl font-black tracking-tight transition-all duration-700 ${
+                    <h1 className={`text-4xl md:text-5xl font-bold transition-all duration-700 ${
                       (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
-                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600' 
-                        : 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600'
+                        ? 'text-green-600' 
+                        : 'text-red-600'
                     }`}>
                       {loadingStates.costEnergy || loadingStates.structure ? (
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 animate-pulse">
+                        <span className="text-blue-600 animate-pulse">
                           Analyzing...
                         </span>
                       ) : (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) ? "Feasible" : "Rejected"}
                     </h1>
                     
-                    {/* Compact underline */}
-                    <div className={`h-1 rounded-full mt-1 transition-all duration-700 ${
+                    {/* Simple underline */}
+                    <div className={`h-1 rounded-full mt-2 transition-all duration-700 ${
                       (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' 
-                        : 'bg-gradient-to-r from-red-500 to-rose-600 w-3/4'
+                        ? 'bg-green-600 w-full' 
+                        : 'bg-red-600 w-3/4'
                     }`} />
                   </div>
                   
-                  {/* Compact Description - Based on xTB */}
-                  <p className={`text-xs font-medium transition-colors duration-500 ${
+                  {/* Clean Description */}
+                  <p className={`text-sm font-medium ${
                     (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
                       ? 'text-green-700' 
                       : 'text-red-700'
@@ -1268,22 +1302,22 @@ export default function MOFScreening() {
                     {loadingStates.costEnergy || loadingStates.structure 
                       ? "Running analysis..." 
                       : (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0)
-                        ? "Structure meets stability criteria" 
-                        : "Structure stability criteria not met"}
+                        ? "✓ Structure meets stability criteria" 
+                        : "✗ Structure stability criteria not met"}
                   </p>
                 </div>
                 
-                {/* Compact Status Badges */}
+                {/* Clean Status Badges */}
                 <div className="flex flex-col items-start sm:items-end gap-2">
                   {structureResults.structure_status && (
-                    <Badge className={`rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide border-0 shadow-lg text-white ${
+                    <Badge className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg ${
                       structureResults.conformational_energy_kcal <= 50
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                        ? 'bg-green-600' 
                         : structureResults.conformational_energy_kcal <= 85
-                        ? 'bg-gradient-to-r from-blue-500 to-cyan-600'
+                        ? 'bg-blue-600'
                         : structureResults.conformational_energy_kcal <= 250
-                        ? 'bg-gradient-to-r from-yellow-500 to-amber-600' 
-                        : 'bg-gradient-to-r from-red-500 to-rose-600'
+                        ? 'bg-amber-600' 
+                        : 'bg-red-600'
                     }`}>
                       {loadingStates.structure ? (
                         <div className="flex items-center gap-1.5">
@@ -1294,14 +1328,14 @@ export default function MOFScreening() {
                     </Badge>
                   )}
                   
-                  {/* Compact Score Indicator - Based on xTB Structure Analysis */}
-                  <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-zinc-200">
-                    <div className={`w-2 h-2 rounded-full transition-colors duration-500 ${
+                  {/* Simple Pass/Fail Indicator */}
+                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
+                    <div className={`w-2 h-2 rounded-full ${
                       (structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) 
-                        ? 'bg-green-500 animate-pulse' 
+                        ? 'bg-green-500' 
                         : 'bg-red-500'
                     }`} />
-                    <span className="text-[10px] font-bold text-zinc-600">
+                    <span className="text-xs font-medium text-gray-700">
                       {(structureResults.conformational_energy_kcal <= 250 && structureResults.conformational_energy_kcal > 0) 
                         ? 'PASS' : 'FAIL'}
                     </span>
@@ -1948,7 +1982,7 @@ export default function MOFScreening() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="text-center">
             <p className="text-sm text-zinc-500">
-              © 2026 TRIAXIS-MOF. All rights reserved.
+              &copy; 2026 TRIAXIS-MOF. All rights reserved.
             </p>
           </div>
         </div>
@@ -1960,28 +1994,46 @@ export default function MOFScreening() {
 // --- SUB-COMPONENTS ---
 function SectionHeader({ icon, text }: any) {
   return (
-    <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 bg-zinc-100/80 rounded-[10px] text-zinc-600 shadow-sm border border-zinc-200/50">{icon}</div>
-      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.15em]">{text}</p>
+    <div className="flex items-center gap-4 mb-6">
+      <div className="relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+        <div className="relative p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg">
+          {icon}
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <p className="text-sm font-bold text-slate-700 tracking-wide">{text}</p>
+        <div className="h-0.5 w-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mt-1"></div>
+      </div>
     </div>
   );
 }
 
 function InputGroup({ icon, label, unit, val, k, s, d, placeholder }: any) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-[11px] font-medium text-zinc-500 ml-1 tracking-wide truncate pr-2">{label}</Label>
-      <div className="relative flex items-center group">
-        {icon && <div className="absolute left-3.5 md:left-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors duration-300 z-10 pointer-events-none">{icon}</div>}
+    <div className="space-y-2">
+      <Label className="text-xs font-semibold text-slate-600 ml-1 tracking-wide">{label}</Label>
+      <div className="relative group">
+        {icon && (
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors duration-300 z-10 pointer-events-none">
+            {icon}
+          </div>
+        )}
         <Input 
           type="number" 
           step="any"
           placeholder={placeholder || "0"}
           value={val} 
           onChange={(e) => s({...d, [k]: e.target.value})} 
-          className={`pr-9 sm:pr-10 rounded-[14px] border-zinc-200 bg-white/80 backdrop-blur-sm h-11 md:h-12 w-full text-[14px] font-medium focus-visible:ring-4 focus-visible:ring-blue-500/10 focus-visible:border-blue-500/30 transition-all shadow-sm no-scroll-jump ${icon ? 'pl-10 md:pl-11' : 'pl-4'}`} 
+          className={`glass-input h-12 w-full text-sm font-medium rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 no-scroll-jump ${
+            icon ? 'pl-12 pr-14' : 'pl-4 pr-14'
+          }`} 
         />
-        {unit && <div className="absolute right-3 md:right-4 text-[10px] sm:text-[11px] font-semibold text-zinc-400 pointer-events-none bg-transparent z-10">{unit}</div>}
+        {unit && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-100 text-xs font-bold text-slate-600 rounded-lg pointer-events-none">
+            {unit}
+          </div>
+        )}
       </div>
     </div>
   );
